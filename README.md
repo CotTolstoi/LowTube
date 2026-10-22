@@ -1,5 +1,9 @@
 LowTube 0.11.6 — Windows 10/11 x64 — application distribution without tools
 
+An early native Linux port is in [linux/README_UK.md](linux/README_UK.md).
+The Windows and Linux versions are developed on separate branches; Linux
+features are being ported incrementally and do not yet match Windows parity.
+
 INSTALLATION
 Extract the entire archive to a writable folder. Run SETUP.cmd to download and
 verify the required components, then START.cmd. .NET Framework 4.8 is required.
