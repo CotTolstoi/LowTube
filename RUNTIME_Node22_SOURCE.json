@@ -1,0 +1,7 @@
+{
+  "name": "node-v22.23.3-win-x64.zip",
+  "url": "https://nodejs.org/dist/v22.23.3/node-v22.23.3-win-x64.zip",
+  "sha256": "2b0ff57b049cda1bbcea2240eec20467018713c1efe1f7360c2681859b90ed71",
+  "upstream_checksum": true,
+  "bytes": 35574076
+}

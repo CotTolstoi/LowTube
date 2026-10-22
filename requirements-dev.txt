@@ -1,0 +1,3 @@
+# Optional Python test dependencies; not application runtime dependencies.
+lupa
+yt-dlp

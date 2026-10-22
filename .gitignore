@@ -1,0 +1,36 @@
+# Build outputs and external dependencies
+*.exe
+*.dll
+*.pdb
+*.obj
+*.lib
+*.7z
+*.zip
+bin/
+obj/
+tools/**
+!tools/README.md
+!tools/COMPONENT_SOURCES.md
+!tools/versions.json
+# User data and credentials must stay outside source control
+settings.json
+cookies*.txt
+*.cookies
+*.cookie
+client_secret*.json
+google-client.json
+google-token*
+.env
+.env.*
+*.key
+*.pem
+saved-session*
+session*.bin
+*.dpapi
+Downloads/
+BrowserProfiles/
+# Local test outputs/cache
+__pycache__/
+*.pyc
+*.log
+.vs/

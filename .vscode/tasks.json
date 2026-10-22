@@ -1,0 +1,7 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {"label":"LowTube: build all", "type":"process", "command":"powershell.exe", "args":["-NoProfile","-ExecutionPolicy","Bypass","-File","${workspaceFolder}/Build-All.ps1"], "problemMatcher":"$msCompile", "group":{"kind":"build","isDefault":true}},
+    {"label":"LowTube: checks", "type":"process", "command":"powershell.exe", "args":["-NoProfile","-ExecutionPolicy","Bypass","-File","${workspaceFolder}/Run-Checks.ps1"], "problemMatcher":"$msCompile", "group":"test"}
+  ]
+}

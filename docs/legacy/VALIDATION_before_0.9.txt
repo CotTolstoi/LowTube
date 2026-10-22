@@ -1,0 +1,385 @@
+LOWTUBE 0.6 — VALIDATION, 2026-10-11
+
+This release:
+- All production sources compiled as C# 5 / .NET Framework 4.8 / Windows x64.
+- 131 core checks, 24 Google OAuth regression checks, 13 Lua seek-guard checks.
+- EN/UK/RU audit: 275 entries, 260 referenced translation keys.
+- Real mpv 0.37 Linux integration with synthetic local media: same PID across
+  reloads, preserved start position/pause/volume/speed, separate audio loading
+  and clearing, audio-only back to video, q stopping to idle without exit.
+  This exercises the shipping Lua load bridge. Windows named-pipe transport,
+  visible window lifecycle, DPAPI and GeForce acceleration require Windows.
+- Offline Firefox cookie export verified with a synthetic cookies.sqlite and
+  unreachable HTTP/HTTPS proxy. No real account cookies used in tests.
+- Format-picker checks reject cap violations and exclude live/oversized cache
+  entries; saved-session filtering excludes unrelated/lookalike domains.
+
+Not measured here: cold HDD launch time or RAM use on the user's laptop,
+Windows UI behavior, real signed-in YouTube playback, session longevity.
+The player remains resident only while LowTube runs. The code stops/unloads
+media on Stop/window close; it does not keep a video downloading while idle.
+No feature removal is intended. Existing login modes, OAuth, downloads,
+local feeds/history, themes/languages, audio window and buffer settings remain.
+
+Earlier release validation (historical):
+=======================================
+LOWTUBE 0.1 — VALIDATION, 2026-10-09
+
+Completed:
+1. All production C# files compiled together into a Windows x64 GUI PE
+   executable, using Microsoft Roslyn, C# language version 5, and Microsoft
+   .NET Framework 4.8 reference assemblies. No compiler errors or warnings.
+2. 43 core checks passed: accepted/rejected URLs, Windows argument quoting,
+   H.264/height/FPS limits on every fallback, download argument construction,
+   separate video/audio stream mapping, audio-only exclusion of combined
+   streams, decoder/renderer settings, URL/cookie redaction, atomic settings
+   replacement, cancellation before process launch.
+   Execution host: Linux .NET 8 with a test-only System.Text.Json adapter for
+   the JavaScriptSerializer API. The shipping application uses .NET Framework
+   JavaScriptSerializer. The adapter is not included in the application.
+   tests/RUN_TESTS.cmd runs the tests with the production serializer on Windows.
+3. 11 offline integration checks passed using the actual yt-dlp 2026.08.19
+   format-selector implementation and synthetic format lists. All six
+   download presets were checked, along with playback/audio selectors and
+   negative/fallback cases. No unexpected higher resolution, FPS, or codec
+   was selected, and audio-only never fell back to a video stream.
+4. Live YouTube search returned two Big Buck Bunny results from Blender.
+5. One live metadata extraction for Blender's aqz-KE-bpKQ succeeded and selected
+   H.264 format 135 (480p/30) + AAC format 140 under the <=720p/30 H.264 profile.
+   A 60fps high-resolution stream was correctly excluded by that profile.
+6. Setup.ps1 and Build.ps1 parsed with Microsoft's PowerShell parser (7.4.6)
+   with zero syntax errors. This is syntax validation, not Windows execution.
+
+Blocked / not verified:
+• Direct CDN samples returned a Site Unavailable HTML response in this
+  environment. These responses were NOT treated as successful media playback.
+• A subsequent live audio-only request received YouTube HTTP 429 / bot
+  verification. Offline audio selection passed; end-to-end live audio did not.
+• Windows GUI execution, mpv playback, actual hardware decoding on GeForce
+  9300M, driver compatibility and performance were not tested on a Windows PC.
+• Installer execution under Windows PowerShell 5.1 and component startup on
+  older dual-core CPU remain to be tested on the target machine. Current GitHub release
+  asset names and SHA256 digests were checked; setup validates downloads again.
+• Google-account feeds were not tested with a real signed-in user session.
+  Cookies are intentionally supplied only on the user's own machine.
+• Full downloads, muxing, process-tree cancellation during FFmpeg, named-pipe
+  controls, and the complete GUI workflow still need a Windows smoke test.
+
+Suggested target-machine smoke test:
+1. SETUP.cmd finishes successfully; LowTube.exe opens without admin rights.
+2. Search returns results; a selected result plays video with sound.
+3. Audio only plays sound; diagnostics shows no decoded video.
+4. Each relevant download preset produces a playable file in the chosen folder.
+5. Cancel a download; repeat it and verify partial-file resume.
+6. Pause / seek / stop controls work; closing LowTube stops its child processes.
+7. ASUS profile: note actual hwdec and dropped frames, try DXVA2 alternatives
+   or 480p when necessary. Do not infer active GPU decoding from the menu alone.
+8. Connect Firefox session locally, open subscriptions / recommendations /
+   YouTube history; confirm local history also records new playback starts.
+
+This is a compiled first release with tested core logic, not a claim of
+end-to-end certification or guaranteed operation after future YouTube changes.
+
+INSTALLER HOTFIX — 2026-10-09
+Root cause: shinchiro FFmpeg configure uses --disable-ffprobe.
+The setup now downloads yt-dlp/FFmpeg-Builds' complete win64 GPL shared ZIP,
+requires ffmpeg.exe + ffprobe.exe in the same directory, preserves all
+adjacent DLLs, and still verifies SHA256 before extraction or execution.
+
+Verified downloaded package SHA256:
+127886e83fdcb976bf8e404a8bfeee4cc8694bf8fdfdd61bf042e3566431bc91
+Both executable PE headers and all seven DLLs are x64.
+Test-Installer.ps1 executed under PowerShell 7.4.6 on Linux against this
+actual ZIP: missing/duplicate binary regression cases, asset selection,
+Expand-Archive, final-directory copy, and DLL hash preservation all passed.
+This tests the corrected packaging route; Windows executable startup and
+older dual-core CPU CPU compatibility remain target-machine checks.
+
+MPV DEPENDENCY HOTFIX — 2026-10-10
+The exact reported mpv-x86_64-20261009-git-36abaa32d0 binary was extracted
+and inspected with objdump: its import table requires vulkan-1.dll; its
+archive includes d3dcompiler_43.dll but not vulkan-1.dll. This is a likely
+source of 0xC0000135 on a machine without a Vulkan runtime, not proof of
+which DLL was missing on the user's Windows installation.
+
+Added: early Vulkan-loader preflight; official runtime ZIP with pinned
+SHA256 and PE-machine selection; system-runtime/manual-ZIP alternatives;
+persistent hash-verified download cache; captured component output, signed
+and hexadecimal exit codes, diagnostic log, and preserved failed binaries.
+Automatic LunarG download was blocked in the development environment
+(HTTP 403, error 1010). The published ZIP hash came from the official
+LunarG download page; actual runtime extraction and Windows loading remain
+unverified. The manual official Runtime installer route is documented.
+
+PowerShell 7.4.6 Linux: 12 dependency regression checks + 4 existing
+installer fixture checks passed. Tests used a mocked download transport,
+the shipped x64 PE, an x86-header fixture, and real local process launches.
+Verified: cache reuse and corruption handling, fail-closed hashes, origin
+checks, architecture selection, invalid-file rejection, process log creation
+and failed-process diagnostic retention. No Windows/9300M performance claim.
+
+QUALITY / BUFFER UPDATE 0.1.1 — 2026-10-10
+User reports that setup, search and playback now work, but some videos select
+480p, long videos stutter, and a wide download has a reported 640px dimension.
+These reports do not establish a single cause for all symptoms.
+
+Changes: separate download FPS setting (default unrestricted), format-specific
+output filenames, actual dimensions/source labels in reports, selected-stream
+logging, bounded selectable cache profiles and initial/rebuffer prefill,
+two diagnostic snapshots including cache state and dropped-frame counters.
+The height filter remains a strict upper bound; no scaling or aspect changes.
+
+Verified for this update:
+- Recompiled all shipping sources with Roslyn C# 5 against .NET Framework 4.8,
+  x64 GUI target, with no compiler errors or warnings.
+- 55 core checks passed on Linux .NET 8 using a test-only serializer adapter.
+  New cases cover independent FPS limits, legacy settings defaults, native
+  dimensions vs source label, output naming and bounded buffer settings.
+- 19 offline integration checks passed using actual yt-dlp 2026.08.19.
+  Includes a 480p30/720p60 ladder, explicit 30fps opt-in, ultrawide 640/800
+  native heights under a 720 cap, and distinct real yt-dlp output filenames.
+- Download print timing and cache/diagnostic property names checked against
+  official yt-dlp documentation and the stable mpv manual.
+
+Not verified: Windows GUI execution of this update, IPC sampling on Windows,
+full live downloads, or playback of the user's affected videos on the 9300M.
+No claim that a larger buffer fixes the reported long-video stutters.
+Need affected URLs and diagnostics captured during a stall to distinguish
+network starvation from decoding/output stalls. For wide video need the full
+width x height, chosen container, and available source formats.
+
+INTERFACE UPDATE 0.2 — 2026-10-10
+User confirmed that the increased buffer eliminated the reported stalls and
+that the 480p selection was caused by the 30 FPS cap. Existing buffer values
+and playback decoder choices are preserved in this update.
+
+Implemented:
+- 167 embedded EN/UK/RU translation entries and a persistent language menu.
+  Static main-window and compact-player captions update without restarting.
+  Video/channel names, OS dialogs and external tools' raw output stay original.
+- Native compact audio window with title, channel, JPEG preview, time/seek,
+  volume and pause/resume. mpv runs with vid=no, audio-display=no, vo=null,
+  force-window=no; no GPU output context is supplied for audio.
+  Preview requests are bounded to 2 MiB with timeouts and cancellation;
+  failed images show a placeholder. Closing the audio window stops its own
+  playback session. Switching media closes the old window first.
+- Download dialog populated from the selected video's metadata: native
+  resolution/FPS/codec choice, container, independent FPS/codec limits,
+  audio-only source choice and MP3 bitrate. Exact format IDs are passed to
+  yt-dlp; unavailable IDs fail instead of silently falling back in quality.
+- Removed the ASUS preset button and main-window download format dropdown.
+  Added concise operating instructions in all three languages.
+
+Verified:
+- Full Windows x64 GUI executable built with Roslyn C# 5 against .NET
+  Framework 4.8 reference assemblies, without compiler warnings or errors.
+- 77 core checks passed on Linux .NET 8 with the test-only JSON adapter.
+  Includes settings migration, language switching, thumbnail URL validation,
+  dialog format filtering, audio-only exclusion of video, exact selection,
+  separate MP3 bitrate filenames and no-video-window player arguments.
+- 26 offline integration checks passed against actual yt-dlp 2026.08.19,
+  including all six exact-format download choices and missing-ID failure.
+- Static localization audit: all 167 referenced keys exist in all three
+  languages, placeholders match, and no hardcoded Cyrillic captions remain
+  outside the catalog except language names.
+- Packaging preserves the previously working installer and build scripts.
+
+Limits:
+Windows GUI layout, audio-window lifecycle, IPC controls, image display and
+live downloading have NOT been executed on Windows in this environment.
+A public JPEG thumbnail request returned data that was not a valid image in
+this environment; it was not counted as successful preview loading.
+The defensive placeholder path is implemented, but real Windows preview
+rendering and playback still need an on-device smoke test.
+No additional signed-in account testing was performed.
+
+Suggested Windows checks for this update:
+1. Switch UK -> EN -> RU -> UK and reopen LowTube; confirm saved language.
+2. Open audio only; confirm one compact window, sound, preview or placeholder,
+   working pause/seek/volume, and sound stopping when the window closes.
+3. Switch audio -> video -> audio; verify no orphaned window or stopped new session.
+4. Select a video, open Download, cancel once, then download one video format
+   and one audio-only format. Compare chosen and resulting dimensions/codecs.
+5. Confirm existing buffer and hardware-decoder selections were retained.
+
+GUEST FEEDS / SETTINGS UPDATE 0.3 — 2026-10-10
+Implemented:
+- Recommendations performs unauthenticated public search for the topic in
+  Settings. Default: science and technology. This is not Google's personal
+  recommendation algorithm or a signed-out copy of the user's Google feed.
+- Local subscriptions: add the selected video's channel or a channel URL /
+  @handle, remove channels, aggregate recent public Atom uploads, sort by
+  absolute publication time, deduplicate and paginate 25 rows at a time.
+  Subscriptions never reads browser cookies. Channel count is capped at 100,
+  concurrency at two requests, timeout at 15 seconds per request and body at
+  2 MiB. Cached rows are used on feed failure with an explicit log message.
+  No periodic background refresh. XML DTDs/external entities are disabled.
+- Settings contains Language, Light / Dark theme and discovery topic.
+  English is the fresh/default fallback language; existing language, buffer
+  and decoder values are preserved. Theme applies immediately to open LowTube
+  windows, including downloads and compact audio. Native OS dialogs and mpv
+  retain their own styling. Title-bar coloring is best-effort on Windows 10.
+- 199 EN/UK/RU catalog entries. The former top language menu was removed.
+
+Verified for 0.3:
+- Shipping Windows x64 GUI EXE compiled with Roslyn C# 5 against .NET
+  Framework 4.8 reference assemblies, with no warnings or errors.
+- 98 core checks passed on Linux .NET 8 with a test-only serializer adapter.
+  Includes legacy preferences, theme/topic persistence, subscription input,
+  duplicates/limits, Atom parsing, XML safety, cache roundtrip, ordering,
+  canonical URLs and cancellation before requests.
+- 26 existing offline format-selector checks passed against yt-dlp 2026.08.19.
+- Localization audit: 199 complete catalogs, 196 currently referenced keys;
+  all placeholders match and no untranslated Cyrillic captions outside the
+  catalog except language autonyms.
+- A live unauthenticated public YouTube channel feed returned 15 Atom entries.
+  The production parser accepted all 15. This exposed and fixed YouTube's
+  omission of the UC prefix in the feed root's channelId; both forms are now
+  tested. A live feed success does not guarantee availability for all channels.
+- Installer and player source are unchanged from 0.2; Build.ps1 only adds the
+  System.Xml reference needed by the feed parser.
+
+Not executed here: native Windows UI/theme rendering, native title bars,
+channel-manager interaction, Windows network/cache failure paths and a live
+0.3 recommendations search. The public topic prefix uses the same search
+backend the user reports as working. No Google-session tests were performed.
+The test host emits a .NET 8 WebRequest deprecation warning; the production
+.NET Framework 4.8 build does not. No new runtime dependency is required.
+
+Suggested Windows checks:
+1. Settings > Language > English, Theme > Dark > Save. Reopen Settings,
+   Download, Audio only and LowTube itself; verify persisted appearance.
+2. Account > No account. Recommendations should load the selected topic.
+3. Select a search result > Subscribe locally; then Subscriptions. Channels
+   also accepts @GoogleDevelopers or a channel URL. Remove a channel there.
+4. After a successful feed refresh, temporarily disconnect the network and
+   refresh again; cached results should appear with a log message.
+5. Existing buffer/decoder selections, playback and download choices remain.
+
+STARTUP / IN-PLAYER SETTINGS / SEEK UPDATE 0.4 — 2026-10-10
+User report: a cold HDD run took about 2 minutes to open LowTube and 30 seconds
+for video playback. No target-machine timing trace was available, so these
+numbers are observations, not a confirmed diagnosis of one particular cause.
+
+Implemented:
+- Removed System.Web.Extensions / JavaScriptSerializer from the shipping app.
+  JsonCodec.cs is a bounded first-party implementation tested directly on Linux
+  and compiled against .NET Framework 4.8; no serializer adapter is used now.
+  History and tool checks run after window construction. Layout is suspended
+  during construction. External process creation runs off the UI thread.
+- Official yt-dlp_win.zip x64 onedir distribution replaces onefile yt-dlp in
+  new setup runs. UPDATE_YTDLP.cmd performs only this component upgrade with
+  publisher SHA256 verification, dependency preservation and directory rollback.
+  Existing onefile installs still work; the unpacked path has priority.
+  No antivirus exclusions, certificate changes or administrator requirement added.
+- Up to four selected-stream metadata records live in RAM for three minutes,
+  keyed by URL, quality/FPS/codec/audio mode and account context. Nothing from
+  this cache is written to disk. Quality/account changes select another entry;
+  buffer/decoder-only changes reuse it. A manual clear is available in Settings.
+- START.cmd records a launch timestamp. Startup report measures managed entry,
+  window construction/first paint, history, yt-dlp operation, mpv process launch,
+  IPC readiness and the first observed playback-restart event. Reports contain
+  timings only, not cookies or stream URLs. Earlier events can occur before an
+  IPC connection is ready; absence of a playback event is not itself a failure.
+- F4 / right-click inside mpv sends a client-message to LowTube and opens a native
+  settings dialog: max height, H.264/FPS limits, decoder, renderer, speed, buffer
+  and safe seeking. Apply re-extracts only if needed and restarts playback at
+  the current position, preserving pause and volume. Cancel leaves media alone.
+- Numeric buffer fields: 5–3600 seconds ahead, 16–1024 MiB ahead per demuxer,
+  0–512 MiB behind per demuxer, 1–30 seconds startup/refill threshold. Old presets
+  keep their former memory values. Separate audio and video each have a buffer.
+  Cache remains in RAM, with explicit independent forward/back memory caps.
+- Bundled lowtube.lua pauses playback during a video seek until playback-restart
+  and seeking=false. It preserves an existing user pause, handles repeated seeks,
+  allows explicit user resume and fails paused with an OSD explanation after
+  30 seconds. A resume-immediately-followed-by-seek race found in integration
+  testing was fixed and now has a deterministic regression test.
+  Audio-clock sync, initial A/V alignment and VO frame dropping are explicit.
+  Precise seeking is enabled with safe mode; decoder frame dropping remains at
+  mpv's default (no speculative decoder/GPU-specific flags were added).
+
+Verified:
+- Windows x64 GUI EXE builds with Roslyn C# 5 and .NET Framework 4.8 reference
+  assemblies, with no errors/warnings. The binary no longer references System.Web.
+- 119 core tests pass using the PRODUCTION JSON codec, including prior settings,
+  channels, formats, independent buffer values, restart-state arguments, IPC
+  serialization, Unicode/numeric round trips and invalid JSON bounds.
+- 26 existing offline integration checks pass against yt-dlp 2026.08.19.
+- Seven backend/process fixture checks pass: cache reuse, buffer-only reuse,
+  quality/account separation, unauthenticated discovery despite AuthMedia,
+  manual invalidation and unpacked-executable priority.
+- 13 deterministic Lua/mp API tests pass (tests/test_seek_guard.py).
+- Real mpv 0.37.0 on Linux, with separate synthetic H.264 and AAC streams served
+  by a throttled local HTTP range server, a 5-second cache and software decoding:
+  seeking past cache to 35 seconds paused and resumed successfully; A/V offset
+  after resuming was about 0.006 s; an existing pause stayed paused; rapid seeks
+  resumed correctly; F4 emitted the expected client-message. Ten HTTP range
+  requests exercised both files. Video/audio output was null/headless: this
+  validates control flow and timestamps, not visible frames or audible sound.
+- PowerShell 7.4.6: four existing FFmpeg installer fixtures and twelve dependency
+  fixtures pass. Seven new onedir tests pass against the actual official ZIP:
+  x64 choice/PE, every copied dependency hash, targeted replacement, unrelated
+  tools preserved and rollback when replacement fails. Build.ps1 syntax passes.
+- Verified yt-dlp 2026.08.19 portable ZIP SHA256:
+  30b4c14aafab6082becff7881e41b76df46dc43ea7633479410a91e29da492bf
+- Localization audit: 225 EN/UK/RU entries, matching placeholders and 213 static
+  references resolved. Numeric buffer labels are also in the same catalog.
+  Lua OSD has EN/UK/RU messages and uses the language chosen when video launches.
+
+Limits / required target-machine check:
+No cold Windows HDD benchmark, Windows GUI interaction, Windows named-pipe
+listener, actual Windows onedir executable startup, DXVA2 / GeForce 9300M driver
+recovery or hardware A/V sync was run in this Linux environment. We cannot
+promise a specific speedup or that every old-driver seek fault is eliminated.
+The Linux .NET 8 test host reports a WebRequest deprecation warning; the shipping
+.NET Framework 4.8 build does not. Test-only Linux binaries are not bundled.
+
+On Windows:
+1. Close LowTube, replace all application files (including player/lowtube.lua),
+   keep tools, then run UPDATE_YTDLP.cmd once. Start via START.cmd for timing.
+2. Settings > Startup report: record cold and warm launch separately. If still
+   slow, send this report; it contains no cookies or signed stream addresses.
+3. Play video; F4 or right-click > change decoder/quality/buffer > Apply. Verify
+   position, volume and prior pause. Reopen the dialog to confirm saved values.
+4. Seek outside the buffer, seek repeatedly, seek while paused, and quickly
+   resume then seek. Verify sound does not continue alone during the seek wait.
+5. If drift persists, capture Player diagnostics during the problem and compare
+   with software decoding. F4 > Apply can restart the decoder at that position.
+
+LOWTUBE 0.5 — 2026-10-11 (Kyiv)
+Changes: YouTube-inspired native layout and virtual painted thumbnail grid;
+Cards/List toggle; Local history caption; saved/live mpv ontop preference;
+Google desktop OAuth (system browser, S256 PKCE, random state, loopback);
+read-only Google subscription channel list with public video feeds;
+DPAPI CurrentUser token storage, refresh, disconnect and revoke controls.
+
+Validation in this build:
+- Compiled every src/*.cs using Roslyn, C# 5, .NET Framework 4.8 reference
+  assemblies, x64 Windows GUI target. Zero warnings/errors for the app.
+- 119 existing core tests passed on .NET 8 using production source.
+- 24 OAuth/settings checks passed: RFC 7636 S256 vector; client JSON
+  validation; state/path/duplicate parameter rejection; form decoding;
+  actual TCP loopback callback after a rejected callback; cancellation;
+  migration of existing settings and topmost video/audio arguments.
+- 262 EN/UK/RU catalog entries and 250 statically referenced UI keys pass
+  localization audit, including new sidebar and Google action buttons.
+- Compared with 0.4 archive: no existing files, MainForm methods or settings
+  fields removed. Only previous action captions absent are the version
+  title and the requested My history -> Local history rename.
+- Setup.ps1, AudioForm.cs, DownloadForm.cs, BufferEditor.cs and the entire
+  mpv seek-guard Lua script are byte-identical to the validated 0.4 versions.
+- No embedded browser or new runtime package dependency. Thumbnail cache
+  is capped at 64 resized images, with two concurrent downloads; no disk
+  thumbnail cache. Only visible cards enqueue downloads.
+- Google account subscription pagination is independent of local channel
+  storage. Tokens are not sent to media processes or public thumbnail/feed
+  endpoints. Both Firefox and cookies.txt modes remain accessible.
+
+Not verified here: Windows UI rendering/DPI interaction, live Windows mpv
+window stacking, actual Google consent/token/refresh/revoke using a real
+registered client and account, Windows DPAPI round-trip, or HDD timings.
+The Linux test runtime emits WebRequest obsolescence warnings; Windows
+.NET Framework 4.8 compilation does not. No Google client ID is bundled.
+Run tests/RUN_TESTS.cmd and tests/RUN_GOOGLE_TESTS.cmd for Windows checks.
+Previous-version validation below/above is historical; it is not a claim
+that those external integration tests were repeated for 0.5.

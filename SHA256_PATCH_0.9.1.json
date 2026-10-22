@@ -1,0 +1,21 @@
+{
+  "LowTube.exe": "19a6b453770e441f31520ca1d342c53771b7b4e1c68762cdd1cacf56c8a34cbf",
+  "PATCH_0.9.1_UK.txt": "c491b8a813cf253b27a913089dd7cf8a9b20de6edd0548ecf01d33b45a104751",
+  "src/AssemblyInfo.cs": "c7d9cc6fe3b5b4a5c4f6fa67a1cee20c6be32138e1ab3d9199f938e9a395501f",
+  "src/Core.cs": "78b98bd7f6afa1fcddfd87488c9b25f91e3a1cf8c7fb4ca7c6064e232b02af7c",
+  "src/I18n.cs": "644f9bc73b766898a8dbda693dc1d71f3cc1e514123510cc81d03d68d4ea661d",
+  "src/MainForm.cs": "760c5f1835aeaa93e10b5734fadeff2dc41f1fff34568f4278332871e2965d21",
+  "src/PlaybackTrace.cs": "34ff51f28dac36da185705e3dbae51ae17f91ef1f2f4ddfcbe2065b2362122e8",
+  "src/Player.cs": "a4f986c34f7f83b59a1369a9af44489484ea811253390e3721895546527a9c72",
+  "src/PlayerTuning.cs": "432589f402985df679a956abf3d2d8683e7acc3f7cb13bd44aa00f6d58d4f95d",
+  "src/StartupTrace.cs": "703cbf742cb13a3de57a3b2fed69fd0fd85e339415c4b58595b8c2bd8c439356",
+  "src/VideoSettingsForm.cs": "3d29dd54e4b1c8cfb7b738d31e1c9afa4371daea52cd31543b6c0808578baf02",
+  "player/MPV-Copyright.txt": "bfe9ee4cceabcb8ecbfadf208d04156f73d801e6a57369a5606bb8341e204a23",
+  "player/MPV-LICENSE.GPL": "edaef632cbb643e4e7a221717a6c441a4c1a7c918e6e4d56debc3d8739b233f6",
+  "player/OSC-SOURCE.txt": "dba02eded9fee773af2e7765811a66f4f959304589e218f4f90467075dd17781",
+  "player/lowtube.lua": "7cfa8c1b7ea5ed1c6069f59950da4e42d40c087abb3091b98c6a8b5c94b88673",
+  "player/lowtube_osc.lua": "d7f6d214a8e99a8e6e0143972ec3c3c62af73f0e16ddafd82cf82d447acf3c24",
+  "tests/CoreTests.cs": "378e4a9db512127a1f32073ed5c394a8d960c70b0afa3e10dbebcae40732efc8",
+  "tests/RUN_TESTS.cmd": "cbe18d2bb9214d7f6a340d9817a8828dfed7b4536966541f6a0501e4d9c3f0ac",
+  "tests/test_seek_guard.py": "647af32b1c08409fdbf5d5957646fc9e564d7368a1ba5f85c9efd13f066380d9"
+}

@@ -1,0 +1,26 @@
+LowTube 0.9.0 — equalizer release — 2026-10-12
+
+Verified for this release:
+- Production executable compiled with Roslyn C# 5 and .NET Framework 4.8
+  reference assemblies, x64 Windows GUI target.
+- 267 core checks passed using production source on a Linux .NET 8 test host.
+  Includes EQ presets, bounds, custom settings, nested JSON array persistence,
+  video/audio arguments and preserving unrelated mpv audio filters.
+- 18 FFmpeg audio-filter checks passed: six nonempty preset/stress graphs at
+  source sample rates 22050, 44100 and 48000 Hz.
+- Localization catalog validation passed for English, Ukrainian and Russian.
+- Video settings clone all Settings through the production JSON codec, including
+  Equalizer, so applying playback settings retains the EQ configuration.
+
+Not verified here:
+- Windows UI rendering, actual Windows named-pipe mpv filter changes, audible
+  output and performance on the legacy test laptop. No measured CPU overhead claim.
+- Historical integration checks are not claimed as rerun for this release.
+
+Suggested target check: enable Bass boost and Apply during playback, switch to
+Custom, save, change quality, restart LowTube and confirm settings are retained.
+Disable the EQ and Apply to return to unprocessed playback. Test audio only too.
+
+Distribution includes source, executable, installer and player script, but
+excludes tools, downloaded dependency archives, user sessions and user data.
+SHA256.json covers the shipped files, excluding itself.
