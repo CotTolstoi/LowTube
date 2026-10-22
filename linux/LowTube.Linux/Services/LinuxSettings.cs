@@ -12,7 +12,11 @@ public sealed class LinuxSettings
     public bool AutoNext { get; set; } = true;
     public int Volume { get; set; } = 100;
     public string VideoScale { get; set; } = "bilinear";
+    public bool EqualizerEnabled { get; set; }
+    public string EqualizerPreset { get; set; } = "flat";
     public string DownloadFolder { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads", "LowTube");
+
+    public LinuxSettings Copy() => (LinuxSettings)MemberwiseClone();
 
     public void Normalize()
     {
@@ -23,6 +27,7 @@ public sealed class LinuxSettings
         if (BufferSeconds is < 5 or > 3600) BufferSeconds = 60;
         if (Volume is < 0 or > 130) Volume = 100;
         if (VideoScale is not ("bilinear" or "bicubic" or "lanczos" or "ewa_lanczos")) VideoScale = "bilinear";
+        if (EqualizerPreset is not ("flat" or "bass" or "voice" or "treble" or "rock" or "classical")) EqualizerPreset = "flat";
         if (string.IsNullOrWhiteSpace(DownloadFolder) || !Path.IsPathRooted(DownloadFolder))
             DownloadFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads", "LowTube");
     }

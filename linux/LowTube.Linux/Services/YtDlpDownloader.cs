@@ -9,12 +9,14 @@ public sealed class YtDlpDownloader
 {
     private static readonly Regex PercentPattern = new(@"(?:^|\s)(\d{1,3}(?:\.\d+)?)%", RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
-    public async Task DownloadAsync(MediaItem item, LinuxSettings settings, IProgress<DownloadProgress>? progress, CancellationToken cancellationToken)
+    public async Task DownloadAsync(MediaItem item, LinuxSettings settings, IProgress<DownloadProgress>? progress, CancellationToken cancellationToken, bool audioOnly = false)
     {
+        if (item.Kind != "Video" || !YouTubeCatalog.IsSafeYoutubeUrl(item.Url))
+            throw new ArgumentException("Only standard YouTube videos can be downloaded.");
         string executable = FindExecutable() ?? throw new InvalidOperationException("yt-dlp is not installed or is missing from PATH.");
         settings.Normalize();
         Directory.CreateDirectory(settings.DownloadFolder);
-        string format = BuildFormat(settings);
+        string format = audioOnly ? BuildAudioFormat() : BuildFormat(settings);
         var info = new ProcessStartInfo(executable)
         {
             UseShellExecute = false,
@@ -66,6 +68,8 @@ public sealed class YtDlpDownloader
             (settings.H264 ? "[vcodec^=avc1]" : "");
         return "bv" + filters + "+ba[ext=m4a]/bv" + filters + "+ba/b" + filters;
     }
+
+    public static string BuildAudioFormat() => "bestaudio/best";
 
     private static string? FindExecutable()
     {

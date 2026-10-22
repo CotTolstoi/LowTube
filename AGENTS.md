@@ -2,13 +2,13 @@
 
 Read `docs/development/PROJECT_STATE_UK.md` and `docs/development/ARCHITECTURE.md` before substantial changes.
 
-LowTube is a C# 5 / .NET Framework 4.8 Windows Forms application. Keep the stable application and experimental hybrid pipeline separately launchable.
+The stable Windows application is a C# 5 / .NET Framework 4.8 WinForms program. Keep it and the experimental hybrid pipeline separately launchable. The Linux app is an isolated .NET 8 / Avalonia project under `linux/LowTube.Linux`; don't pull Avalonia dependencies into the Windows project.
 
 ## Project constraints
 
 - Communicate in Ukrainian. Preserve existing features and explain substantial architectural changes before making them.
 - Target Windows 10 x64, including older CPUs without AVX/AVX2. Do not use x86_64-v3 dependencies.
-- Windows 7 32-bit, older Linux systems and Android are future possibilities, not supported targets.
+- Windows 7 32-bit, older Linux systems and Android are not supported targets. The Linux preview is developed and validated separately on modern Linux; don't claim a distro or desktop support matrix without testing it.
 - English is the default UI language. Keep English, Ukrainian and Russian catalogs and theme settings.
 - Keep C# 5 compatibility and avoid new runtime dependencies without discussion.
 - Maintain mpv reuse, IPC, resume position, queue, equalizer, downloads, playlists and settings.

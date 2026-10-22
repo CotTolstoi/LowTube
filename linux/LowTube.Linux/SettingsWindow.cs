@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Interactivity;
+using Avalonia.Styling;
 using LowTube.Linux.Services;
 
 namespace LowTube.Linux;
@@ -18,12 +19,16 @@ public sealed class SettingsWindow : Window
     private readonly NumericUpDown buffer;
     private readonly TextBox downloadFolder;
     private readonly ComboBox language;
+    private readonly ComboBox theme;
+    private readonly ComboBox scale;
+    private readonly ComboBox equalizer;
+    private readonly CheckBox autoNext;
     private readonly TextBlock error;
 
     public SettingsWindow(SettingsStore store, LinuxSettings settings, Action<LinuxSettings> saved)
     {
         this.store = store;
-        this.settings = settings;
+        this.settings = settings.Copy();
         this.saved = saved;
         Title = UiText.T("LowTube settings");
         Width = 500;
@@ -36,6 +41,11 @@ public sealed class SettingsWindow : Window
         buffer = new NumericUpDown { Minimum = 5, Maximum = 3600, Increment = 5, Value = settings.BufferSeconds };
         downloadFolder = new TextBox { Text = settings.DownloadFolder };
         language = new ComboBox { ItemsSource = new[] { "English", "Українська", "Русский" }, SelectedIndex = settings.Language == "uk" ? 1 : settings.Language == "ru" ? 2 : 0 };
+        theme = new ComboBox { ItemsSource = new[] { UiText.T("System"), UiText.T("Light"), UiText.T("Dark") } };
+        theme.SelectedIndex = settings.Theme == "dark" ? 2 : settings.Theme == "system" ? 0 : 1;
+        scale = new ComboBox { ItemsSource = new[] { "bilinear", "bicubic", "lanczos", "ewa_lanczos" }, SelectedItem = settings.VideoScale };
+        equalizer = new ComboBox { ItemsSource = new[] { "Flat", "Bass boost", "Voice", "Treble boost", "Rock", "Classical" }, SelectedIndex = settings.EqualizerPreset switch { "bass" => 1, "voice" => 2, "treble" => 3, "rock" => 4, "classical" => 5, _ => 0 } };
+        autoNext = new CheckBox { Content = UiText.T("Play next queued video automatically"), IsChecked = settings.AutoNext };
         error = new TextBlock { Foreground = Brushes.IndianRed, TextWrapping = TextWrapping.Wrap };
 
         var save = new Button { Content = UiText.T("Save settings"), MinWidth = 120 };
@@ -47,10 +57,17 @@ public sealed class SettingsWindow : Window
         content.Children.Add(new TextBlock { Text = UiText.T("Playback"), FontSize = 22, FontWeight = FontWeight.SemiBold });
         content.Children.Add(new TextBlock { Text = UiText.T("Language") });
         content.Children.Add(language);
+        content.Children.Add(new TextBlock { Text = UiText.T("Theme") });
+        content.Children.Add(theme);
         content.Children.Add(new TextBlock { Text = UiText.T("Maximum video height") });
         content.Children.Add(quality);
         content.Children.Add(h264);
         content.Children.Add(fps30);
+        content.Children.Add(new TextBlock { Text = UiText.T("Video scaling") });
+        content.Children.Add(scale);
+        content.Children.Add(autoNext);
+        content.Children.Add(new TextBlock { Text = UiText.T("Equalizer") });
+        content.Children.Add(equalizer);
         content.Children.Add(new TextBlock { Text = "mpv cache duration (seconds)" });
         content.Children.Add(buffer);
         content.Children.Add(new TextBlock { Text = "Download folder (absolute path)" });
@@ -77,6 +94,11 @@ public sealed class SettingsWindow : Window
         settings.BufferSeconds = decimal.ToInt32(buffer.Value ?? 60);
         settings.DownloadFolder = downloadFolder.Text?.Trim() ?? "";
         settings.Language = language.SelectedIndex == 1 ? "uk" : language.SelectedIndex == 2 ? "ru" : "en";
+        settings.Theme = theme.SelectedIndex == 0 ? "system" : theme.SelectedIndex == 2 ? "dark" : "light";
+        settings.VideoScale = scale.SelectedItem as string ?? "bilinear";
+        settings.AutoNext = autoNext.IsChecked == true;
+        settings.EqualizerEnabled = equalizer.SelectedIndex > 0;
+        settings.EqualizerPreset = equalizer.SelectedIndex switch { 1 => "bass", 2 => "voice", 3 => "treble", 4 => "rock", 5 => "classical", _ => "flat" };
         try
         {
             store.Save(settings);

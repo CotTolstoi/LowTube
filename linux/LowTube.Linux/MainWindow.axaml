@@ -17,7 +17,11 @@
         <Button x:Name="SearchNavButton" Content="Search" HorizontalContentAlignment="Left" Click="Search_OnClick" />
         <Button x:Name="SubscriptionsButton" Content="Subscriptions" HorizontalContentAlignment="Left" Click="Subscriptions_OnClick" />
         <Button x:Name="SavedButton" Content="Saved" HorizontalContentAlignment="Left" Click="Saved_OnClick" />
+        <Button x:Name="PlaylistsButton" Content="Playlists" HorizontalContentAlignment="Left" Click="Playlists_OnClick" />
         <Button x:Name="HistoryButton" Content="History" HorizontalContentAlignment="Left" Click="History_OnClick" />
+        <Button x:Name="QueueButton" Content="Queue" HorizontalContentAlignment="Left" Click="Queue_OnClick" />
+        <Button x:Name="PlayQueueButton" Content="Play queue" HorizontalContentAlignment="Left" Click="PlayQueue_OnClick" />
+        <Button x:Name="ClearQueueButton" Content="Clear queue" HorizontalContentAlignment="Left" Click="ClearQueue_OnClick" />
         <Button x:Name="DownloadsButton" Content="Downloads" HorizontalContentAlignment="Left" Click="Downloads_OnClick" />
         <TextBlock x:Name="PortStatusText" Text="Linux port in progress" TextWrapping="Wrap" Foreground="#69717D" Margin="8,20,8,0" />
       </StackPanel>
@@ -31,12 +35,14 @@
         <ListBox.ItemTemplate>
           <DataTemplate>
             <Border Padding="14,12" Margin="0,0,0,8" CornerRadius="6" Background="#F7F8FA">
-              <Grid ColumnDefinitions="*,Auto,Auto,Auto" RowDefinitions="Auto,Auto">
+              <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto,Auto" RowDefinitions="Auto,Auto">
                 <TextBlock Text="{Binding Title}" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap" />
                 <TextBlock Grid.Row="1" Text="{Binding Metadata}" Foreground="#69717D" Margin="0,5,0,0" />
-                <Button Grid.Column="1" Grid.RowSpan="2" Content="Play" VerticalAlignment="Center" Click="PlayItem_OnClick" />
-                <Button Grid.Column="2" Grid.RowSpan="2" Content="Download" VerticalAlignment="Center" Margin="8,0,0,0" Click="DownloadItem_OnClick" />
-                <Button Grid.Column="3" Grid.RowSpan="2" Content="Save" VerticalAlignment="Center" Margin="8,0,0,0" Click="SaveItem_OnClick" />
+                <Button Grid.Column="1" Grid.RowSpan="2" Content="{Binding PlayLabel}" VerticalAlignment="Center" Click="PlayItem_OnClick" />
+                <Button Grid.Column="2" Grid.RowSpan="2" Content="{Binding QueueLabel}" VerticalAlignment="Center" Margin="8,0,0,0" Click="QueueItem_OnClick" />
+                <Button Grid.Column="3" Grid.RowSpan="2" Content="{Binding VideoDownloadLabel}" VerticalAlignment="Center" Margin="8,0,0,0" Click="DownloadItem_OnClick" />
+                <Button Grid.Column="4" Grid.RowSpan="2" Content="{Binding AudioDownloadLabel}" VerticalAlignment="Center" Margin="8,0,0,0" Click="DownloadAudioItem_OnClick" />
+                <Button Grid.Column="5" Grid.RowSpan="2" Content="{Binding SaveLabel}" VerticalAlignment="Center" Margin="8,0,0,0" Click="SaveItem_OnClick" />
               </Grid>
             </Border>
           </DataTemplate>

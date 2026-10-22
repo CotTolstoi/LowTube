@@ -12,4 +12,10 @@ public sealed class MainViewModel
         Items.Clear();
         foreach (var item in items) Items.Add(item);
     }
+
+    public void RefreshLanguage()
+    {
+        var current = Items.ToArray();
+        Replace(current.Select(item => item with { }));
+    }
 }

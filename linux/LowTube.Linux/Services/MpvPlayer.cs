@@ -23,6 +23,7 @@ public sealed class MpvPlayer : IAsyncDisposable
 
     public async Task PlayAsync(string url, CancellationToken cancellationToken = default)
     {
+        if (!YouTubeCatalog.IsSafeYoutubeUrl(url)) throw new ArgumentException("Only standard YouTube links are supported.", nameof(url));
         await gate.WaitAsync(cancellationToken);
         try
         {
@@ -36,6 +37,18 @@ public sealed class MpvPlayer : IAsyncDisposable
     public Task StopAsync(CancellationToken cancellationToken = default) => SendSerializedAsync(new object?[] { "stop" }, cancellationToken);
     public Task SeekAsync(double seconds, CancellationToken cancellationToken = default) => SendSerializedAsync(new object?[] { "seek", seconds, "absolute+keyframes" }, cancellationToken);
     public Task SetVolumeAsync(int volume, CancellationToken cancellationToken = default) => SendSerializedAsync(new object?[] { "set_property", "volume", Math.Clamp(volume, 0, 130) }, cancellationToken);
+
+    public async Task<bool> IsIdleAsync(CancellationToken cancellationToken = default)
+    {
+        if (!IsRunning) return true;
+        await gate.WaitAsync(cancellationToken);
+        try
+        {
+            JsonElement? value = await SendCommandAsync(new object?[] { "get_property", "idle-active" }, cancellationToken);
+            return value is { ValueKind: JsonValueKind.True };
+        }
+        finally { gate.Release(); }
+    }
 
     public async Task<(double? Position, double? Duration)> GetPlaybackPositionAsync(CancellationToken cancellationToken = default)
     {
@@ -64,8 +77,13 @@ public sealed class MpvPlayer : IAsyncDisposable
         var info = new ProcessStartInfo(executable) { UseShellExecute = false };
         string limits = "[height<=" + settings.MaxHeight + "]" + (settings.Fps30 ? "[fps<=?30]" : "") + (settings.H264 ? "[vcodec^=avc1]" : "");
         string quality = "bestvideo" + limits + "+bestaudio/best" + limits + "/best";
-        foreach (string arg in new[] { "--idle=yes", "--force-window=yes", "--hwdec=auto-safe", "--ytdl=yes", "--ytdl-format=" + quality,
-                     "--cache=yes", "--cache-secs=" + settings.BufferSeconds, "--volume=" + settings.Volume, "--input-ipc-server=" + socketPath })
+        var arguments = new List<string> { "--idle=yes", "--force-window=yes", "--hwdec=auto-safe", "--ytdl=yes", "--ytdl-format=" + quality,
+            "--cache=yes", "--cache-secs=" + settings.BufferSeconds, "--volume=" + settings.Volume,
+            "--scale=" + settings.VideoScale, "--cscale=" + settings.VideoScale, "--dscale=" + settings.VideoScale,
+            "--input-ipc-server=" + socketPath };
+        string equalizer = BuildEqualizerFilter(settings);
+        if (equalizer.Length > 0) arguments.Add("--af=lavfi=[" + equalizer + "]");
+        foreach (string arg in arguments)
             info.ArgumentList.Add(arg);
 
         process = Process.Start(info) ?? throw new InvalidOperationException("Could not start mpv.");
@@ -120,6 +138,26 @@ public sealed class MpvPlayer : IAsyncDisposable
         if (!value.HasValue) return null;
         if (value.Value.ValueKind == JsonValueKind.Number && value.Value.TryGetDouble(out double number)) return number;
         return null;
+    }
+
+    public static string BuildEqualizerFilter(LinuxSettings settings)
+    {
+        if (!settings.EqualizerEnabled || settings.EqualizerPreset == "flat") return "";
+        int[][] curves =
+        {
+            new int[10], new[] { 6, 5, 4, 2, 0, 0, 0, 0, 0, 0 }, new[] { -4, -3, -2, 0, 2, 4, 4, 2, 0, -2 },
+            new[] { 0, 0, 0, 0, 0, 1, 2, 3, 4, 4 }, new[] { 4, 3, 2, 0, -2, -1, 1, 3, 4, 3 }, new[] { 3, 2, 1, 0, -1, -1, 0, 1, 2, 3 }
+        };
+        string[] presets = { "flat", "bass", "voice", "treble", "rock", "classical" };
+        int preset = Array.IndexOf(presets, settings.EqualizerPreset);
+        if (preset <= 0) return "";
+        int[] frequency = { 31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000 };
+        int preamp = -curves[preset].Max();
+        var filters = new List<string> { "aresample=48000" };
+        if (preamp != 0) filters.Add("volume=" + preamp + "dB");
+        for (int i = 0; i < 10; i++)
+            if (curves[preset][i] != 0) filters.Add("equalizer=f=" + frequency[i] + ":t=o:w=1:g=" + curves[preset][i]);
+        return string.Join(",", filters);
     }
 
     private async Task DisposeProcessAsync()

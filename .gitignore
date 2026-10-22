@@ -8,6 +8,7 @@
 *.zip
 bin/
 obj/
+linux/LowTube.Linux/publish/
 tools/**
 !tools/README.md
 !tools/COMPONENT_SOURCES.md

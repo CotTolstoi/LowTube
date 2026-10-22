@@ -3,8 +3,8 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Controls.Primitives;
 using Avalonia.Threading;
+using Avalonia.Styling;
 using System.Diagnostics;
-using LowTube;
 using LowTube.Linux.Services;
 using LowTube.Linux.ViewModels;
 
@@ -22,13 +22,19 @@ public partial class MainWindow : Window
     private LinuxSettings settings;
     private CancellationTokenSource? searchCancellation;
     private bool seeking;
+    private MediaItem? currentItem;
+    private bool playbackObserved;
+    private DateTime lastResumeSave = DateTime.MinValue;
 
     public MainWindow()
     {
         InitializeComponent();
         settings = settingsStore.Load();
-        L.Set(settings.Language);
+        UiText.SetLanguage(settings.Language);
         ApplyLanguage();
+        PageTitleText.Text = UiText.T("Discover");
+        IntroText.Text = UiText.T("Search YouTube to find something to watch.");
+        ApplyTheme();
         player.ApplySettings(settings);
         VolumeSlider.Value = settings.Volume;
         DataContext = viewModel;
@@ -50,16 +56,26 @@ public partial class MainWindow : Window
 
     private async void Settings_OnClick(object? sender, RoutedEventArgs e)
     {
+        LinuxSettings previous = settings.Copy();
         var dialog = new SettingsWindow(settingsStore, settings, updated =>
         {
             settings = updated;
-            L.Set(settings.Language);
+            UiText.SetLanguage(settings.Language);
             ApplyLanguage();
+            ApplyTheme();
             player.ApplySettings(settings);
             VolumeSlider.Value = settings.Volume;
+            StatusText.Text = player.IsRunning && NeedsPlayerRestart(previous, updated)
+                ? UiText.T("Saved. Restart LowTube to apply playback quality, scaling and equalizer changes.")
+                : UiText.T("Settings saved");
         });
         await dialog.ShowDialog(this);
     }
+
+    private static bool NeedsPlayerRestart(LinuxSettings oldValue, LinuxSettings newValue) =>
+        oldValue.MaxHeight != newValue.MaxHeight || oldValue.H264 != newValue.H264 || oldValue.Fps30 != newValue.Fps30 ||
+        oldValue.BufferSeconds != newValue.BufferSeconds || oldValue.VideoScale != newValue.VideoScale ||
+        oldValue.EqualizerEnabled != newValue.EqualizerEnabled || oldValue.EqualizerPreset != newValue.EqualizerPreset;
 
     private void ApplyLanguage()
     {
@@ -70,14 +86,27 @@ public partial class MainWindow : Window
         SearchNavButton.Content = UiText.T("Search");
         SubscriptionsButton.Content = UiText.T("Subscriptions");
         SavedButton.Content = UiText.T("Saved");
+        PlaylistsButton.Content = UiText.T("Playlists");
         HistoryButton.Content = UiText.T("History");
+        QueueButton.Content = UiText.T("Queue");
+        PlayQueueButton.Content = UiText.T("Play queue");
+        ClearQueueButton.Content = UiText.T("Clear queue");
         DownloadsButton.Content = UiText.T("Downloads");
-        PortStatusText.Text = UiText.T("Linux port in progress");
-        PageTitleText.Text = UiText.T("Discover");
-        IntroText.Text = UiText.T("Search YouTube to find something to watch.");
+        PortStatusText.Text = UiText.T("Linux edition preview");
         PauseButton.Content = UiText.T("Pause / resume");
         StopButton.Content = UiText.T("Stop");
         VolumeLabel.Text = UiText.T("Volume");
+        viewModel.RefreshLanguage();
+    }
+
+    private void ApplyTheme()
+    {
+        Avalonia.Application.Current!.RequestedThemeVariant = settings.Theme switch
+        {
+            "dark" => ThemeVariant.Dark,
+            "system" => ThemeVariant.Default,
+            _ => ThemeVariant.Light
+        };
     }
 
     private async void Saved_OnClick(object? sender, RoutedEventArgs e)
@@ -98,9 +127,50 @@ public partial class MainWindow : Window
         await Task.CompletedTask;
     }
 
+    private async void Queue_OnClick(object? sender, RoutedEventArgs e)
+    {
+        viewModel.Replace(library.Queue);
+        PageTitleText.Text = UiText.T("Queue");
+        IntroText.Text = library.Queue.Count + " · " + UiText.T("Queued videos");
+        StatusText.Text = library.Queue.Count == 0 ? UiText.T("Queue is empty") : UiText.T("Choose a video or press Play queue");
+        await Task.CompletedTask;
+    }
+
+    private async void PlayQueue_OnClick(object? sender, RoutedEventArgs e)
+    {
+        MediaItem? next = library.TakeNextQueued();
+        if (next is null) { StatusText.Text = UiText.T("Queue is empty"); return; }
+        await PlayAsync(next);
+    }
+
+    private void QueueItem_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { DataContext: MediaItem item }) return;
+        try { library.Enqueue(item); StatusText.Text = UiText.T("Added to queue") + " · " + item.Title; }
+        catch (Exception ex) { StatusText.Text = UiText.T(ex.Message); }
+    }
+
+    private void ClearQueue_OnClick(object? sender, RoutedEventArgs e)
+    {
+        library.ClearQueue();
+        if (PageTitleText.Text == UiText.T("Queue")) Queue_OnClick(sender, e);
+        else StatusText.Text = UiText.T("Queue cleared");
+    }
+
     private async void Subscriptions_OnClick(object? sender, RoutedEventArgs e)
     {
         var dialog = new SubscriptionWindow(library, RefreshSubscriptionsAsync);
+        await dialog.ShowDialog(this);
+    }
+
+    private async void Playlists_OnClick(object? sender, RoutedEventArgs e)
+    {
+        var dialog = new PlaylistWindow(library, items =>
+        {
+            viewModel.Replace(items);
+            PageTitleText.Text = UiText.T("Local playlist");
+            IntroText.Text = items.Count + " · " + UiText.T("Double-click or choose Play");
+        });
         await dialog.ShowDialog(this);
     }
 
@@ -165,7 +235,7 @@ public partial class MainWindow : Window
 
     private async void Stop_OnClick(object? sender, RoutedEventArgs e)
     {
-        try { await player.StopAsync(); StatusText.Text = UiText.T("Playback stopped"); }
+        try { await player.StopAsync(); currentItem = null; playbackObserved = false; StatusText.Text = UiText.T("Playback stopped"); }
         catch (Exception ex) { StatusText.Text = ex.Message; }
     }
 
@@ -187,14 +257,29 @@ public partial class MainWindow : Window
 
     private async void PlaybackTimer_OnTick(object? sender, EventArgs e)
     {
-        if (!player.IsRunning || seeking) return;
+        if (!player.IsRunning) return;
         try
         {
+            bool idle = await player.IsIdleAsync();
+            if (!idle) playbackObserved = true;
+            if (idle && playbackObserved && currentItem is not null)
+            {
+                playbackObserved = false;
+                MediaItem? next = settings.AutoNext ? library.TakeNextQueued() : null;
+                currentItem = null;
+                if (next is not null) { await PlayAsync(next); return; }
+            }
+            if (seeking) return;
             var state = await player.GetPlaybackPositionAsync();
             if (!state.Duration.HasValue || !state.Position.HasValue) return;
             SeekSlider.Maximum = Math.Max(1, state.Duration.Value);
             SeekSlider.Value = Math.Clamp(state.Position.Value, 0, SeekSlider.Maximum);
             TimeText.Text = FormatTime(state.Position.Value) + " / " + FormatTime(state.Duration.Value);
+            if (currentItem is not null && DateTime.UtcNow - lastResumeSave >= TimeSpan.FromSeconds(10))
+            {
+                library.SaveResumePosition(currentItem, state.Position.Value, state.Duration.Value);
+                lastResumeSave = DateTime.UtcNow;
+            }
         }
         catch (InvalidOperationException) { }
         catch (IOException) { }
@@ -247,11 +332,22 @@ public partial class MainWindow : Window
     private async void DownloadItem_OnClick(object? sender, RoutedEventArgs e)
     {
         if (sender is not Button { DataContext: MediaItem item }) return;
+        await DownloadAsync(item, audioOnly: false);
+    }
+
+    private async void DownloadAudioItem_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { DataContext: MediaItem item }) return;
+        await DownloadAsync(item, audioOnly: true);
+    }
+
+    private async Task DownloadAsync(MediaItem item, bool audioOnly)
+    {
         try
         {
             StatusText.Text = UiText.T("Starting download…");
             var progress = new Progress<DownloadProgress>(state => StatusText.Text = UiText.T(state.Message));
-            await downloader.DownloadAsync(item, settings, progress, CancellationToken.None);
+            await downloader.DownloadAsync(item, settings, progress, CancellationToken.None, audioOnly);
             StatusText.Text = UiText.T("Download complete") + " · " + settings.DownloadFolder;
         }
         catch (Exception ex) { StatusText.Text = UiText.T(ex.Message); }
@@ -259,7 +355,11 @@ public partial class MainWindow : Window
 
     private async void PlayItem_OnClick(object? sender, RoutedEventArgs e)
     {
-        if (sender is Button { DataContext: MediaItem item }) await PlayAsync(item);
+        if (sender is Button { DataContext: MediaItem item })
+        {
+            if (PageTitleText.Text == UiText.T("Queue")) library.RemoveQueued(item.Url);
+            await PlayAsync(item);
+        }
     }
 
     private async Task PlaySelectedAsync()
@@ -269,11 +369,31 @@ public partial class MainWindow : Window
 
     private async Task PlayAsync(MediaItem item)
     {
+        currentItem = null;
+        playbackObserved = false;
         try
         {
             StatusText.Text = UiText.T("Opening in mpv…");
             await player.PlayAsync(item.Url);
+            currentItem = item;
+            playbackObserved = false;
             library.AddToHistory(item);
+            double resume = library.GetResumePosition(item.Url);
+            if (resume >= 5)
+            {
+                for (int attempt = 0; attempt < 30; attempt++)
+                {
+                    if (await player.IsIdleAsync()) { await Task.Delay(150); continue; }
+                    var state = await player.GetPlaybackPositionAsync();
+                    if (state.Duration.HasValue)
+                    {
+                        await player.SeekAsync(Math.Min(resume, Math.Max(0, state.Duration.Value - 5)));
+                        break;
+                    }
+                    await Task.Delay(150);
+                }
+            }
+            lastResumeSave = DateTime.UtcNow;
             StatusText.Text = UiText.T("Video opened in mpv");
         }
         catch (Exception ex)
