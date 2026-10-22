@@ -1,6 +1,0 @@
-Core tests: 163 passed
-Lua: 19 passed
-Localization: 283 complete EN/UK/RU entries, 266 static keys
-Installer fixture tests: dependency hashes/PE checks/FFmpeg pairing/Node22 branch and layout/yt-dlp onedir replacement passed
-Compiled C#5 .NET4.8 x64
-Not run: native Windows UI, GPU playback, live account or YouTube download tests

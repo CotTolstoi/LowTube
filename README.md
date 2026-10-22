@@ -47,5 +47,5 @@ DIAGNOSTICS
 Use Settings > Startup report or START_PLAYBACK_DEBUG.cmd; F8 marks a playback
 problem. See PLAYBACK_DEBUG_UK.txt and HARDWARE_MODES.md for details.
 Sources and build scripts are included. BUILD.cmd rebuilds LowTube.exe.
-See VALIDATION.txt for current verification and limitations.
-Old documentation in docs/legacy is historical and may describe older behavior.
+See docs/development/PROJECT_STATE_UK.md for development status and verification
+guidance. Historical release notes are kept in docs/legacy.

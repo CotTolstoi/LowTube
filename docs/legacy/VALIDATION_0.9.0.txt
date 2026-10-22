@@ -21,6 +21,5 @@ Suggested target check: enable Bass boost and Apply during playback, switch to
 Custom, save, change quality, restart LowTube and confirm settings are retained.
 Disable the EQ and Apply to return to unprocessed playback. Test audio only too.
 
-Distribution includes source, executable, installer and player script, but
-excludes tools, downloaded dependency archives, user sessions and user data.
-SHA256.json covers the shipped files, excluding itself.
+This historical report described a release distribution. Its package contents
+and checksum manifest are no longer maintained in this source repository.

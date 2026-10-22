@@ -41,4 +41,5 @@ Closing the dialog or Cancel sign-in stops waiting; timeout is five minutes.
 
 The complete browser-to-Google flow requires your registered client and
 account and has not been live-tested with this build. Local callback/state,
-PKCE, cancellation and C# compilation have been tested. See VALIDATION.txt.
+PKCE, cancellation and C# compilation have been tested; automated coverage is
+in tests/GoogleTests.cs.
