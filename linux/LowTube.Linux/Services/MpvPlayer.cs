@@ -37,6 +37,19 @@ public sealed class MpvPlayer : IAsyncDisposable
     public Task SeekAsync(double seconds, CancellationToken cancellationToken = default) => SendSerializedAsync(new object?[] { "seek", seconds, "absolute+keyframes" }, cancellationToken);
     public Task SetVolumeAsync(int volume, CancellationToken cancellationToken = default) => SendSerializedAsync(new object?[] { "set_property", "volume", Math.Clamp(volume, 0, 130) }, cancellationToken);
 
+    public async Task<(double? Position, double? Duration)> GetPlaybackPositionAsync(CancellationToken cancellationToken = default)
+    {
+        if (!IsRunning) return (null, null);
+        await gate.WaitAsync(cancellationToken);
+        try
+        {
+            JsonElement? position = await SendCommandAsync(new object?[] { "get_property", "time-pos" }, cancellationToken);
+            JsonElement? duration = await SendCommandAsync(new object?[] { "get_property", "duration" }, cancellationToken);
+            return (Number(position), Number(duration));
+        }
+        finally { gate.Release(); }
+    }
+
     private async Task SendSerializedAsync(object?[] command, CancellationToken cancellationToken)
     {
         await gate.WaitAsync(cancellationToken);
@@ -79,7 +92,7 @@ public sealed class MpvPlayer : IAsyncDisposable
         throw new InvalidOperationException(reason, lastError);
     }
 
-    private async Task SendCommandAsync(object?[] command, CancellationToken cancellationToken)
+    private async Task<JsonElement?> SendCommandAsync(object?[] command, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(socketPath)) throw new InvalidOperationException("mpv is not running.");
         using var socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
@@ -97,9 +110,16 @@ public sealed class MpvPlayer : IAsyncDisposable
             if (!root.TryGetProperty("request_id", out var responseId) || responseId.GetInt64() != id) continue;
             string error = root.TryGetProperty("error", out var errorValue) ? errorValue.GetString() ?? "unknown error" : "unknown error";
             if (error != "success") throw new InvalidOperationException("mpv command failed: " + error);
-            return;
+            return root.TryGetProperty("data", out var data) ? data.Clone() : null;
         }
         throw new IOException("mpv closed the IPC connection before replying.");
+    }
+
+    private static double? Number(JsonElement? value)
+    {
+        if (!value.HasValue) return null;
+        if (value.Value.ValueKind == JsonValueKind.Number && value.Value.TryGetDouble(out double number)) return number;
+        return null;
     }
 
     private async Task DisposeProcessAsync()

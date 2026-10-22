@@ -132,6 +132,8 @@ public sealed class YouTubeCatalog
         return new UriBuilder(uri) { Scheme = Uri.UriSchemeHttps, Port = -1, Fragment = "" }.Uri.AbsoluteUri;
     }
 
+    public static bool IsSafeYoutubeUrl(string value) => !string.IsNullOrEmpty(value) && NormalizeYoutubeUrl(value).Length > 0;
+
     private static string? FindExecutable(string name)
     {
         string? path = Environment.GetEnvironmentVariable("PATH");

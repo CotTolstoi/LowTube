@@ -13,39 +13,43 @@
     </Border>
     <Border Grid.Row="1" Grid.Column="0" Background="#F1F2F4" Padding="14">
       <StackPanel Spacing="8">
-        <TextBlock Text="LIBRARY" FontSize="11" FontWeight="Bold" Foreground="#69717D" Margin="8,12,0,4" />
-        <Button Content="Search" HorizontalContentAlignment="Left" Click="Search_OnClick" />
-        <Button Content="Subscriptions" HorizontalContentAlignment="Left" IsEnabled="False" />
-        <Button Content="Playlists" HorizontalContentAlignment="Left" IsEnabled="False" />
-        <Button Content="Downloads" HorizontalContentAlignment="Left" IsEnabled="False" />
-        <Button Content="Settings" HorizontalContentAlignment="Left" IsEnabled="False" />
-        <TextBlock Text="Linux port in progress" TextWrapping="Wrap" Foreground="#69717D" Margin="8,20,8,0" />
+        <TextBlock x:Name="LibraryLabel" Text="LIBRARY" FontSize="11" FontWeight="Bold" Foreground="#69717D" Margin="8,12,0,4" />
+        <Button x:Name="SearchNavButton" Content="Search" HorizontalContentAlignment="Left" Click="Search_OnClick" />
+        <Button x:Name="SubscriptionsButton" Content="Subscriptions" HorizontalContentAlignment="Left" Click="Subscriptions_OnClick" />
+        <Button x:Name="SavedButton" Content="Saved" HorizontalContentAlignment="Left" Click="Saved_OnClick" />
+        <Button x:Name="HistoryButton" Content="History" HorizontalContentAlignment="Left" Click="History_OnClick" />
+        <Button x:Name="DownloadsButton" Content="Downloads" HorizontalContentAlignment="Left" Click="Downloads_OnClick" />
+        <TextBlock x:Name="PortStatusText" Text="Linux port in progress" TextWrapping="Wrap" Foreground="#69717D" Margin="8,20,8,0" />
       </StackPanel>
     </Border>
     <Grid Grid.Row="1" Grid.Column="1" RowDefinitions="Auto,*,Auto,Auto" Margin="22">
       <StackPanel Spacing="4" Margin="0,0,0,14">
-        <TextBlock Text="Discover" FontSize="25" FontWeight="SemiBold" />
+        <TextBlock x:Name="PageTitleText" Text="Discover" FontSize="25" FontWeight="SemiBold" />
         <TextBlock x:Name="IntroText" Text="Search YouTube to find something to watch." Foreground="#69717D" />
       </StackPanel>
       <ListBox Grid.Row="1" x:Name="ResultsList" SelectionMode="Single" DoubleTapped="Results_OnDoubleTapped">
         <ListBox.ItemTemplate>
           <DataTemplate>
             <Border Padding="14,12" Margin="0,0,0,8" CornerRadius="6" Background="#F7F8FA">
-              <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+              <Grid ColumnDefinitions="*,Auto,Auto,Auto" RowDefinitions="Auto,Auto">
                 <TextBlock Text="{Binding Title}" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap" />
                 <TextBlock Grid.Row="1" Text="{Binding Metadata}" Foreground="#69717D" Margin="0,5,0,0" />
                 <Button Grid.Column="1" Grid.RowSpan="2" Content="Play" VerticalAlignment="Center" Click="PlayItem_OnClick" />
+                <Button Grid.Column="2" Grid.RowSpan="2" Content="Download" VerticalAlignment="Center" Margin="8,0,0,0" Click="DownloadItem_OnClick" />
+                <Button Grid.Column="3" Grid.RowSpan="2" Content="Save" VerticalAlignment="Center" Margin="8,0,0,0" Click="SaveItem_OnClick" />
               </Grid>
             </Border>
           </DataTemplate>
         </ListBox.ItemTemplate>
       </ListBox>
-      <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8" Margin="0,12,0,12">
-        <Button Content="Pause / resume" Click="Pause_OnClick" />
-        <Button Content="Stop" Click="Stop_OnClick" />
-        <TextBlock Text="Volume" VerticalAlignment="Center" Margin="8,0,0,0" />
-        <Slider x:Name="VolumeSlider" Minimum="0" Maximum="130" Width="150" Value="100" VerticalAlignment="Center" ValueChanged="Volume_OnChanged" />
-      </StackPanel>
+      <Grid Grid.Row="2" ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto" ColumnSpacing="8" Margin="0,12,0,12">
+        <Button x:Name="PauseButton" Content="Pause / resume" Click="Pause_OnClick" />
+        <Button x:Name="StopButton" Grid.Column="1" Content="Stop" Click="Stop_OnClick" />
+        <Slider Grid.Column="2" x:Name="SeekSlider" Minimum="0" Maximum="1" VerticalAlignment="Center" PointerPressed="Seek_OnPointerPressed" PointerReleased="Seek_OnPointerReleased" />
+        <TextBlock Grid.Column="3" x:Name="TimeText" Text="0:00 / 0:00" VerticalAlignment="Center" />
+        <TextBlock x:Name="VolumeLabel" Grid.Column="4" Text="Volume" VerticalAlignment="Center" />
+        <Slider Grid.Column="5" x:Name="VolumeSlider" Minimum="0" Maximum="130" Width="120" Value="100" VerticalAlignment="Center" ValueChanged="Volume_OnChanged" />
+      </Grid>
       <Border Grid.Row="3" Padding="0,10,0,0" BorderThickness="0,1,0,0" BorderBrush="#D8DCE2">
         <TextBlock x:Name="StatusText" Text="Checking for yt-dlp and mpv…" Foreground="#69717D" />
       </Border>

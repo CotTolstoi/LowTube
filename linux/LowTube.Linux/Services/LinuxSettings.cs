@@ -23,6 +23,7 @@ public sealed class LinuxSettings
         if (BufferSeconds is < 5 or > 3600) BufferSeconds = 60;
         if (Volume is < 0 or > 130) Volume = 100;
         if (VideoScale is not ("bilinear" or "bicubic" or "lanczos" or "ewa_lanczos")) VideoScale = "bilinear";
-        if (string.IsNullOrWhiteSpace(DownloadFolder)) DownloadFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads", "LowTube");
+        if (string.IsNullOrWhiteSpace(DownloadFolder) || !Path.IsPathRooted(DownloadFolder))
+            DownloadFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads", "LowTube");
     }
 }
