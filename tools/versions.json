@@ -1,0 +1,32 @@
+﻿[
+    {
+        "asset":  "yt-dlp_win.zip",
+        "url":  "https://github.com/yt-dlp/yt-dlp/releases/download/2026.08.19/yt-dlp_win.zip",
+        "sha256":  "30b4c14aafab6082becff7881e41b76df46dc43ea7633479410a91e29da492bf"
+    },
+    {
+        "asset":  "node-v22.23.3-win-x64.zip",
+        "url":  "https://nodejs.org/dist/v22.23.3/node-v22.23.3-win-x64.zip",
+        "sha256":  "2b0ff57b049cda1bbcea2240eec20467018713c1efe1f7360c2681859b90ed71"
+    },
+    {
+        "asset":  "qjs-windows-x86_64.exe",
+        "url":  "https://github.com/quickjs-ng/quickjs/releases/download/v0.17.0/qjs-windows-x86_64.exe",
+        "sha256":  "2aeabf0092c3262d6b2609824418f7dd7ed1f1df939f73b2b15645230cac0d77"
+    },
+    {
+        "asset":  "7zr.exe",
+        "url":  "https://github.com/ip7z/7zip/releases/download/26.04/7zr.exe",
+        "sha256":  "256feca8e274e5da655e2a284fabafd9f554365eb164862089dacd4e8276d282"
+    },
+    {
+        "asset":  "mpv-x86_64-20261015-git-492bae0768.7z",
+        "url":  "https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/20261015/mpv-x86_64-20261015-git-492bae0768.7z",
+        "sha256":  "f9becefe40e2a29d2ce5f3ab231ff094f9cf3e4038ff014cfe4a0c09ad90e79e"
+    },
+    {
+        "asset":  "ffmpeg-master-latest-win64-gpl-shared.zip",
+        "url":  "https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl-shared.zip",
+        "sha256":  "20b2f500c9d94fc417ea770d37c4f27e4c26a707e54052973a0591cb663169c7"
+    }
+]

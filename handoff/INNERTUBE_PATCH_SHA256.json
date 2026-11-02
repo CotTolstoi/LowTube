@@ -1,0 +1,86 @@
+{
+  "src/InnerTube.cs": {
+    "bytes": 23738,
+    "sha256": "ea5645164b9165bfbd7658553c4308c06501f071119abc5b8570ac8249b03722"
+  },
+  "src/InnerTubeJson.cs": {
+    "bytes": 13881,
+    "sha256": "518ce7f2d10b55a7a3b701ad54965f9232448a23cdadb38a19234f9f07e4e43c"
+  },
+  "src/Core.cs": {
+    "bytes": 32908,
+    "sha256": "40db72529eec98cf5ad20331fc1417ef243a02a3f825a8821b34f6ad9db10a8f"
+  },
+  "src/BackgroundFeeds.cs": {
+    "bytes": 19606,
+    "sha256": "3bd2f3a39e9cec9c8b9a5e81748e2ee09b269be213d662a981db5fa92f6f2fc9"
+  },
+  "src/SavedSession.cs": {
+    "bytes": 11074,
+    "sha256": "68624d80edce81598946f9f477653f9f6a5b1a8928b1a3ba93c3ed9e02322869"
+  },
+  "src/I18n.cs": {
+    "bytes": 106991,
+    "sha256": "7c873f04eba3c02cd74218fdfc4882b77346ac998f34d08f674be60596eec4ee"
+  },
+  "src/AssemblyInfo.cs": {
+    "bytes": 333,
+    "sha256": "3393cda7581ed00d5c6c00b4af9286b559ffad108282e6e730a45bfabe8a712c"
+  },
+  "src/StartupTrace.cs": {
+    "bytes": 12460,
+    "sha256": "ed8c05b1034efebe4356c1ab3594d8ca5753cbb7347dd8794568062e88a789bc"
+  },
+  "tests/InnerTubeTests.cs": {
+    "bytes": 20832,
+    "sha256": "f3df5d8220d6111af0e9c038191636f013b73fa9145331db2cad664b18ecf2cc"
+  },
+  "tests/CoreTests.cs": {
+    "bytes": 56471,
+    "sha256": "a4606f158ee0cc981d1b9a2e15169badb0d133e49117c4738284d7121d95bbd0"
+  },
+  "tests/FeatureTests.cs": {
+    "bytes": 7646,
+    "sha256": "c5ebbaf2db180071487214410ff90442487f6b4d0d8634ba802b424385285a5d"
+  },
+  "tests/ContinuityTests.cs": {
+    "bytes": 7421,
+    "sha256": "9018740b17fcd7888e7860aeefa59eecf38669fe0124630f52b4ce7656a74b46"
+  },
+  "Run-Checks.ps1": {
+    "bytes": 1964,
+    "sha256": "3bb69a78106f5ba3879e0fca3f44a5e670c2792ba3a4b31bcf21cc5adc3a48e4"
+  },
+  "README_CODEX_UK.md": {
+    "bytes": 5379,
+    "sha256": "74f3561234c6ca72f9af28ef5dd65bda6bd54c8a43ddb3b4ccce8c4cc423b945"
+  },
+  "handoff/ARCHITECTURE.md": {
+    "bytes": 2858,
+    "sha256": "195e2f3d67bdf2269d655af4824255325f45378c164c8edc3704b7347a3984c5"
+  },
+  "handoff/PROJECT_STATE.md": {
+    "bytes": 4845,
+    "sha256": "c8e3756ee4bd613d7764ab7024e855c6c87b97591a054a1e86ef37fc2d6ef24a"
+  },
+  "handoff/INNERTUBE_VALIDATION_UK.md": {
+    "bytes": 12596,
+    "sha256": "e373f4c5bb89a454e8506d2b046a417eafa09f202f2f43d2ffccc15fdc9c21ba"
+  },
+  "LowTube.exe": {
+    "bytes": 598016,
+    "sha256": "cc3fab3a960bc67fe1e376d91781d6521245d7c887ecce872b5bb4c51448214e"
+  },
+  "LowTube.Benchmark.exe": {
+    "bytes": 67584,
+    "sha256": "6a19540c4a110b21fdb2769d6f5898af9cd88f770ead09abbae3e69b953ca0d9"
+  },
+  "LowTube.Hybrid.exe": {
+    "bytes": 33792,
+    "sha256": "944abe8a547e3bada2d2cb859f6dfe6e6d430516e8590174845a7e23fc25d543"
+  },
+  "LowTube.Hybrid.Compare.exe": {
+    "bytes": 19456,
+    "sha256": "a6b49d118479fde2bb683f277cad178a555b4bce1ef31944898b0e8647604290"
+  }
+}

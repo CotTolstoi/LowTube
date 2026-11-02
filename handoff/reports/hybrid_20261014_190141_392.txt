@@ -1,0 +1,663 @@
+2026-10-14T16:01:41.4083341Z | LowTube hybrid prototype 0.3; mode=hybrid; first 60 seconds; two bounded frame queues; payload <=64 MiB; no settings modified.
+2026-10-14T16:01:41.4637818Z | Copy-back via FFmpeg stdout, ordered YUV420 frames, mpv video/audio presentation. Per-GOP process startup is included. This is NOT zero-copy and NOT a steady-state decoder benchmark.
+2026-10-14T16:01:41.4940806Z | PROBE started: scanning first 61 seconds (timeout 180s).
+2026-10-14T16:01:51.5732264Z | PROBE still scanning: 10 seconds
+2026-10-14T16:02:01.5977890Z | PROBE still scanning: 20 seconds
+2026-10-14T16:02:11.6301889Z | PROBE still scanning: 30 seconds
+2026-10-14T16:02:21.6729196Z | PROBE still scanning: 40 seconds
+2026-10-14T16:02:31.6965004Z | PROBE still scanning: 50 seconds
+2026-10-14T16:02:31.7166640Z | PROBE completed in 50.2079337 seconds.
+2026-10-14T16:02:31.7166640Z | SOURCE 1920x1080 fps=60/1 GOPs=20 longest_gop_frames=420 queue_frames_each=8 frame_payload_bytes=49766400
+2026-10-14T16:02:31.7479096Z | DECODE_START gop=0 requested=software frames=150
+2026-10-14T16:02:31.7479096Z | DECODE_START gop=1 requested=d3d11va frames=216
+2026-10-14T16:02:32.1285977Z | PRESENT gop=0 frames=150 elapsed=0.395028
+2026-10-14T16:02:35.3411035Z | HARDWARE_FRAMES_CONFIRMED gop=1 first_frame via mandatory hwdownload
+2026-10-14T16:02:37.0520482Z | MPV [vo/gpu] correct-downscaling requires non-bilinear scaler.
+2026-10-14T16:02:37.0530485Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":0.033333,"avsync":0.000015,"frame-drop-count":0}
+2026-10-14T16:02:37.0530485Z | MPV [ao/wasapi] Under-run: Device delay: -4400 ns
+2026-10-14T16:02:37.0530485Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":0.233333,"avsync":0.000058,"frame-drop-count":0}
+2026-10-14T16:02:37.0530485Z | MPV [ao/wasapi] Under-run: Device delay: -2100 ns
+2026-10-14T16:02:37.0540478Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":0.400000,"avsync":0.000008,"frame-drop-count":3}
+2026-10-14T16:02:37.0540478Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":0.400000,"avsync":0.000008,"frame-drop-count":3}
+2026-10-14T16:02:37.2727277Z | MPV [ao/wasapi] Under-run: Device delay: -3700 ns
+2026-10-14T16:02:37.4702080Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":0.633333,"avsync":0.000019,"frame-drop-count":3}
+2026-10-14T16:02:38.4698086Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":0.900000,"avsync":0.000011,"frame-drop-count":3}
+2026-10-14T16:02:39.4689789Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":1.383333,"avsync":0.000015,"frame-drop-count":3}
+2026-10-14T16:02:39.6901045Z | MPV [ao/wasapi] Under-run: Device delay: -2300 ns
+2026-10-14T16:02:39.7726470Z | MPV [ao/wasapi] Under-run: Device delay: -1700 ns
+2026-10-14T16:02:39.9415906Z | MPV [ao/wasapi] Under-run: Device delay: -3200 ns
+2026-10-14T16:02:40.0249148Z | MPV [ao/wasapi] Under-run: Device delay: -1900 ns
+2026-10-14T16:02:40.4721557Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":1.800000,"avsync":0.000000,"frame-drop-count":3}
+2026-10-14T16:02:40.8636198Z | MPV [ao/wasapi] Under-run: Device delay: -3400 ns
+2026-10-14T16:02:40.9607893Z | MPV [ao/wasapi] Under-run: Device delay: -1500 ns
+2026-10-14T16:02:41.0765174Z | MPV [ao/wasapi] Under-run: Device delay: -3700 ns
+2026-10-14T16:02:41.1873449Z | MPV [ao/wasapi] Under-run: Device delay: -1400 ns
+2026-10-14T16:02:41.4755564Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":2.233333,"avsync":0.000015,"frame-drop-count":3}
+2026-10-14T16:02:41.6354913Z | MPV [ao/wasapi] Under-run: Device delay: -3700 ns
+2026-10-14T16:02:41.8024628Z | MPV [ao/wasapi] Under-run: Device delay: -2300 ns
+2026-10-14T16:02:41.9777287Z | MPV [ao/wasapi] Under-run: Device delay: -5000 ns
+2026-10-14T16:02:42.1402000Z | DECODE gop=0 requested=software frames=150 bytes=466560000 wall_s_including_backpressure=10.3921122 cpu_s=4.78125 peak_working_set_observed=64868352 resource_sampling=best_effort
+2026-10-14T16:02:42.1402000Z | QUEUE gop=0 total_frame_wait_ms=5951
+2026-10-14T16:02:42.1467690Z | DECODE_START gop=2 requested=software frames=360
+2026-10-14T16:02:42.1467690Z | PRESENT gop=1 frames=216 elapsed=10.4061072
+2026-10-14T16:02:42.2503561Z | MPV [ao/wasapi] Under-run: Device delay: -2400 ns
+2026-10-14T16:02:42.4777216Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":2.600000,"avsync":0.000277,"frame-drop-count":3}
+2026-10-14T16:02:42.5556331Z | MPV [ao/wasapi] Under-run: Device delay: -3600 ns
+2026-10-14T16:02:42.9584067Z | MPV [ao/wasapi] Under-run: Device delay: -2500 ns
+2026-10-14T16:02:43.0878921Z | MPV [ao/wasapi] Under-run: Device delay: -2300 ns
+2026-10-14T16:02:43.4878505Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":3.100000,"avsync":0.009584,"frame-drop-count":5}
+2026-10-14T16:02:43.6419067Z | MPV [ao/wasapi] Under-run: Device delay: -3000 ns
+2026-10-14T16:02:43.8588092Z | MPV [ao/wasapi] Under-run: Device delay: -2500 ns
+2026-10-14T16:02:44.2176150Z | MPV [ao/wasapi] Under-run: Device delay: -1700 ns
+2026-10-14T16:02:44.4961546Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":3.383333,"avsync":0.000018,"frame-drop-count":5}
+2026-10-14T16:02:44.6163685Z | MPV [ao/wasapi] Under-run: Device delay: -5600 ns
+2026-10-14T16:02:44.8546215Z | MPV [ao/wasapi] Under-run: Device delay: -2200 ns
+2026-10-14T16:02:45.0774234Z | MPV [ao/wasapi] Under-run: Device delay: -2300 ns
+2026-10-14T16:02:45.4961025Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":3.716667,"avsync":0.006666,"frame-drop-count":5}
+2026-10-14T16:02:46.4960562Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":4.100000,"avsync":0.000029,"frame-drop-count":5}
+2026-10-14T16:02:47.0992710Z | MPV [ao/wasapi] Under-run: Device delay: -5200 ns
+2026-10-14T16:02:47.3224666Z | MPV [ao/wasapi] Under-run: Device delay: -2600 ns
+2026-10-14T16:02:47.4117809Z | MPV [ao/wasapi] Under-run: Device delay: -2700 ns
+2026-10-14T16:02:47.4966801Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":4.466667,"avsync":0.000027,"frame-drop-count":5}
+2026-10-14T16:02:48.4968280Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":4.833333,"avsync":0.013289,"frame-drop-count":5}
+2026-10-14T16:02:48.8819661Z | MPV [ao/wasapi] Under-run: Device delay: -2500 ns
+2026-10-14T16:02:49.4773149Z | MPV [ao/wasapi] Under-run: Device delay: -1800 ns
+2026-10-14T16:02:49.5117788Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":5.200000,"avsync":0.002170,"frame-drop-count":5}
+2026-10-14T16:02:50.4492688Z | MPV [ao/wasapi] Under-run: Device delay: -3000 ns
+2026-10-14T16:02:50.4976707Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":5.600000,"avsync":0.000019,"frame-drop-count":5}
+2026-10-14T16:02:50.9842739Z | MPV [ao/wasapi] Under-run: Device delay: -3600 ns
+2026-10-14T16:02:51.4973364Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":5.966667,"avsync":0.000017,"frame-drop-count":5}
+2026-10-14T16:02:51.5359986Z | MPV [ao/wasapi] Under-run: Device delay: -4100 ns
+2026-10-14T16:02:51.8016632Z | DECODE gop=1 requested=d3d11va frames=216 bytes=671846400 wall_s_including_backpressure=20.052299 cpu_s=6.453125 peak_working_set_observed=71921664 resource_sampling=best_effort
+2026-10-14T16:02:51.8016632Z | QUEUE gop=1 total_frame_wait_ms=4586
+2026-10-14T16:02:51.8117890Z | DECODE_START gop=3 requested=d3d11va frames=111
+2026-10-14T16:02:51.8117890Z | PRESENT gop=2 frames=360 elapsed=20.0725788
+2026-10-14T16:02:51.9338238Z | MPV [ao/wasapi] Under-run: Device delay: -4700 ns
+2026-10-14T16:02:52.5021574Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":6.500000,"avsync":-0.000000,"frame-drop-count":8}
+2026-10-14T16:02:52.5782570Z | MPV [ao/wasapi] Under-run: Device delay: -5200 ns
+2026-10-14T16:02:53.1131152Z | MPV [ao/wasapi] Under-run: Device delay: -3600 ns
+2026-10-14T16:02:53.1862767Z | HARDWARE_FRAMES_CONFIRMED gop=3 first_frame via mandatory hwdownload
+2026-10-14T16:02:53.3429141Z | MPV [ao/wasapi] Under-run: Device delay: -4700 ns
+2026-10-14T16:02:53.4995658Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":6.800000,"avsync":0.000013,"frame-drop-count":8}
+2026-10-14T16:02:53.7688961Z | MPV [ao/wasapi] Under-run: Device delay: -2200 ns
+2026-10-14T16:02:54.3748599Z | MPV [ao/wasapi] Under-run: Device delay: -5300 ns
+2026-10-14T16:02:54.4976494Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":7.166667,"avsync":0.001120,"frame-drop-count":8}
+2026-10-14T16:02:55.4800373Z | MPV [ao/wasapi] Under-run: Device delay: -2500 ns
+2026-10-14T16:02:55.4979989Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":7.583333,"avsync":0.000013,"frame-drop-count":8}
+2026-10-14T16:02:56.3672003Z | MPV [ao/wasapi] Under-run: Device delay: -1900 ns
+2026-10-14T16:02:56.4876749Z | MPV [ao/wasapi] Under-run: Device delay: -2900 ns
+2026-10-14T16:02:56.5007361Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":8.016667,"avsync":0.001556,"frame-drop-count":8}
+2026-10-14T16:02:56.7158127Z | MPV [ao/wasapi] Under-run: Device delay: -2300 ns
+2026-10-14T16:02:56.8807815Z | MPV [ao/wasapi] Under-run: Device delay: -2100 ns
+2026-10-14T16:02:57.0812685Z | MPV [ao/wasapi] Under-run: Device delay: -1700 ns
+2026-10-14T16:02:57.1738285Z | MPV [ao/wasapi] Under-run: Device delay: -2900 ns
+2026-10-14T16:02:57.4382083Z | MPV [ao/wasapi] Under-run: Device delay: -3800 ns
+2026-10-14T16:02:57.5961755Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":8.433333,"avsync":0.000590,"frame-drop-count":8}
+2026-10-14T16:02:58.5487923Z | MPV [ao/wasapi] Under-run: Device delay: -1600 ns
+2026-10-14T16:02:58.6404924Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":8.866667,"avsync":0.000000,"frame-drop-count":8}
+2026-10-14T16:02:58.9531075Z | MPV [ao/wasapi] Under-run: Device delay: -2200 ns
+2026-10-14T16:02:59.4505233Z | MPV [ao/wasapi] Under-run: Device delay: -1400 ns
+2026-10-14T16:02:59.6692652Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":9.316667,"avsync":0.000021,"frame-drop-count":8}
+2026-10-14T16:02:59.8968254Z | MPV [ao/wasapi] Under-run: Device delay: -1800 ns
+2026-10-14T16:03:00.1867951Z | MPV [ao/wasapi] Under-run: Device delay: -3100 ns
+2026-10-14T16:03:00.3749052Z | MPV [ao/wasapi] Under-run: Device delay: -2700 ns
+2026-10-14T16:03:00.7060444Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":9.733333,"avsync":0.000021,"frame-drop-count":8}
+2026-10-14T16:03:00.7240648Z | MPV [ao/wasapi] Under-run: Device delay: -1700 ns
+2026-10-14T16:03:00.8028321Z | MPV [ao/wasapi] Under-run: Device delay: -3200 ns
+2026-10-14T16:03:01.1197260Z | MPV [ao/wasapi] Under-run: Device delay: -1400 ns
+2026-10-14T16:03:01.7258634Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":10.183333,"avsync":0.000462,"frame-drop-count":8}
+2026-10-14T16:03:02.4815989Z | MPV [ao/wasapi] Under-run: Device delay: -2900 ns
+2026-10-14T16:03:02.6479913Z | MPV [ao/wasapi] Under-run: Device delay: -1800 ns
+2026-10-14T16:03:02.7531156Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":10.600000,"avsync":0.007010,"frame-drop-count":8}
+2026-10-14T16:03:02.7793563Z | MPV [ao/wasapi] Under-run: Device delay: -4100 ns
+2026-10-14T16:03:03.1243795Z | MPV [ao/wasapi] Under-run: Device delay: -2600 ns
+2026-10-14T16:03:03.4917609Z | MPV [ao/wasapi] Under-run: Device delay: -1400 ns
+2026-10-14T16:03:03.6164107Z | MPV [ao/wasapi] Under-run: Device delay: -1300 ns
+2026-10-14T16:03:03.7795515Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":11.033333,"avsync":0.000854,"frame-drop-count":9}
+2026-10-14T16:03:03.8161357Z | MPV [ao/wasapi] Under-run: Device delay: -2100 ns
+2026-10-14T16:03:04.2148451Z | MPV [ao/wasapi] Under-run: Device delay: -3000 ns
+2026-10-14T16:03:04.3359269Z | MPV [ao/wasapi] Under-run: Device delay: -1500 ns
+2026-10-14T16:03:04.5305101Z | MPV [ao/wasapi] Under-run: Device delay: -2300 ns
+2026-10-14T16:03:04.6925122Z | MPV [ao/wasapi] Under-run: Device delay: -1900 ns
+2026-10-14T16:03:04.8150438Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":11.450000,"avsync":0.000159,"frame-drop-count":10}
+2026-10-14T16:03:04.8251922Z | MPV [ao/wasapi] Under-run: Device delay: -3400 ns
+2026-10-14T16:03:04.9270830Z | MPV [ao/wasapi] Under-run: Device delay: -1500 ns
+2026-10-14T16:03:05.1797336Z | MPV [ao/wasapi] Under-run: Device delay: -2300 ns
+2026-10-14T16:03:05.4460344Z | MPV [ao/wasapi] Under-run: Device delay: -1700 ns
+2026-10-14T16:03:05.6948724Z | MPV [ao/wasapi] Under-run: Device delay: -2500 ns
+2026-10-14T16:03:05.8220002Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":11.733333,"avsync":0.000000,"frame-drop-count":10}
+2026-10-14T16:03:06.9695960Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":11.966667,"avsync":0.000024,"frame-drop-count":10}
+2026-10-14T16:03:07.1349302Z | MPV [ao/wasapi] Under-run: Device delay: -2100 ns
+2026-10-14T16:03:07.1786458Z | DECODE gop=2 requested=software frames=360 bytes=1119744000 wall_s_including_backpressure=25.0382984 cpu_s=12.1875 peak_working_set_observed=65261568 resource_sampling=best_effort
+2026-10-14T16:03:07.1786458Z | QUEUE gop=2 total_frame_wait_ms=8696
+2026-10-14T16:03:07.1836788Z | DECODE_START gop=4 requested=software frames=209
+2026-10-14T16:03:07.1836788Z | PRESENT gop=3 frames=111 elapsed=35.4439725
+2026-10-14T16:03:07.3487024Z | MPV [ao/wasapi] Under-run: Device delay: -3900 ns
+2026-10-14T16:03:07.6303642Z | MPV [ao/wasapi] Under-run: Device delay: -3800 ns
+2026-10-14T16:03:07.9468097Z | MPV [ao/wasapi] Under-run: Device delay: -4600 ns
+2026-10-14T16:03:08.0496974Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":12.533333,"avsync":0.000016,"frame-drop-count":12}
+2026-10-14T16:03:08.3716048Z | MPV [ao/wasapi] Under-run: Device delay: -4000 ns
+2026-10-14T16:03:08.7553003Z | MPV [ao/wasapi] Under-run: Device delay: -3100 ns
+2026-10-14T16:03:09.1710769Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":12.800000,"avsync":0.000021,"frame-drop-count":12}
+2026-10-14T16:03:09.3667815Z | MPV [ao/wasapi] Under-run: Device delay: -4400 ns
+2026-10-14T16:03:09.7135701Z | MPV [ao/wasapi] Under-run: Device delay: -2800 ns
+2026-10-14T16:03:10.1461671Z | MPV [ao/wasapi] Under-run: Device delay: -1400 ns
+2026-10-14T16:03:10.1827227Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":13.183333,"avsync":0.000039,"frame-drop-count":12}
+2026-10-14T16:03:10.6153305Z | MPV [ao/wasapi] Under-run: Device delay: -2700 ns
+2026-10-14T16:03:10.7426828Z | MPV [ao/wasapi] Under-run: Device delay: -4200 ns
+2026-10-14T16:03:10.9334774Z | MPV [ao/wasapi] Under-run: Device delay: -2800 ns
+2026-10-14T16:03:11.1896343Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":13.566667,"avsync":0.004445,"frame-drop-count":12}
+2026-10-14T16:03:11.4772681Z | MPV [ao/wasapi] Under-run: Device delay: -3700 ns
+2026-10-14T16:03:11.6118488Z | MPV [ao/wasapi] Under-run: Device delay: -5500 ns
+2026-10-14T16:03:11.7038992Z | MPV [ao/wasapi] Under-run: Device delay: -2500 ns
+2026-10-14T16:03:11.9088012Z | MPV [ao/wasapi] Under-run: Device delay: -5000 ns
+2026-10-14T16:03:12.1969335Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":13.916667,"avsync":0.009883,"frame-drop-count":12}
+2026-10-14T16:03:12.2203725Z | DECODE gop=3 requested=d3d11va frames=111 bytes=345254400 wall_s_including_backpressure=20.4110211 cpu_s=3.71875 peak_working_set_observed=71819264 resource_sampling=best_effort
+2026-10-14T16:03:12.2203725Z | QUEUE gop=3 total_frame_wait_ms=2262
+2026-10-14T16:03:12.2253727Z | DECODE_START gop=5 requested=d3d11va frames=46
+2026-10-14T16:03:12.2253727Z | PRESENT gop=4 frames=209 elapsed=40.4843241
+2026-10-14T16:03:12.4476260Z | MPV [ao/wasapi] Under-run: Device delay: -1900 ns
+2026-10-14T16:03:12.8392893Z | MPV [ao/wasapi] Under-run: Device delay: -3500 ns
+2026-10-14T16:03:12.9640554Z | MPV [ao/wasapi] Under-run: Device delay: -2100 ns
+2026-10-14T16:03:13.2303959Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":14.450000,"avsync":0.026422,"frame-drop-count":17}
+2026-10-14T16:03:13.3687873Z | HARDWARE_FRAMES_CONFIRMED gop=5 first_frame via mandatory hwdownload
+2026-10-14T16:03:13.5319123Z | MPV [ao/wasapi] Under-run: Device delay: -1500 ns
+2026-10-14T16:03:13.7411208Z | MPV [ao/wasapi] Under-run: Device delay: -2300 ns
+2026-10-14T16:03:14.2620471Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":14.750000,"avsync":0.000014,"frame-drop-count":18}
+2026-10-14T16:03:14.2954323Z | MPV [ao/wasapi] Under-run: Device delay: -1500 ns
+2026-10-14T16:03:14.5642516Z | MPV [ao/wasapi] Under-run: Device delay: -1600 ns
+2026-10-14T16:03:14.7444465Z | MPV [ao/wasapi] Under-run: Device delay: -2000 ns
+2026-10-14T16:03:14.9432985Z | MPV [ao/wasapi] Under-run: Device delay: -1800 ns
+2026-10-14T16:03:15.2571687Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":15.133333,"avsync":0.000013,"frame-drop-count":18}
+2026-10-14T16:03:15.3718908Z | MPV [ao/wasapi] Under-run: Device delay: -1300 ns
+2026-10-14T16:03:15.7462584Z | MPV [ao/wasapi] Under-run: Device delay: -1800 ns
+2026-10-14T16:03:16.0589233Z | MPV [ao/wasapi] Under-run: Device delay: -1300 ns
+2026-10-14T16:03:16.2859147Z | MPV [ao/wasapi] Under-run: Device delay: -4700 ns
+2026-10-14T16:03:16.2882302Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":15.600000,"avsync":0.000000,"frame-drop-count":18}
+2026-10-14T16:03:16.5969600Z | MPV [ao/wasapi] Under-run: Device delay: -2100 ns
+2026-10-14T16:03:16.7868855Z | MPV [ao/wasapi] Under-run: Device delay: -1600 ns
+2026-10-14T16:03:16.9192593Z | MPV [ao/wasapi] Under-run: Device delay: -2100 ns
+2026-10-14T16:03:17.1673872Z | MPV [ao/wasapi] Under-run: Device delay: -4100 ns
+2026-10-14T16:03:17.2988783Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":16.016667,"avsync":0.000015,"frame-drop-count":18}
+2026-10-14T16:03:17.7085016Z | MPV [ao/wasapi] Under-run: Device delay: -3700 ns
+2026-10-14T16:03:18.3199479Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":16.433333,"avsync":0.000012,"frame-drop-count":18}
+2026-10-14T16:03:19.1575903Z | MPV [ao/wasapi] Under-run: Device delay: -1300 ns
+2026-10-14T16:03:19.3433097Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":16.866667,"avsync":0.000740,"frame-drop-count":18}
+2026-10-14T16:03:19.6571535Z | MPV [ao/wasapi] Under-run: Device delay: -1600 ns
+2026-10-14T16:03:19.9136811Z | MPV [ao/wasapi] Under-run: Device delay: -2800 ns
+2026-10-14T16:03:20.3601983Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":17.200000,"avsync":0.000015,"frame-drop-count":18}
+2026-10-14T16:03:21.1717028Z | MPV [ao/wasapi] Under-run: Device delay: -2600 ns
+2026-10-14T16:03:21.3189030Z | DECODE gop=4 requested=software frames=209 bytes=650073600 wall_s_including_backpressure=14.1369165 cpu_s=7.21875 peak_working_set_observed=65196032 resource_sampling=best_effort
+2026-10-14T16:03:21.3610394Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":17.316667,"avsync":0.000011,"frame-drop-count":19}
+2026-10-14T16:03:21.4205673Z | QUEUE gop=4 total_frame_wait_ms=5713
+2026-10-14T16:03:21.4237155Z | DECODE_START gop=6 requested=software frames=125
+2026-10-14T16:03:21.4247174Z | PRESENT gop=5 frames=46 elapsed=49.6837068
+2026-10-14T16:03:21.7200229Z | MPV [ao/wasapi] Under-run: Device delay: -2000 ns
+2026-10-14T16:03:22.1687546Z | MPV [ao/wasapi] Under-run: Device delay: -2600 ns
+2026-10-14T16:03:22.4191780Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":17.883333,"avsync":0.000023,"frame-drop-count":21}
+2026-10-14T16:03:23.0153765Z | MPV [ao/wasapi] Under-run: Device delay: -1500 ns
+2026-10-14T16:03:23.2768837Z | DECODE gop=5 requested=d3d11va frames=46 bytes=143078400 wall_s_including_backpressure=11.0556109 cpu_s=1.5 peak_working_set_observed=71815168 resource_sampling=best_effort
+2026-10-14T16:03:23.2849919Z | QUEUE gop=5 total_frame_wait_ms=454
+2026-10-14T16:03:23.2992958Z | DECODE_START gop=7 requested=d3d11va frames=135
+2026-10-14T16:03:23.3053775Z | PRESENT gop=6 frames=125 elapsed=51.5647226
+2026-10-14T16:03:23.3759894Z | MPV [ao/wasapi] Under-run: Device delay: -4400 ns
+2026-10-14T16:03:23.4746138Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":18.266667,"avsync":-0.000000,"frame-drop-count":23}
+2026-10-14T16:03:23.4786192Z | MPV [ao/wasapi] Under-run: Device delay: -2300 ns
+2026-10-14T16:03:24.2150862Z | MPV [ao/wasapi] Under-run: Device delay: -2400 ns
+2026-10-14T16:03:24.4869245Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":18.683333,"avsync":0.000019,"frame-drop-count":23}
+2026-10-14T16:03:24.5079397Z | HARDWARE_FRAMES_CONFIRMED gop=7 first_frame via mandatory hwdownload
+2026-10-14T16:03:24.7483545Z | MPV [ao/wasapi] Under-run: Device delay: -2500 ns
+2026-10-14T16:03:25.4951354Z | MPV [ao/wasapi] Under-run: Device delay: -3000 ns
+2026-10-14T16:03:25.5051786Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":18.966667,"avsync":0.001064,"frame-drop-count":23}
+2026-10-14T16:03:26.0279676Z | MPV [ao/wasapi] Under-run: Device delay: -3700 ns
+2026-10-14T16:03:26.1433250Z | MPV [ao/wasapi] Under-run: Device delay: -1600 ns
+2026-10-14T16:03:26.3269669Z | MPV [ao/wasapi] Under-run: Device delay: -3500 ns
+2026-10-14T16:03:26.5146930Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":19.300000,"avsync":0.000020,"frame-drop-count":23}
+2026-10-14T16:03:26.8402658Z | MPV [ao/wasapi] Under-run: Device delay: -4300 ns
+2026-10-14T16:03:26.9700925Z | MPV [ao/wasapi] Under-run: Device delay: -2200 ns
+2026-10-14T16:03:27.5080997Z | MPV [ao/wasapi] Under-run: Device delay: -2300 ns
+2026-10-14T16:03:27.5160426Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":19.633333,"avsync":0.000976,"frame-drop-count":23}
+2026-10-14T16:03:27.7099074Z | MPV [ao/wasapi] Under-run: Device delay: -4100 ns
+2026-10-14T16:03:27.9770859Z | MPV [ao/wasapi] Under-run: Device delay: -2000 ns
+2026-10-14T16:03:28.4754620Z | MPV [ao/wasapi] Under-run: Device delay: -1400 ns
+2026-10-14T16:03:28.5262141Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":20.016667,"avsync":0.000025,"frame-drop-count":23}
+2026-10-14T16:03:28.7221273Z | MPV [ao/wasapi] Under-run: Device delay: -1900 ns
+2026-10-14T16:03:28.8421443Z | MPV [ao/wasapi] Under-run: Device delay: -2400 ns
+2026-10-14T16:03:29.0292991Z | MPV [ao/wasapi] Under-run: Device delay: -2200 ns
+2026-10-14T16:03:29.1785541Z | DECODE gop=6 requested=software frames=125 bytes=388800000 wall_s_including_backpressure=7.7578975 cpu_s=4.375 peak_working_set_observed=55500800 resource_sampling=best_effort
+2026-10-14T16:03:29.1785541Z | QUEUE gop=6 total_frame_wait_ms=3386
+2026-10-14T16:03:29.1847202Z | DECODE_START gop=8 requested=software frames=94
+2026-10-14T16:03:29.1847202Z | PRESENT gop=7 frames=135 elapsed=57.4442329
+2026-10-14T16:03:29.4780726Z | MPV [ao/wasapi] Under-run: Device delay: -1800 ns
+2026-10-14T16:03:29.5716643Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":20.416667,"avsync":0.000013,"frame-drop-count":23}
+2026-10-14T16:03:29.8795583Z | MPV [ao/wasapi] Under-run: Device delay: -3000 ns
+2026-10-14T16:03:30.3166180Z | MPV [ao/wasapi] Under-run: Device delay: -2900 ns
+2026-10-14T16:03:30.3922414Z | MPV [ao/wasapi] Under-run: Device delay: -2800 ns
+2026-10-14T16:03:30.6449733Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":20.883333,"avsync":0.002167,"frame-drop-count":28}
+2026-10-14T16:03:30.8491913Z | MPV [ao/wasapi] Under-run: Device delay: -2500 ns
+2026-10-14T16:03:31.0514761Z | MPV [ao/wasapi] Under-run: Device delay: -2200 ns
+2026-10-14T16:03:31.5667006Z | MPV [ao/wasapi] Under-run: Device delay: -1500 ns
+2026-10-14T16:03:31.7812638Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":21.250000,"avsync":-0.000000,"frame-drop-count":30}
+2026-10-14T16:03:31.7907169Z | MPV [ao/wasapi] Under-run: Device delay: -2400 ns
+2026-10-14T16:03:32.1267915Z | MPV [ao/wasapi] Under-run: Device delay: -5000 ns
+2026-10-14T16:03:32.4631767Z | MPV [ao/wasapi] Under-run: Device delay: -5900 ns
+2026-10-14T16:03:32.6082142Z | MPV [ao/wasapi] Under-run: Device delay: -5900 ns
+2026-10-14T16:03:32.8270028Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":21.616667,"avsync":0.002091,"frame-drop-count":30}
+2026-10-14T16:03:32.9602942Z | MPV [ao/wasapi] Under-run: Device delay: -2500 ns
+2026-10-14T16:03:33.6630556Z | MPV [ao/wasapi] Under-run: Device delay: -1800 ns
+2026-10-14T16:03:33.7982535Z | MPV [ao/wasapi] Under-run: Device delay: -1500 ns
+2026-10-14T16:03:33.8353798Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":22.016667,"avsync":-0.000000,"frame-drop-count":30}
+2026-10-14T16:03:34.1717904Z | MPV [ao/wasapi] Under-run: Device delay: -2300 ns
+2026-10-14T16:03:34.4521239Z | MPV [ao/wasapi] Under-run: Device delay: -2600 ns
+2026-10-14T16:03:34.6960278Z | MPV [ao/wasapi] Under-run: Device delay: -2200 ns
+2026-10-14T16:03:34.8394203Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":22.366667,"avsync":0.000063,"frame-drop-count":30}
+2026-10-14T16:03:35.2221988Z | DECODE gop=7 requested=d3d11va frames=135 bytes=419904000 wall_s_including_backpressure=11.9307565 cpu_s=4.25 peak_working_set_observed=71917568 resource_sampling=best_effort
+2026-10-14T16:03:35.2242280Z | QUEUE gop=7 total_frame_wait_ms=2092
+2026-10-14T16:03:35.2262577Z | DECODE_START gop=9 requested=d3d11va frames=245
+2026-10-14T16:03:35.2262577Z | PRESENT gop=8 frames=94 elapsed=63.4881072
+2026-10-14T16:03:35.3310035Z | MPV [ao/wasapi] Under-run: Device delay: -3900 ns
+2026-10-14T16:03:35.6827066Z | MPV [ao/wasapi] Under-run: Device delay: -2200 ns
+2026-10-14T16:03:35.8590146Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":22.716667,"avsync":-0.000000,"frame-drop-count":30}
+2026-10-14T16:03:35.8639549Z | MPV [ao/wasapi] Under-run: Device delay: -2700 ns
+2026-10-14T16:03:36.2239888Z | MPV [ao/wasapi] Under-run: Device delay: -1800 ns
+2026-10-14T16:03:36.3886294Z | MPV [ao/wasapi] Under-run: Device delay: -1700 ns
+2026-10-14T16:03:36.6289471Z | HARDWARE_FRAMES_CONFIRMED gop=9 first_frame via mandatory hwdownload
+2026-10-14T16:03:36.9582669Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":23.083333,"avsync":0.000089,"frame-drop-count":31}
+2026-10-14T16:03:36.9939383Z | MPV [ao/wasapi] Under-run: Device delay: -2400 ns
+2026-10-14T16:03:37.1555572Z | MPV [ao/wasapi] Under-run: Device delay: -2800 ns
+2026-10-14T16:03:37.9590957Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":23.166667,"avsync":0.000036,"frame-drop-count":31}
+2026-10-14T16:03:38.7476476Z | MPV [ao/wasapi] Under-run: Device delay: -3000 ns
+2026-10-14T16:03:38.9908781Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":23.366667,"avsync":0.000023,"frame-drop-count":32}
+2026-10-14T16:03:39.9929541Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":23.850000,"avsync":0.000013,"frame-drop-count":32}
+2026-10-14T16:03:40.4709193Z | DECODE gop=8 requested=software frames=94 bytes=292377600 wall_s_including_backpressure=11.2883821 cpu_s=3.546875 peak_working_set_observed=65040384 resource_sampling=best_effort
+2026-10-14T16:03:40.4709193Z | QUEUE gop=8 total_frame_wait_ms=2832
+2026-10-14T16:03:40.4739175Z | DECODE_START gop=10 requested=software frames=124
+2026-10-14T16:03:40.4739175Z | PRESENT gop=9 frames=245 elapsed=68.732899
+2026-10-14T16:03:40.8992193Z | MPV [ao/wasapi] Under-run: Device delay: -1500 ns
+2026-10-14T16:03:41.0160111Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":24.333333,"avsync":0.000013,"frame-drop-count":33}
+2026-10-14T16:03:41.2909627Z | MPV [ao/wasapi] Under-run: Device delay: -3700 ns
+2026-10-14T16:03:41.6891280Z | MPV [ao/wasapi] Under-run: Device delay: -2100 ns
+2026-10-14T16:03:41.9749979Z | MPV [ao/wasapi] Under-run: Device delay: -3200 ns
+2026-10-14T16:03:42.1073598Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":24.750000,"avsync":-0.000000,"frame-drop-count":34}
+2026-10-14T16:03:42.1709704Z | MPV [ao/wasapi] Under-run: Device delay: -2600 ns
+2026-10-14T16:03:42.5447665Z | MPV [ao/wasapi] Under-run: Device delay: -1700 ns
+2026-10-14T16:03:42.7761596Z | MPV [ao/wasapi] Under-run: Device delay: -2300 ns
+2026-10-14T16:03:43.0043301Z | MPV [ao/wasapi] Under-run: Device delay: -1400 ns
+2026-10-14T16:03:43.1911236Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":25.133333,"avsync":-0.000000,"frame-drop-count":34}
+2026-10-14T16:03:43.7456942Z | MPV [ao/wasapi] Under-run: Device delay: -3600 ns
+2026-10-14T16:03:44.0040850Z | MPV [ao/wasapi] Under-run: Device delay: -3200 ns
+2026-10-14T16:03:44.1967319Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":25.516667,"avsync":0.004527,"frame-drop-count":34}
+2026-10-14T16:03:44.4091001Z | MPV [ao/wasapi] Under-run: Device delay: -5500 ns
+2026-10-14T16:03:44.8191116Z | MPV [ao/wasapi] Under-run: Device delay: -2000 ns
+2026-10-14T16:03:45.1860428Z | MPV [ao/wasapi] Under-run: Device delay: -3000 ns
+2026-10-14T16:03:45.2076986Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":25.883333,"avsync":0.003913,"frame-drop-count":34}
+2026-10-14T16:03:45.2919234Z | MPV [ao/wasapi] Under-run: Device delay: -1900 ns
+2026-10-14T16:03:45.4327196Z | MPV [ao/wasapi] Under-run: Device delay: -1900 ns
+2026-10-14T16:03:45.6250809Z | MPV [ao/wasapi] Under-run: Device delay: -3800 ns
+2026-10-14T16:03:46.1103905Z | MPV [ao/wasapi] Under-run: Device delay: -2000 ns
+2026-10-14T16:03:46.2247479Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":26.250000,"avsync":0.000026,"frame-drop-count":35}
+2026-10-14T16:03:46.3142300Z | MPV [ao/wasapi] Under-run: Device delay: -3100 ns
+2026-10-14T16:03:47.0198109Z | MPV [ao/wasapi] Under-run: Device delay: -1700 ns
+2026-10-14T16:03:47.1821499Z | MPV [ao/wasapi] Under-run: Device delay: -1700 ns
+2026-10-14T16:03:47.2353536Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":26.650000,"avsync":0.000022,"frame-drop-count":35}
+2026-10-14T16:03:47.4648061Z | MPV [ao/wasapi] Under-run: Device delay: -2100 ns
+2026-10-14T16:03:47.7272178Z | MPV [ao/wasapi] Under-run: Device delay: -3600 ns
+2026-10-14T16:03:47.9435698Z | MPV [ao/wasapi] IAudioClient_Start returned AUDCLNT_E_NOT_STOPPED (0x88890005)
+2026-10-14T16:03:48.1359482Z | MPV [ao/wasapi] Under-run: Device delay: -3400 ns
+2026-10-14T16:03:48.2389402Z | MPV [ao/wasapi] Under-run: Device delay: -3100 ns
+2026-10-14T16:03:48.2783839Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":27.016667,"avsync":0.000018,"frame-drop-count":37}
+2026-10-14T16:03:48.5331615Z | MPV [ao/wasapi] Under-run: Device delay: -3500 ns
+2026-10-14T16:03:49.0325761Z | MPV [ao/wasapi] Under-run: Device delay: -4600 ns
+2026-10-14T16:03:49.3063408Z | MPV [ao/wasapi] Under-run: Device delay: -4600 ns
+2026-10-14T16:03:49.3427422Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":27.400000,"avsync":-0.000000,"frame-drop-count":37}
+2026-10-14T16:03:49.8516580Z | MPV [ao/wasapi] Under-run: Device delay: -3500 ns
+2026-10-14T16:03:50.0049142Z | MPV [ao/wasapi] Under-run: Device delay: -2700 ns
+2026-10-14T16:03:50.1197666Z | MPV [ao/wasapi] Under-run: Device delay: -3200 ns
+2026-10-14T16:03:50.3489692Z | MPV [ao/wasapi] Under-run: Device delay: -4300 ns
+2026-10-14T16:03:50.3848830Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":27.800000,"avsync":-0.000000,"frame-drop-count":37}
+2026-10-14T16:03:50.7179474Z | MPV [ao/wasapi] Under-run: Device delay: -1900 ns
+2026-10-14T16:03:50.9479183Z | MPV [ao/wasapi] Under-run: Device delay: -2100 ns
+2026-10-14T16:03:51.1909096Z | MPV [ao/wasapi] Under-run: Device delay: -2100 ns
+2026-10-14T16:03:51.4040299Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":28.150000,"avsync":0.000012,"frame-drop-count":37}
+2026-10-14T16:03:51.4545617Z | DECODE gop=9 requested=d3d11va frames=245 bytes=762048000 wall_s_including_backpressure=16.2281902 cpu_s=7.71875 peak_working_set_observed=71856128 resource_sampling=best_effort
+2026-10-14T16:03:51.4545617Z | QUEUE gop=9 total_frame_wait_ms=5530
+2026-10-14T16:03:51.4647036Z | DECODE_START gop=11 requested=d3d11va frames=45
+2026-10-14T16:03:51.4647036Z | PRESENT gop=10 frames=124 elapsed=79.7242804
+2026-10-14T16:03:51.6168579Z | MPV [ao/wasapi] Under-run: Device delay: -5300 ns
+2026-10-14T16:03:52.1840634Z | MPV [ao/wasapi] Under-run: Device delay: -1800 ns
+2026-10-14T16:03:52.4498145Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":28.600000,"avsync":0.071441,"frame-drop-count":39}
+2026-10-14T16:03:52.5687623Z | MPV [ao/wasapi] Under-run: Device delay: -4000 ns
+2026-10-14T16:03:52.7391886Z | HARDWARE_FRAMES_CONFIRMED gop=11 first_frame via mandatory hwdownload
+2026-10-14T16:03:52.7615873Z | MPV [ao/wasapi] Under-run: Device delay: -3300 ns
+2026-10-14T16:03:53.0155535Z | MPV [ao/wasapi] Under-run: Device delay: -3500 ns
+2026-10-14T16:03:53.1570662Z | MPV [ao/wasapi] Under-run: Device delay: -1800 ns
+2026-10-14T16:03:53.4523954Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":28.950000,"avsync":-0.000000,"frame-drop-count":46}
+2026-10-14T16:03:53.7953309Z | MPV [ao/wasapi] Under-run: Device delay: -2000 ns
+2026-10-14T16:03:54.2934005Z | MPV [ao/wasapi] Under-run: Device delay: -2900 ns
+2026-10-14T16:03:54.4552891Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":29.350000,"avsync":0.000015,"frame-drop-count":46}
+2026-10-14T16:03:55.4683340Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":29.783333,"avsync":-0.000000,"frame-drop-count":47}
+2026-10-14T16:03:55.9682864Z | MPV [ao/wasapi] Under-run: Device delay: -2900 ns
+2026-10-14T16:03:56.3748945Z | MPV [ao/wasapi] Under-run: Device delay: -2200 ns
+2026-10-14T16:03:56.4692187Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":30.200000,"avsync":-0.000000,"frame-drop-count":47}
+2026-10-14T16:03:56.5206698Z | DECODE gop=10 requested=software frames=124 bytes=385689600 wall_s_including_backpressure=16.0488196 cpu_s=4.703125 peak_working_set_observed=64929792 resource_sampling=best_effort
+2026-10-14T16:03:56.5206698Z | QUEUE gop=10 total_frame_wait_ms=2269
+2026-10-14T16:03:56.5283165Z | DECODE_START gop=12 requested=software frames=83
+2026-10-14T16:03:56.5308509Z | PRESENT gop=11 frames=45 elapsed=84.789838
+2026-10-14T16:03:56.8596316Z | MPV [ao/wasapi] Under-run: Device delay: -3500 ns
+2026-10-14T16:03:57.3134449Z | MPV [ao/wasapi] Under-run: Device delay: -2700 ns
+2026-10-14T16:03:57.4832302Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":30.716667,"avsync":-0.000000,"frame-drop-count":50}
+2026-10-14T16:03:57.7413937Z | MPV [ao/wasapi] Under-run: Device delay: -2100 ns
+2026-10-14T16:03:57.9608984Z | MPV [ao/wasapi] Under-run: Device delay: -3800 ns
+2026-10-14T16:03:58.2291166Z | MPV [ao/wasapi] Under-run: Device delay: -3600 ns
+2026-10-14T16:03:58.4872057Z | DECODE gop=11 requested=d3d11va frames=45 bytes=139968000 wall_s_including_backpressure=7.0307637 cpu_s=1.59375 peak_working_set_observed=71892992 resource_sampling=best_effort
+2026-10-14T16:03:58.4922826Z | QUEUE gop=11 total_frame_wait_ms=422
+2026-10-14T16:03:58.5025021Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":30.966667,"avsync":0.000020,"frame-drop-count":50}
+2026-10-14T16:03:58.5075440Z | DECODE_START gop=13 requested=d3d11va frames=119
+2026-10-14T16:03:58.5147119Z | PRESENT gop=12 frames=83 elapsed=86.7755783
+2026-10-14T16:03:58.6676954Z | MPV [ao/wasapi] Under-run: Device delay: -2800 ns
+2026-10-14T16:03:59.0052719Z | MPV [ao/wasapi] Under-run: Device delay: -2300 ns
+2026-10-14T16:03:59.1263547Z | MPV [ao/wasapi] Under-run: Device delay: -3500 ns
+2026-10-14T16:03:59.2843392Z | MPV [ao/wasapi] Under-run: Device delay: -1800 ns
+2026-10-14T16:03:59.3807974Z | MPV [ao/wasapi] Under-run: Device delay: -3400 ns
+2026-10-14T16:03:59.5749880Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":31.466667,"avsync":0.000016,"frame-drop-count":50}
+2026-10-14T16:03:59.9093250Z | HARDWARE_FRAMES_CONFIRMED gop=13 first_frame via mandatory hwdownload
+2026-10-14T16:04:00.1423046Z | MPV [ao/wasapi] Under-run: Device delay: -1800 ns
+2026-10-14T16:04:00.5834875Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":31.716667,"avsync":0.000010,"frame-drop-count":52}
+2026-10-14T16:04:00.6704922Z | MPV [ao/wasapi] Under-run: Device delay: -2200 ns
+2026-10-14T16:04:01.3198620Z | MPV [ao/wasapi] Under-run: Device delay: -2300 ns
+2026-10-14T16:04:01.5834133Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":32.150000,"avsync":0.000014,"frame-drop-count":52}
+2026-10-14T16:04:01.9560608Z | MPV [ao/wasapi] Under-run: Device delay: -4100 ns
+2026-10-14T16:04:02.1019208Z | DECODE gop=12 requested=software frames=83 bytes=258163200 wall_s_including_backpressure=5.5785104 cpu_s=2.984375 peak_working_set_observed=55476224 resource_sampling=best_effort
+2026-10-14T16:04:02.1019208Z | QUEUE gop=12 total_frame_wait_ms=1903
+2026-10-14T16:04:02.1121695Z | DECODE_START gop=14 requested=software frames=100
+2026-10-14T16:04:02.1121695Z | PRESENT gop=13 frames=119 elapsed=90.3757434
+2026-10-14T16:04:02.3087268Z | MPV [ao/wasapi] Under-run: Device delay: -4900 ns
+2026-10-14T16:04:02.7235217Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":32.650000,"avsync":-0.000000,"frame-drop-count":52}
+2026-10-14T16:04:02.9011807Z | MPV [ao/wasapi] Under-run: Device delay: -3400 ns
+2026-10-14T16:04:03.8495438Z | MPV [ao/wasapi] Under-run: Device delay: -2800 ns
+2026-10-14T16:04:04.1157969Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":33.133333,"avsync":0.015804,"frame-drop-count":53}
+2026-10-14T16:04:04.2453158Z | MPV [ao/wasapi] Under-run: Device delay: -3300 ns
+2026-10-14T16:04:04.7582027Z | MPV [ao/wasapi] Under-run: Device delay: -2700 ns
+2026-10-14T16:04:05.0231245Z | MPV [ao/wasapi] Under-run: Device delay: -5900 ns
+2026-10-14T16:04:05.2459913Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":33.533333,"avsync":-0.000000,"frame-drop-count":60}
+2026-10-14T16:04:05.3211286Z | MPV [ao/wasapi] Under-run: Device delay: -2000 ns
+2026-10-14T16:04:05.7726591Z | MPV [ao/wasapi] Under-run: Device delay: -1500 ns
+2026-10-14T16:04:06.0401094Z | MPV [ao/wasapi] Under-run: Device delay: -2400 ns
+2026-10-14T16:04:06.2634038Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":33.950000,"avsync":0.005490,"frame-drop-count":62}
+2026-10-14T16:04:06.4004309Z | MPV [ao/wasapi] Under-run: Device delay: -3100 ns
+2026-10-14T16:04:06.8657117Z | MPV [ao/wasapi] Under-run: Device delay: -2800 ns
+2026-10-14T16:04:07.1675097Z | MPV [ao/wasapi] Under-run: Device delay: -5200 ns
+2026-10-14T16:04:07.2636713Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":34.300000,"avsync":0.008390,"frame-drop-count":62}
+2026-10-14T16:04:07.3706684Z | DECODE gop=13 requested=d3d11va frames=119 bytes=370137600 wall_s_including_backpressure=8.8709961 cpu_s=4.15625 peak_working_set_observed=71839744 resource_sampling=best_effort
+2026-10-14T16:04:07.3706684Z | QUEUE gop=13 total_frame_wait_ms=1059
+2026-10-14T16:04:07.3808097Z | DECODE_START gop=15 requested=d3d11va frames=104
+2026-10-14T16:04:07.3808097Z | PRESENT gop=14 frames=100 elapsed=95.6444262
+2026-10-14T16:04:07.5338490Z | MPV [ao/wasapi] Under-run: Device delay: -3800 ns
+2026-10-14T16:04:08.2105625Z | MPV [ao/wasapi] Under-run: Device delay: -2300 ns
+2026-10-14T16:04:08.2690212Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":34.850000,"avsync":0.000013,"frame-drop-count":64}
+2026-10-14T16:04:08.6632249Z | HARDWARE_FRAMES_CONFIRMED gop=15 first_frame via mandatory hwdownload
+2026-10-14T16:04:09.2683978Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":34.933333,"avsync":0.000022,"frame-drop-count":64}
+2026-10-14T16:04:10.0903765Z | MPV [ao/wasapi] Under-run: Device delay: -4000 ns
+2026-10-14T16:04:10.3075282Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":35.116667,"avsync":0.000036,"frame-drop-count":64}
+2026-10-14T16:04:10.6057838Z | MPV [ao/wasapi] Under-run: Device delay: -2200 ns
+2026-10-14T16:04:11.3507689Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":35.700000,"avsync":0.000023,"frame-drop-count":64}
+2026-10-14T16:04:11.7058011Z | MPV [ao/wasapi] Under-run: Device delay: -1700 ns
+2026-10-14T16:04:11.8476442Z | MPV [ao/wasapi] Under-run: Device delay: -2100 ns
+2026-10-14T16:04:12.0985352Z | DECODE gop=14 requested=software frames=100 bytes=311040000 wall_s_including_backpressure=9.9885404 cpu_s=3.609375 peak_working_set_observed=64995328 resource_sampling=best_effort
+2026-10-14T16:04:12.0985352Z | QUEUE gop=14 total_frame_wait_ms=2719
+2026-10-14T16:04:12.1117127Z | DECODE_START gop=16 requested=software frames=194
+2026-10-14T16:04:12.1117127Z | PRESENT gop=15 frames=104 elapsed=100.3713927
+2026-10-14T16:04:12.2104268Z | MPV [ao/wasapi] Under-run: Device delay: -3300 ns
+2026-10-14T16:04:12.3173004Z | MPV [ao/wasapi] Under-run: Device delay: -5000 ns
+2026-10-14T16:04:12.3780305Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":36.083333,"avsync":0.000026,"frame-drop-count":64}
+2026-10-14T16:04:12.5598621Z | MPV [ao/wasapi] Under-run: Device delay: -1600 ns
+2026-10-14T16:04:13.1494786Z | MPV [ao/wasapi] Under-run: Device delay: -1800 ns
+2026-10-14T16:04:13.2804939Z | MPV [ao/wasapi] Under-run: Device delay: -2700 ns
+2026-10-14T16:04:13.5590006Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":36.616667,"avsync":-0.000000,"frame-drop-count":64}
+2026-10-14T16:04:13.6531066Z | MPV [ao/wasapi] Under-run: Device delay: -1700 ns
+2026-10-14T16:04:13.9638862Z | MPV [ao/wasapi] Under-run: Device delay: -3900 ns
+2026-10-14T16:04:14.2545162Z | MPV [ao/wasapi] Under-run: Device delay: -3900 ns
+2026-10-14T16:04:14.7291644Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":36.933333,"avsync":0.005624,"frame-drop-count":67}
+2026-10-14T16:04:14.7421671Z | MPV [ao/wasapi] Under-run: Device delay: -4400 ns
+2026-10-14T16:04:15.0098497Z | MPV [ao/wasapi] Under-run: Device delay: -2400 ns
+2026-10-14T16:04:15.4397660Z | MPV [ao/wasapi] Under-run: Device delay: -5200 ns
+2026-10-14T16:04:15.6082291Z | MPV [ao/wasapi] Under-run: Device delay: -5400 ns
+2026-10-14T16:04:15.7289965Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":37.350000,"avsync":0.000024,"frame-drop-count":67}
+2026-10-14T16:04:16.2232589Z | MPV [ao/wasapi] Under-run: Device delay: -1600 ns
+2026-10-14T16:04:16.6663041Z | DECODE gop=15 requested=d3d11va frames=104 bytes=323481600 wall_s_including_backpressure=9.2853198 cpu_s=3.359375 peak_working_set_observed=71913472 resource_sampling=best_effort
+2026-10-14T16:04:16.6663041Z | QUEUE gop=15 total_frame_wait_ms=494
+2026-10-14T16:04:16.6765396Z | DECODE_START gop=17 requested=d3d11va frames=420
+2026-10-14T16:04:16.6800770Z | PRESENT gop=16 frames=194 elapsed=104.9395057
+2026-10-14T16:04:16.8454384Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":37.816667,"avsync":-0.000000,"frame-drop-count":67}
+2026-10-14T16:04:16.8724410Z | MPV [ao/wasapi] Under-run: Device delay: -4900 ns
+2026-10-14T16:04:17.3922854Z | MPV [ao/wasapi] Under-run: Device delay: -4500 ns
+2026-10-14T16:04:17.7523506Z | MPV [ao/wasapi] Under-run: Device delay: -2500 ns
+2026-10-14T16:04:17.9354381Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":38.283333,"avsync":-0.000000,"frame-drop-count":67}
+2026-10-14T16:04:18.0142174Z | MPV [ao/wasapi] Under-run: Device delay: -3000 ns
+2026-10-14T16:04:18.5497501Z | HARDWARE_FRAMES_CONFIRMED gop=17 first_frame via mandatory hwdownload
+2026-10-14T16:04:18.5598924Z | MPV [ao/wasapi] Under-run: Device delay: -3000 ns
+2026-10-14T16:04:19.0981126Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":38.616667,"avsync":0.179478,"frame-drop-count":76}
+2026-10-14T16:04:19.2097810Z | MPV [ao/wasapi] Under-run: Device delay: -2400 ns
+2026-10-14T16:04:19.3162266Z | MPV [ao/wasapi] Under-run: Device delay: -2900 ns
+2026-10-14T16:04:19.5959862Z | MPV [ao/wasapi] Under-run: Device delay: -4500 ns
+2026-10-14T16:04:20.0300791Z | MPV [ao/wasapi] Under-run: Device delay: -2700 ns
+2026-10-14T16:04:20.2138484Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":39.166667,"avsync":0.000018,"frame-drop-count":84}
+2026-10-14T16:04:20.7667835Z | MPV [ao/wasapi] Under-run: Device delay: -2600 ns
+2026-10-14T16:04:21.0839555Z | MPV [ao/wasapi] Under-run: Device delay: -4100 ns
+2026-10-14T16:04:21.2866871Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":39.700000,"avsync":-0.000000,"frame-drop-count":86}
+2026-10-14T16:04:21.3861976Z | MPV [ao/wasapi] Under-run: Device delay: -1900 ns
+2026-10-14T16:04:21.6644098Z | MPV [ao/wasapi] Under-run: Device delay: -3300 ns
+2026-10-14T16:04:21.8169748Z | MPV [ao/wasapi] Under-run: Device delay: -4400 ns
+2026-10-14T16:04:22.2913970Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":40.166667,"avsync":0.000018,"frame-drop-count":87}
+2026-10-14T16:04:22.5255040Z | MPV [ao/wasapi] Under-run: Device delay: -2400 ns
+2026-10-14T16:04:22.9438813Z | MPV [ao/wasapi] Under-run: Device delay: -1700 ns
+2026-10-14T16:04:23.2182349Z | MPV [ao/wasapi] Under-run: Device delay: -1600 ns
+2026-10-14T16:04:23.3004708Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":40.583333,"avsync":0.000011,"frame-drop-count":87}
+2026-10-14T16:04:23.4627271Z | MPV [ao/wasapi] Under-run: Device delay: -1500 ns
+2026-10-14T16:04:23.5871206Z | MPV [ao/wasapi] Under-run: Device delay: -1900 ns
+2026-10-14T16:04:23.7703641Z | MPV [ao/wasapi] Under-run: Device delay: -1900 ns
+2026-10-14T16:04:24.2556811Z | DECODE gop=16 requested=software frames=194 bytes=603417600 wall_s_including_backpressure=12.1501658 cpu_s=6.171875 peak_working_set_observed=64888832 resource_sampling=best_effort
+2026-10-14T16:04:24.2556811Z | QUEUE gop=16 total_frame_wait_ms=2206
+2026-10-14T16:04:24.2673376Z | DECODE_START gop=18 requested=software frames=360
+2026-10-14T16:04:24.2673376Z | PRESENT gop=17 frames=420 elapsed=112.5265253
+2026-10-14T16:04:24.4160250Z | MPV [ao/wasapi] Under-run: Device delay: -6000 ns
+2026-10-14T16:04:24.5055302Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":41.083333,"avsync":0.000014,"frame-drop-count":87}
+2026-10-14T16:04:24.9039134Z | MPV [ao/wasapi] Under-run: Device delay: -2400 ns
+2026-10-14T16:04:25.2724460Z | MPV [ao/wasapi] Under-run: Device delay: -7100 ns
+2026-10-14T16:04:25.5428186Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":41.583333,"avsync":-0.000000,"frame-drop-count":87}
+2026-10-14T16:04:25.6648334Z | MPV [ao/wasapi] Under-run: Device delay: -1400 ns
+2026-10-14T16:04:26.0505148Z | MPV [ao/wasapi] Under-run: Device delay: -3800 ns
+2026-10-14T16:04:26.5448069Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":41.850000,"avsync":0.000019,"frame-drop-count":87}
+2026-10-14T16:04:27.1860630Z | MPV [ao/wasapi] Under-run: Device delay: -3000 ns
+2026-10-14T16:04:27.3446991Z | MPV [ao/wasapi] Under-run: Device delay: -4600 ns
+2026-10-14T16:04:27.5755634Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":42.100000,"avsync":-0.000000,"frame-drop-count":88}
+2026-10-14T16:04:27.6979825Z | MPV [ao/wasapi] Under-run: Device delay: -2500 ns
+2026-10-14T16:04:28.0477548Z | MPV [ao/wasapi] Under-run: Device delay: -4200 ns
+2026-10-14T16:04:28.1743565Z | MPV [ao/wasapi] Under-run: Device delay: -3800 ns
+2026-10-14T16:04:28.5848366Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":42.533333,"avsync":0.008653,"frame-drop-count":89}
+2026-10-14T16:04:28.6685935Z | MPV [ao/wasapi] Under-run: Device delay: -1400 ns
+2026-10-14T16:04:29.5968341Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":42.933333,"avsync":0.002438,"frame-drop-count":90}
+2026-10-14T16:04:29.8136325Z | MPV [ao/wasapi] Under-run: Device delay: -3100 ns
+2026-10-14T16:04:30.0171883Z | MPV [ao/wasapi] Under-run: Device delay: -1900 ns
+2026-10-14T16:04:30.2539322Z | MPV [ao/wasapi] Under-run: Device delay: -3700 ns
+2026-10-14T16:04:30.3765725Z | MPV [ao/wasapi] Under-run: Device delay: -2100 ns
+2026-10-14T16:04:30.4503501Z | MPV [ao/wasapi] Under-run: Device delay: -5300 ns
+2026-10-14T16:04:30.6244619Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":43.300000,"avsync":0.000017,"frame-drop-count":90}
+2026-10-14T16:04:30.8487590Z | MPV [ao/wasapi] Under-run: Device delay: -2400 ns
+2026-10-14T16:04:31.0926460Z | MPV [ao/wasapi] Under-run: Device delay: -1500 ns
+2026-10-14T16:04:31.6403272Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":43.683333,"avsync":0.000026,"frame-drop-count":90}
+2026-10-14T16:04:31.8358569Z | MPV [ao/wasapi] Under-run: Device delay: -5000 ns
+2026-10-14T16:04:32.1644879Z | MPV [ao/wasapi] Under-run: Device delay: -3200 ns
+2026-10-14T16:04:32.4511635Z | MPV [ao/wasapi] Under-run: Device delay: -4100 ns
+2026-10-14T16:04:32.6319867Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":44.050000,"avsync":0.000016,"frame-drop-count":90}
+2026-10-14T16:04:32.8269539Z | MPV [ao/wasapi] Under-run: Device delay: -2000 ns
+2026-10-14T16:04:33.1007104Z | MPV [ao/wasapi] Under-run: Device delay: -1500 ns
+2026-10-14T16:04:33.3492209Z | MPV [ao/wasapi] Under-run: Device delay: -1700 ns
+2026-10-14T16:04:33.6451641Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":44.416667,"avsync":0.000023,"frame-drop-count":90}
+2026-10-14T16:04:33.7295099Z | MPV [ao/wasapi] Under-run: Device delay: -6100 ns
+2026-10-14T16:04:33.8242455Z | MPV [ao/wasapi] Under-run: Device delay: -4100 ns
+2026-10-14T16:04:34.6799062Z | MPV [ao/wasapi] Under-run: Device delay: -4300 ns
+2026-10-14T16:04:34.7107550Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":44.583333,"avsync":-0.000000,"frame-drop-count":90}
+2026-10-14T16:04:35.0015691Z | MPV [ao/wasapi] Under-run: Device delay: -2000 ns
+2026-10-14T16:04:35.2467977Z | MPV [ao/wasapi] Under-run: Device delay: -3000 ns
+2026-10-14T16:04:35.7480374Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":45.050000,"avsync":0.003112,"frame-drop-count":93}
+2026-10-14T16:04:36.7543452Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":45.433333,"avsync":0.006240,"frame-drop-count":94}
+2026-10-14T16:04:36.8576062Z | MPV [ao/wasapi] IAudioClient_Start returned AUDCLNT_E_NOT_STOPPED (0x88890005)
+2026-10-14T16:04:37.2034723Z | MPV [ao/wasapi] Under-run: Device delay: -1800 ns
+2026-10-14T16:04:37.3551313Z | MPV [ao/wasapi] Under-run: Device delay: -3400 ns
+2026-10-14T16:04:37.4628267Z | MPV [ao/wasapi] Under-run: Device delay: -2600 ns
+2026-10-14T16:04:37.7633421Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":45.833333,"avsync":-0.000000,"frame-drop-count":94}
+2026-10-14T16:04:38.4682205Z | MPV [ao/wasapi] Under-run: Device delay: -6500 ns
+2026-10-14T16:04:38.7710755Z | MPV [ao/wasapi] Under-run: Device delay: -1700 ns
+2026-10-14T16:04:38.8102696Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":46.216667,"avsync":0.001040,"frame-drop-count":95}
+2026-10-14T16:04:38.9493564Z | MPV [ao/wasapi] Under-run: Device delay: -3200 ns
+2026-10-14T16:04:39.1178443Z | MPV [ao/wasapi] Under-run: Device delay: -2800 ns
+2026-10-14T16:04:39.8043124Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":46.383333,"avsync":0.003750,"frame-drop-count":95}
+2026-10-14T16:04:40.8144107Z | MPV [ao/wasapi] Under-run: Device delay: -2800 ns
+2026-10-14T16:04:40.8402109Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":46.483333,"avsync":0.000035,"frame-drop-count":95}
+2026-10-14T16:04:41.2204354Z | MPV [ao/wasapi] Under-run: Device delay: -3600 ns
+2026-10-14T16:04:41.4666117Z | MPV [ao/wasapi] Under-run: Device delay: -3100 ns
+2026-10-14T16:04:41.6672230Z | MPV [ao/wasapi] Under-run: Device delay: -4900 ns
+2026-10-14T16:04:41.8464210Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":46.950000,"avsync":-0.000000,"frame-drop-count":96}
+2026-10-14T16:04:41.8765893Z | MPV [ao/wasapi] Under-run: Device delay: -3100 ns
+2026-10-14T16:04:42.1266207Z | MPV [ao/wasapi] Under-run: Device delay: -3400 ns
+2026-10-14T16:04:42.2484500Z | MPV [ao/wasapi] Under-run: Device delay: -1200 ns
+2026-10-14T16:04:42.6435910Z | MPV [ao/wasapi] Under-run: Device delay: -1400 ns
+2026-10-14T16:04:42.8618383Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":47.350000,"avsync":0.012811,"frame-drop-count":99}
+2026-10-14T16:04:43.0455192Z | MPV [ao/wasapi] Under-run: Device delay: -4200 ns
+2026-10-14T16:04:43.7962640Z | MPV [ao/wasapi] Under-run: Device delay: -2400 ns
+2026-10-14T16:04:43.8791083Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":47.733333,"avsync":0.000019,"frame-drop-count":99}
+2026-10-14T16:04:44.1354628Z | MPV [ao/wasapi] Under-run: Device delay: -2400 ns
+2026-10-14T16:04:44.5236630Z | DECODE gop=17 requested=d3d11va frames=420 bytes=1306368000 wall_s_including_backpressure=27.8502232 cpu_s=12.25 peak_working_set_observed=72155136 resource_sampling=best_effort
+2026-10-14T16:04:44.5236630Z | QUEUE gop=17 total_frame_wait_ms=10664
+2026-10-14T16:04:44.5359106Z | DECODE_START gop=19 requested=d3d11va frames=360
+2026-10-14T16:04:44.5359106Z | PRESENT gop=18 frames=360 elapsed=132.797719
+2026-10-14T16:04:44.7724855Z | MPV [ao/wasapi] Under-run: Device delay: -1700 ns
+2026-10-14T16:04:44.9443349Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":48.183333,"avsync":0.000020,"frame-drop-count":100}
+2026-10-14T16:04:45.0421314Z | MPV [ao/wasapi] Under-run: Device delay: -1600 ns
+2026-10-14T16:04:45.1608481Z | MPV [ao/wasapi] Under-run: Device delay: -4800 ns
+2026-10-14T16:04:45.3937239Z | MPV [ao/wasapi] Under-run: Device delay: -1800 ns
+2026-10-14T16:04:45.6866391Z | MPV [ao/wasapi] Under-run: Device delay: -1900 ns
+2026-10-14T16:04:45.8422867Z | HARDWARE_FRAMES_CONFIRMED gop=19 first_frame via mandatory hwdownload
+2026-10-14T16:04:45.9741676Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":48.600000,"avsync":0.003022,"frame-drop-count":100}
+2026-10-14T16:04:46.0557402Z | MPV [ao/wasapi] Under-run: Device delay: -1400 ns
+2026-10-14T16:04:46.3083474Z | MPV [ao/wasapi] Under-run: Device delay: -4600 ns
+2026-10-14T16:04:46.9288628Z | MPV [ao/wasapi] Under-run: Device delay: -1400 ns
+2026-10-14T16:04:46.9806797Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":48.933333,"avsync":0.000017,"frame-drop-count":100}
+2026-10-14T16:04:47.0325355Z | MPV [ao/wasapi] Under-run: Device delay: -3400 ns
+2026-10-14T16:04:47.1658477Z | MPV [ao/wasapi] Under-run: Device delay: -3700 ns
+2026-10-14T16:04:47.6195962Z | MPV [ao/wasapi] Under-run: Device delay: -2000 ns
+2026-10-14T16:04:48.0222103Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":49.350000,"avsync":0.000014,"frame-drop-count":100}
+2026-10-14T16:04:48.7507049Z | MPV [ao/wasapi] Under-run: Device delay: -4400 ns
+2026-10-14T16:04:48.8327094Z | MPV [ao/wasapi] Under-run: Device delay: -1600 ns
+2026-10-14T16:04:49.0273380Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":49.800000,"avsync":0.000277,"frame-drop-count":101}
+2026-10-14T16:04:49.2891797Z | MPV [ao/wasapi] Under-run: Device delay: -4300 ns
+2026-10-14T16:04:49.5149106Z | MPV [ao/wasapi] Under-run: Device delay: -2200 ns
+2026-10-14T16:04:49.5961013Z | MPV [ao/wasapi] Under-run: Device delay: -4700 ns
+2026-10-14T16:04:49.8036621Z | MPV [ao/wasapi] Under-run: Device delay: -3500 ns
+2026-10-14T16:04:49.8871476Z | MPV [ao/wasapi] Under-run: Device delay: -3900 ns
+2026-10-14T16:04:50.0507255Z | MPV [ao/wasapi] Under-run: Device delay: -1800 ns
+2026-10-14T16:04:50.1211878Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":50.216667,"avsync":-0.000000,"frame-drop-count":101}
+2026-10-14T16:04:50.2891435Z | MPV [ao/wasapi] Under-run: Device delay: -1400 ns
+2026-10-14T16:04:50.4281109Z | MPV [ao/wasapi] Under-run: Device delay: -4000 ns
+2026-10-14T16:04:50.8116221Z | MPV [ao/wasapi] Under-run: Device delay: -2700 ns
+2026-10-14T16:04:51.0586940Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":50.633333,"avsync":0.000012,"frame-drop-count":101}
+2026-10-14T16:04:51.2633121Z | MPV [ao/wasapi] Under-run: Device delay: -2800 ns
+2026-10-14T16:04:51.3953235Z | MPV [ao/wasapi] Under-run: Device delay: -1300 ns
+2026-10-14T16:04:51.5111609Z | MPV [ao/wasapi] Under-run: Device delay: -2000 ns
+2026-10-14T16:04:51.7863095Z | MPV [ao/wasapi] Under-run: Device delay: -3700 ns
+2026-10-14T16:04:52.0763663Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":51.050000,"avsync":0.000030,"frame-drop-count":101}
+2026-10-14T16:04:52.1540260Z | MPV [ao/wasapi] Under-run: Device delay: -2200 ns
+2026-10-14T16:04:52.3137421Z | MPV [ao/wasapi] Under-run: Device delay: -2300 ns
+2026-10-14T16:04:52.5073725Z | MPV [ao/wasapi] Under-run: Device delay: -1400 ns
+2026-10-14T16:04:52.5919687Z | MPV [ao/wasapi] Under-run: Device delay: -2800 ns
+2026-10-14T16:04:52.8655017Z | MPV [ao/wasapi] Under-run: Device delay: -2400 ns
+2026-10-14T16:04:52.9839186Z | MPV [ao/wasapi] Under-run: Device delay: -2600 ns
+2026-10-14T16:04:53.1206566Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":51.483333,"avsync":-0.000000,"frame-drop-count":101}
+2026-10-14T16:04:53.1504254Z | MPV [ao/wasapi] Under-run: Device delay: -1500 ns
+2026-10-14T16:04:53.3144450Z | MPV [ao/wasapi] Under-run: Device delay: -1600 ns
+2026-10-14T16:04:53.7574108Z | MPV [ao/wasapi] Under-run: Device delay: -2500 ns
+2026-10-14T16:04:54.1322712Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":51.733333,"avsync":0.000020,"frame-drop-count":101}
+2026-10-14T16:04:55.2698638Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":51.783333,"avsync":-0.000000,"frame-drop-count":101}
+2026-10-14T16:04:55.3218627Z | MPV [ao/wasapi] Under-run: Device delay: -3400 ns
+2026-10-14T16:04:55.7630979Z | MPV [ao/wasapi] Under-run: Device delay: -1800 ns
+2026-10-14T16:04:55.8530872Z | MPV [ao/wasapi] Under-run: Device delay: -3300 ns
+2026-10-14T16:04:56.2312664Z | MPV [ao/wasapi] Under-run: Device delay: -3900 ns
+2026-10-14T16:04:56.2761504Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":52.350000,"avsync":0.000015,"frame-drop-count":101}
+2026-10-14T16:04:56.4249008Z | MPV [ao/wasapi] Under-run: Device delay: -2200 ns
+2026-10-14T16:04:56.5922229Z | MPV [ao/wasapi] Under-run: Device delay: -4400 ns
+2026-10-14T16:04:56.7302070Z | MPV [ao/wasapi] Under-run: Device delay: -3900 ns
+2026-10-14T16:04:56.8283130Z | MPV [ao/wasapi] Under-run: Device delay: -3600 ns
+2026-10-14T16:04:57.0050439Z | MPV [ao/wasapi] Under-run: Device delay: -2900 ns
+2026-10-14T16:04:57.2878468Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":52.750000,"avsync":0.000012,"frame-drop-count":101}
+2026-10-14T16:04:57.5516946Z | MPV [ao/wasapi] Under-run: Device delay: -2400 ns
+2026-10-14T16:04:57.6348274Z | MPV [ao/wasapi] Under-run: Device delay: -4800 ns
+2026-10-14T16:04:58.3000919Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":53.183333,"avsync":-0.000000,"frame-drop-count":101}
+2026-10-14T16:04:58.3488483Z | MPV [ao/wasapi] Under-run: Device delay: -1600 ns
+2026-10-14T16:04:58.6176582Z | MPV [ao/wasapi] Under-run: Device delay: -1400 ns
+2026-10-14T16:04:59.3120518Z | MPV [ao/wasapi] Under-run: Device delay: -5000 ns
+2026-10-14T16:04:59.3264428Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":53.616667,"avsync":-0.000000,"frame-drop-count":101}
+2026-10-14T16:04:59.7178619Z | MPV [ao/wasapi] Under-run: Device delay: -2400 ns
+2026-10-14T16:04:59.8152682Z | MPV [ao/wasapi] Under-run: Device delay: -4900 ns
+2026-10-14T16:05:00.2113466Z | DECODE gop=18 requested=software frames=360 bytes=1119744000 wall_s_including_backpressure=35.9497219 cpu_s=11.890625 peak_working_set_observed=65224704 resource_sampling=best_effort
+2026-10-14T16:05:00.2113466Z | QUEUE gop=18 total_frame_wait_ms=9856
+2026-10-14T16:05:00.2164235Z | PRESENT gop=19 frames=360 elapsed=148.4767124
+2026-10-14T16:05:00.3103398Z | MPV [ao/wasapi] Under-run: Device delay: -4300 ns
+2026-10-14T16:05:00.3555143Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":54.016667,"avsync":-0.000000,"frame-drop-count":101}
+2026-10-14T16:05:00.4236213Z | MPV [ao/wasapi] Under-run: Device delay: -3400 ns
+2026-10-14T16:05:00.6891618Z | MPV [ao/wasapi] Under-run: Device delay: -2200 ns
+2026-10-14T16:05:01.2212398Z | MPV [ao/wasapi] Under-run: Device delay: -3800 ns
+2026-10-14T16:05:01.3552785Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":54.550000,"avsync":0.000020,"frame-drop-count":105}
+2026-10-14T16:05:01.7383480Z | MPV [ao/wasapi] Under-run: Device delay: -1800 ns
+2026-10-14T16:05:02.2200212Z | MPV [ao/wasapi] Under-run: Device delay: -1500 ns
+2026-10-14T16:05:02.3698464Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":54.950000,"avsync":0.009278,"frame-drop-count":105}
+2026-10-14T16:05:02.4604146Z | MPV [ao/wasapi] Under-run: Device delay: -1900 ns
+2026-10-14T16:05:02.6755087Z | MPV [ao/wasapi] Under-run: Device delay: -3700 ns
+2026-10-14T16:05:02.8893798Z | MPV [ao/wasapi] Under-run: Device delay: -1500 ns
+2026-10-14T16:05:03.2519361Z | MPV [ao/wasapi] Under-run: Device delay: -2700 ns
+2026-10-14T16:05:03.4235138Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":55.333333,"avsync":0.003888,"frame-drop-count":105}
+2026-10-14T16:05:04.1487918Z | MPV [ao/wasapi] Under-run: Device delay: -5200 ns
+2026-10-14T16:05:04.4201807Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":55.716667,"avsync":0.000018,"frame-drop-count":105}
+2026-10-14T16:05:05.1792176Z | MPV [ao/wasapi] Under-run: Device delay: -3700 ns
+2026-10-14T16:05:05.4234842Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":56.116667,"avsync":0.001784,"frame-drop-count":105}
+2026-10-14T16:05:06.2796000Z | MPV [ao/wasapi] Under-run: Device delay: -2800 ns
+2026-10-14T16:05:06.4412152Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":56.500000,"avsync":0.000027,"frame-drop-count":106}
+2026-10-14T16:05:06.5777529Z | MPV [ao/wasapi] Under-run: Device delay: -3000 ns
+2026-10-14T16:05:06.9573042Z | MPV [ao/wasapi] Under-run: Device delay: -2400 ns
+2026-10-14T16:05:07.1932581Z | MPV [ao/wasapi] Under-run: Device delay: -2400 ns
+2026-10-14T16:05:07.4417351Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":56.900000,"avsync":0.000011,"frame-drop-count":107}
+2026-10-14T16:05:07.7737239Z | MPV [ao/wasapi] Under-run: Device delay: -5300 ns
+2026-10-14T16:05:08.0169613Z | MPV [ao/wasapi] Under-run: Device delay: -2600 ns
+2026-10-14T16:05:08.3456333Z | MPV [ao/wasapi] Under-run: Device delay: -5200 ns
+2026-10-14T16:05:08.4441765Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":57.283333,"avsync":0.000024,"frame-drop-count":108}
+2026-10-14T16:05:08.8500435Z | MPV [ao/wasapi] Under-run: Device delay: -4500 ns
+2026-10-14T16:05:09.1251291Z | MPV [ao/wasapi] Under-run: Device delay: -2000 ns
+2026-10-14T16:05:09.2640849Z | MPV [ao/wasapi] Under-run: Device delay: -2700 ns
+2026-10-14T16:05:09.4449549Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":57.650000,"avsync":0.000023,"frame-drop-count":108}
+2026-10-14T16:05:09.5806798Z | MPV [ao/wasapi] Under-run: Device delay: -2000 ns
+2026-10-14T16:05:10.4860764Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":58.050000,"avsync":0.002361,"frame-drop-count":110}
+2026-10-14T16:05:10.5184121Z | MPV [ao/wasapi] Under-run: Device delay: -3000 ns
+2026-10-14T16:05:10.8428809Z | MPV [ao/wasapi] Under-run: Device delay: -1300 ns
+2026-10-14T16:05:11.2364538Z | MPV [ao/wasapi] Under-run: Device delay: -2000 ns
+2026-10-14T16:05:11.4867344Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":58.450000,"avsync":0.000011,"frame-drop-count":110}
+2026-10-14T16:05:11.8005730Z | MPV [ao/wasapi] Under-run: Device delay: -2300 ns
+2026-10-14T16:05:12.0062637Z | MPV [ao/wasapi] Under-run: Device delay: -4000 ns
+2026-10-14T16:05:12.3109577Z | MPV [ao/wasapi] Under-run: Device delay: -5700 ns
+2026-10-14T16:05:12.4935024Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":58.833333,"avsync":0.000024,"frame-drop-count":112}
+2026-10-14T16:05:12.6666672Z | MPV [ao/wasapi] Under-run: Device delay: -4000 ns
+2026-10-14T16:05:13.5084334Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":59.016667,"avsync":0.002109,"frame-drop-count":112}
+2026-10-14T16:05:14.5098907Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":true,"time-pos":59.333333,"avsync":0.007277,"frame-drop-count":115}
+2026-10-14T16:05:15.2820949Z | MPV [ao/wasapi] Under-run: Device delay: -4300 ns
+2026-10-14T16:05:15.5407586Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":59.566667,"avsync":0.000018,"frame-drop-count":116}
+2026-10-14T16:05:16.0367372Z | MPV [ao/wasapi] Under-run: Device delay: -2600 ns
+2026-10-14T16:05:16.3556329Z | MPV [ao/wasapi] Under-run: Device delay: -3500 ns
+2026-10-14T16:05:16.5410013Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":59.966667,"avsync":0.000017,"frame-drop-count":116}
+2026-10-14T16:05:16.6013404Z | DECODE gop=19 requested=d3d11va frames=360 bytes=1119744000 wall_s_including_backpressure=32.0705727 cpu_s=10.703125 peak_working_set_observed=72196096 resource_sampling=best_effort
+2026-10-14T16:05:16.6013404Z | QUEUE gop=19 total_frame_wait_ms=8767
+2026-10-14T16:05:17.5574417Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":60.918417,"avsync":0,"frame-drop-count":116}
+2026-10-14T16:05:18.5630697Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":61.934292,"avsync":0,"frame-drop-count":116}
+2026-10-14T16:05:19.5687622Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":62.940012,"avsync":0,"frame-drop-count":116}
+2026-10-14T16:05:20.5846674Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":63.955846,"avsync":0,"frame-drop-count":116}
+2026-10-14T16:05:21.5958091Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":64.951407,"avsync":0,"frame-drop-count":116}
+2026-10-14T16:05:22.5961130Z | MPV [metrics] HYBRID_SAMPLE {"vo-delayed-frame-count":0,"pause":false,"paused-for-cache":false,"time-pos":65.957111,"avsync":0,"frame-drop-count":116}
+2026-10-14T16:05:23.7407021Z | COMPLETED

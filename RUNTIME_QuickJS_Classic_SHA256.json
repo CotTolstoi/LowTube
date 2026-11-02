@@ -1,0 +1,7 @@
+{
+  "RUNTIME_QuickJS_Classic_SOURCE.json": "09b4f58bc162eb61ebb1e2e16d28ef54a9ba06a2d409f507f2f1b33aed4deced",
+  "START_QUICKJS_CLASSIC.cmd": "6286dc332f08fddb938011469d0f9777bcbcd148ff7c9fa62b702b80978c9fe1",
+  "tools/js/quickjs-classic/libwinpthread-1.dll": "1933c3f02ede171b7d9432204a89dfbdd846b86819df3040b0804fe1d02a8b16",
+  "tools/js/quickjs-classic/LICENSE.txt": "598fd7fc928e4350abce36e337ba5a1346923c5c692f5be92c3d8e29ddd7c18d",
+  "tools/js/quickjs-classic/qjs.exe": "433a35a59bd6ff8950c57e6c7e809cae3fa01302ff673c121488b45f738afe3a"
+}

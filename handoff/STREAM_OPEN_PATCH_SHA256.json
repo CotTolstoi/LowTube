@@ -1,0 +1,130 @@
+{
+  "LowTube.Benchmark.exe": {
+    "bytes": 67584,
+    "sha256": "c000e7b1fdbe7e6e0f2bd0d978c90280fbc8e69bb4555c5a4931ed2b256ffd6d"
+  },
+  "LowTube.Hybrid.Compare.exe": {
+    "bytes": 19456,
+    "sha256": "303686e4ac4a1d16009607178e352f6d7eb42ad73e752cf6c1efac0e36cb8830"
+  },
+  "LowTube.Hybrid.exe": {
+    "bytes": 33792,
+    "sha256": "7244655a4d2403f4a08b064162693689181b13924930fa19c2c74088759e8f41"
+  },
+  "LowTube.exe": {
+    "bytes": 611840,
+    "sha256": "2a4bf258232a46d3584c24f4548bcf129afe3ba7c5bba73e0c376bbb0d5b764d"
+  },
+  "README_CODEX_UK.md": {
+    "bytes": 6420,
+    "sha256": "390e59f14dc5eea9bdf567bc62cf22be7467301ae6343d056c1a46b51505478c"
+  },
+  "Run-Checks.ps1": {
+    "bytes": 2125,
+    "sha256": "9142485f14948e2378ad715b18f0507f4eddc9e7391ce84cfc63952d22377b6a"
+  },
+  "handoff/ARCHITECTURE.md": {
+    "bytes": 3564,
+    "sha256": "5bcb3e9135225b8d63d6cbb397c06912a6c949a6fb05a2b585b872018a545de4"
+  },
+  "handoff/DEVELOPMENT_PLAN_UK.md": {
+    "bytes": 10924,
+    "sha256": "3354d5dd0d417e5cb33366278f391378857644c37a95e6a6e12cc4cb59692a77"
+  },
+  "handoff/INNERTUBE_PATCH_SHA256.json": {
+    "bytes": 2889,
+    "sha256": "bd8e2fc2986b6eb61e7c2a0590d377a3ee922c478431f65be8183baaf378d7bc"
+  },
+  "handoff/INNERTUBE_VALIDATION_UK.md": {
+    "bytes": 12596,
+    "sha256": "e373f4c5bb89a454e8506d2b046a417eafa09f202f2f43d2ffccc15fdc9c21ba"
+  },
+  "handoff/PROJECT_STATE.md": {
+    "bytes": 6846,
+    "sha256": "57860c811d055a5bf3b605570066976ef151ca8459e3fbe0a71a8938d8393a71"
+  },
+  "handoff/RELIABILITY_PATCH_SHA256.json": {
+    "bytes": 3482,
+    "sha256": "4d292ac52f2e3f2d5519b9bee674db68968bd4a578bfefce300ac58d32f62f99"
+  },
+  "handoff/STREAM_OPEN_VALIDATION_UK.md": {
+    "bytes": 7018,
+    "sha256": "7ad605d5ac4fe1643bcfd31334c68de20e97f3973d51a7505c48f67ac0101953"
+  },
+  "src/AssemblyInfo.cs": {
+    "bytes": 333,
+    "sha256": "026a2e24442f2462ba948f32a6c61a69fe407928af8c339a62912e8861acbcac"
+  },
+  "src/BackgroundFeeds.cs": {
+    "bytes": 19606,
+    "sha256": "3bd2f3a39e9cec9c8b9a5e81748e2ee09b269be213d662a981db5fa92f6f2fc9"
+  },
+  "src/Core.cs": {
+    "bytes": 33612,
+    "sha256": "f85f8cca44bac4162c6d14093bbaa97262f273af7c7cd43db9ab4f621ab262e1"
+  },
+  "src/I18n.cs": {
+    "bytes": 108989,
+    "sha256": "427bb3b90915ab69a210eaa5eb0202795eb26b4104018d6d143209e29447522f"
+  },
+  "src/InnerTube.cs": {
+    "bytes": 25811,
+    "sha256": "2781e6e4bc1cfddf6b89f110f3838a02a70f3c2e8be16bb6b3cb4ceab545c645"
+  },
+  "src/InnerTubeFailures.cs": {
+    "bytes": 3350,
+    "sha256": "32d498b5704869fb44458d30f070fda8eb5e759768abc11874cf74c4385701f8"
+  },
+  "src/InnerTubeJson.cs": {
+    "bytes": 13969,
+    "sha256": "3acabdf4a9ebe60d297df07364ac546256b568547122892f168cf6480327a965"
+  },
+  "src/MainForm.cs": {
+    "bytes": 65400,
+    "sha256": "eabab74b5a3051381c5925601219edcc410f712eb98ae4d8b8302a559f007172"
+  },
+  "src/Player.cs": {
+    "bytes": 29876,
+    "sha256": "9e3badcb2bc8643899c96f778cd1eb836a76df5b98fa97d639bac88e1fa97718"
+  },
+  "src/SavedSession.cs": {
+    "bytes": 11074,
+    "sha256": "68624d80edce81598946f9f477653f9f6a5b1a8928b1a3ba93c3ed9e02322869"
+  },
+  "src/StartupTrace.cs": {
+    "bytes": 12460,
+    "sha256": "6f1809278c17453e889e725affc4960638d3b28b3e4782075bb83b53ba3d4d12"
+  },
+  "src/StreamOpenRecovery.cs": {
+    "bytes": 4093,
+    "sha256": "1fc6911c38ef8ca867d88d0850aa10eabb80b5ac722151e5e7c1a4e124d1da07"
+  },
+  "tests/ContinuityTests.cs": {
+    "bytes": 7421,
+    "sha256": "9018740b17fcd7888e7860aeefa59eecf38669fe0124630f52b4ce7656a74b46"
+  },
+  "tests/CoreTests.cs": {
+    "bytes": 56471,
+    "sha256": "6f9df2cd3def673821a0ee2fed62bb0fa507470b1a5b7084184de16c3acbfffe"
+  },
+  "tests/FeatureTests.cs": {
+    "bytes": 7646,
+    "sha256": "c5ebbaf2db180071487214410ff90442487f6b4d0d8634ba802b424385285a5d"
+  },
+  "tests/InnerTubeReliabilityTests.cs": {
+    "bytes": 14250,
+    "sha256": "a8374339085ac51fa4d1a1e46fc4c92f5375db2c217849f9bf70efa69db9e96b"
+  },
+  "tests/InnerTubeTests.cs": {
+    "bytes": 21057,
+    "sha256": "cc25a7f492943e2c1ada583e625ff01a85e80068d1657d9dd7d51535a72520d9"
+  },
+  "tests/StreamOpenTests.cs": {
+    "bytes": 5386,
+    "sha256": "cd5e124a29185cdd864442470d267b9371f417d1c267a4219b71afebd4e03436"
+  },
+  "tests/WindowsStreamOpenTests.cs": {
+    "bytes": 4618,
+    "sha256": "407d968c747b13869ed7ed276e97388eb359a6cc4b918a62a4e4891545d4b0f6"
+  }
+}

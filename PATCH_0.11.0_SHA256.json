@@ -1,0 +1,23 @@
+{
+  "LowTube.exe": "fb84c5eb4cf2388277c6709a116bb974554d2bbb5d5966b5a58fae0191f2e694",
+  "PATCH_0.11.0_UK.txt": "93f8d83e659225c3fac71e821d40cd1ca68e87fd0fe988e4f7e33e5b86fe347b",
+  "player/lowtube.lua": "d3c86447a585deb172b61d61e126fd8f78ed6a931e60af83f0370bc442a415ec",
+  "src/AssemblyInfo.cs": "842bdf0a3aa04d2399b745438e9a3f0a80a246e4fcc1d07970b272c176cab299",
+  "src/BackgroundFeeds.cs": "2fc396161ce2647143ac8de62ec681cd684714538cc48142c6d4efc822e432b5",
+  "src/ContinuityModels.cs": "82cc5e9b03ad3a3f6c6f7fc8e53e320b013e3b30949603a21a18e43037fa878b",
+  "src/Core.cs": "e705de256abf736799aecb26407942a0640d73519f8feeec61cee8c7db606752",
+  "src/FormatCache.cs": "b13bc1a4057dcda553882911f4fad1bf28706517229bdb2f07e5c3ae261da281",
+  "src/I18n.cs": "ee869ad12009871ee95562f6715403338949efcfcffeb001e83bfcf8b1c26b01",
+  "src/LibraryFeatures.cs": "39739baa058dd193458da077b00c1ee57f75b0d9ab0bc67a1e1da06fa303a779",
+  "src/MainForm.cs": "36fb01feb3b80b2b17cbf54f396c5759d0cd34073ceef6eb0b3212191e2fae0b",
+  "src/PlaybackTrace.cs": "6bfeb2af95d39680d98a394d646bf34e7edbdcab42490ed69945995d6baad7f4",
+  "src/Player.cs": "d68bb5fa7c3e75735d719d7d6c1db0e1d2fbe320f2fc32d5aada5a9162c6b1b9",
+  "src/StartupTrace.cs": "914a2379b8acf7038da21e006be4ee4b41e53285cf24df365940868dc4fe4056",
+  "src/StreamContinuity.cs": "cf04e4d6daa0345b508a2c3a59cccfa29c7f3f37ec616ee4bf0003677972842b",
+  "src/VideoGrid.cs": "ec8bb3b6370739e823ff3221ef55434ff8305bb2a5cd4baeb1faaaf847a50465",
+  "src/WorkspaceFeatures.cs": "88e6f942a2a3bea89173b787a3bd15f84dfdf50f5532c1f46a2af56bbe1169c5",
+  "tests/ContinuityTests.cs": "5318fa859634960c588b6e004ae895811eb33bc7123870c8117bd0500f470ee8",
+  "tests/CoreTests.cs": "abdb5080dab1e35536a823ae54080241d0d152ed7729547315845fa488df1700",
+  "tests/RUN_CONTINUITY_TESTS.cmd": "eb81aa8ca9a50c213b35c90e81e782168c0efce7bc3886fccd8a05bfde35bf8d",
+  "tests/test_seek_guard.py": "98180c567d3f8c2fbe5d346fc6d9911159e676f22adeaba2e117cf813b12c921"
+}

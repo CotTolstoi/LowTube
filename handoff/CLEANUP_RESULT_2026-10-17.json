@@ -1,0 +1,1835 @@
+{
+  "date": "2026-10-17",
+  "root": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube",
+  "authorization": "User requested removal of all disposable items after reviewing audit.",
+  "status": "completed",
+  "plannedFiles": 256,
+  "plannedBytes": 216871705,
+  "quickJsKept": "Required by current MainForm startup dependency check; no application code changed.",
+  "files": [
+    {
+      "group": "A1",
+      "path": "download-cache/20b2f500c9d94fc417ea770d37c4f27e4c26a707e54052973a0591cb663169c7-ffmpeg-master-latest-win64-gpl-shared.zip",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\download-cache\\20b2f500c9d94fc417ea770d37c4f27e4c26a707e54052973a0591cb663169c7-ffmpeg-master-latest-win64-gpl-shared.zip",
+      "bytes": 88848730,
+      "status": "deleted"
+    },
+    {
+      "group": "A1",
+      "path": "download-cache/256feca8e274e5da655e2a284fabafd9f554365eb164862089dacd4e8276d282-7zr.exe",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\download-cache\\256feca8e274e5da655e2a284fabafd9f554365eb164862089dacd4e8276d282-7zr.exe",
+      "bytes": 602624,
+      "status": "deleted"
+    },
+    {
+      "group": "A1",
+      "path": "download-cache/2aeabf0092c3262d6b2609824418f7dd7ed1f1df939f73b2b15645230cac0d77-qjs-windows-x86_64.exe",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\download-cache\\2aeabf0092c3262d6b2609824418f7dd7ed1f1df939f73b2b15645230cac0d77-qjs-windows-x86_64.exe",
+      "bytes": 2151363,
+      "status": "deleted"
+    },
+    {
+      "group": "A1",
+      "path": "download-cache/2b0ff57b049cda1bbcea2240eec20467018713c1efe1f7360c2681859b90ed71-node-v22.23.3-win-x64.zip",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\download-cache\\2b0ff57b049cda1bbcea2240eec20467018713c1efe1f7360c2681859b90ed71-node-v22.23.3-win-x64.zip",
+      "bytes": 35574076,
+      "status": "deleted"
+    },
+    {
+      "group": "A1",
+      "path": "download-cache/30b4c14aafab6082becff7881e41b76df46dc43ea7633479410a91e29da492bf-yt-dlp_win.zip",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\download-cache\\30b4c14aafab6082becff7881e41b76df46dc43ea7633479410a91e29da492bf-yt-dlp_win.zip",
+      "bytes": 18087041,
+      "status": "deleted"
+    },
+    {
+      "group": "A1",
+      "path": "download-cache/f9becefe40e2a29d2ce5f3ab231ff094f9cf3e4038ff014cfe4a0c09ad90e79e-mpv-x86_64-20261015-git-492bae0768.7z",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\download-cache\\f9becefe40e2a29d2ce5f3ab231ff094f9cf3e4038ff014cfe4a0c09ad90e79e-mpv-x86_64-20261015-git-492bae0768.7z",
+      "bytes": 33969226,
+      "status": "deleted"
+    },
+    {
+      "group": "A2",
+      "path": "Test.BenchPlanTests.exe",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\Test.BenchPlanTests.exe",
+      "bytes": 11776,
+      "status": "deleted"
+    },
+    {
+      "group": "A2",
+      "path": "Test.ContinuityTests.exe",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\Test.ContinuityTests.exe",
+      "bytes": 16384,
+      "status": "deleted"
+    },
+    {
+      "group": "A2",
+      "path": "Test.CoreTests.exe",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\Test.CoreTests.exe",
+      "bytes": 73216,
+      "status": "deleted"
+    },
+    {
+      "group": "A2",
+      "path": "Test.FeatureTests.exe",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\Test.FeatureTests.exe",
+      "bytes": 19456,
+      "status": "deleted"
+    },
+    {
+      "group": "A2",
+      "path": "Test.GoogleTests.exe",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\Test.GoogleTests.exe",
+      "bytes": 11776,
+      "status": "deleted"
+    },
+    {
+      "group": "A2",
+      "path": "Test.InnerTubeReliabilityTests.exe",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\Test.InnerTubeReliabilityTests.exe",
+      "bytes": 27648,
+      "status": "deleted"
+    },
+    {
+      "group": "A2",
+      "path": "Test.InnerTubeTests.exe",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\Test.InnerTubeTests.exe",
+      "bytes": 41984,
+      "status": "deleted"
+    },
+    {
+      "group": "A2",
+      "path": "Test.PlaybackSelectionTests.exe",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\Test.PlaybackSelectionTests.exe",
+      "bytes": 7680,
+      "status": "deleted"
+    },
+    {
+      "group": "A2",
+      "path": "Test.StreamOpenTests.exe",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\Test.StreamOpenTests.exe",
+      "bytes": 15360,
+      "status": "deleted"
+    },
+    {
+      "group": "A2",
+      "path": "Test.StreamProbe.exe",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\Test.StreamProbe.exe",
+      "bytes": 9728,
+      "status": "deleted"
+    },
+    {
+      "group": "A2",
+      "path": "Test.WindowsPlayerStopTests.exe",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\Test.WindowsPlayerStopTests.exe",
+      "bytes": 37888,
+      "status": "deleted"
+    },
+    {
+      "group": "A2",
+      "path": "Test.WindowsStreamOpenTests.exe",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\Test.WindowsStreamOpenTests.exe",
+      "bytes": 19968,
+      "status": "deleted"
+    },
+    {
+      "group": "A3",
+      "path": ".checks-temp/StreamProbe.cs",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\.checks-temp\\StreamProbe.cs",
+      "bytes": 2530,
+      "status": "deleted"
+    },
+    {
+      "group": "A3",
+      "path": ".checks-temp/checks-full.log",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\.checks-temp\\checks-full.log",
+      "bytes": 22712,
+      "status": "deleted"
+    },
+    {
+      "group": "A3",
+      "path": ".checks-temp/checks.log",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\.checks-temp\\checks.log",
+      "bytes": 16261,
+      "status": "deleted"
+    },
+    {
+      "group": "A3",
+      "path": ".checks-temp/lowtube-features-f1b3f15dea1149099015dd4c24b5e90d/cancel.json.tmp",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\.checks-temp\\lowtube-features-f1b3f15dea1149099015dd4c24b5e90d\\cancel.json.tmp",
+      "bytes": 389,
+      "status": "deleted"
+    },
+    {
+      "group": "A3",
+      "path": ".checks-temp/lowtube-rate-dfd7bc24c2fc4bed90f6f7b1e98fbeab/jobs.json",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\.checks-temp\\lowtube-rate-dfd7bc24c2fc4bed90f6f7b1e98fbeab\\jobs.json",
+      "bytes": 954,
+      "status": "deleted"
+    },
+    {
+      "group": "A3",
+      "path": ".checks-temp/osc-close-2026-10-17-final.log",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\.checks-temp\\osc-close-2026-10-17-final.log",
+      "bytes": 28512,
+      "status": "deleted"
+    },
+    {
+      "group": "A3",
+      "path": ".checks-temp/osc-close-2026-10-17.log",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\.checks-temp\\osc-close-2026-10-17.log",
+      "bytes": 28947,
+      "status": "deleted"
+    },
+    {
+      "group": "A3",
+      "path": ".checks-temp/package_0_11_3.py",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\.checks-temp\\package_0_11_3.py",
+      "bytes": 2280,
+      "status": "deleted"
+    },
+    {
+      "group": "A3",
+      "path": ".checks-temp/package_0_11_4.py",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\.checks-temp\\package_0_11_4.py",
+      "bytes": 1942,
+      "status": "deleted"
+    },
+    {
+      "group": "A3",
+      "path": ".checks-temp/package_0_11_5.py",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\.checks-temp\\package_0_11_5.py",
+      "bytes": 2060,
+      "status": "deleted"
+    },
+    {
+      "group": "A3",
+      "path": ".checks-temp/package_0_11_6.py",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\.checks-temp\\package_0_11_6.py",
+      "bytes": 1909,
+      "status": "deleted"
+    },
+    {
+      "group": "A3",
+      "path": ".checks-temp/package_patch.py",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\.checks-temp\\package_patch.py",
+      "bytes": 2055,
+      "status": "deleted"
+    },
+    {
+      "group": "A3",
+      "path": ".checks-temp/playback-stop-final.log",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\.checks-temp\\playback-stop-final.log",
+      "bytes": 27907,
+      "status": "deleted"
+    },
+    {
+      "group": "A3",
+      "path": ".checks-temp/playback-stop.log",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\.checks-temp\\playback-stop.log",
+      "bytes": 28530,
+      "status": "deleted"
+    },
+    {
+      "group": "A3",
+      "path": ".checks-temp/public.log",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\.checks-temp\\public.log",
+      "bytes": 3393,
+      "status": "deleted"
+    },
+    {
+      "group": "A3",
+      "path": ".checks-temp/stage1-checks.log",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\.checks-temp\\stage1-checks.log",
+      "bytes": 24946,
+      "status": "deleted"
+    },
+    {
+      "group": "A3",
+      "path": ".checks-temp/stage1-public.log",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\.checks-temp\\stage1-public.log",
+      "bytes": 3454,
+      "status": "deleted"
+    },
+    {
+      "group": "A3",
+      "path": ".checks-temp/stream-checks.log",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\.checks-temp\\stream-checks.log",
+      "bytes": 26300,
+      "status": "deleted"
+    },
+    {
+      "group": "B",
+      "path": "LowTube_0.11.3_patch_2026-10-15.zip",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\LowTube_0.11.3_patch_2026-10-15.zip",
+      "bytes": 399111,
+      "status": "deleted"
+    },
+    {
+      "group": "B",
+      "path": "LowTube_0.11.4_patch_2026-10-15.zip",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\LowTube_0.11.4_patch_2026-10-15.zip",
+      "bytes": 438522,
+      "status": "deleted"
+    },
+    {
+      "group": "B",
+      "path": "LowTube_0.11.5_patch_2026-10-15.zip",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\LowTube_0.11.5_patch_2026-10-15.zip",
+      "bytes": 467910,
+      "status": "deleted"
+    },
+    {
+      "group": "B",
+      "path": "LowTube_InnerTube_patch_2026-10-15.zip",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\LowTube_InnerTube_patch_2026-10-15.zip",
+      "bytes": 384728,
+      "status": "deleted"
+    },
+    {
+      "group": "C1",
+      "path": "tools/ffmpeg/ffplay.exe",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\ffplay.exe",
+      "bytes": 19156992,
+      "status": "deleted"
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/bootstrap.min.css",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\doc\\bootstrap.min.css",
+      "bytes": 109483,
+      "status": "deleted"
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/community.html",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\doc\\community.html",
+      "bytes": 13505,
+      "status": "deleted"
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/default.css",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\doc\\default.css",
+      "bytes": 2494,
+      "status": "deleted"
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/developer.html",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\doc\\developer.html",
+      "bytes": 65770,
+      "status": "deleted"
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/drawvg-reference.html",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\doc\\drawvg-reference.html",
+      "bytes": 147341,
+      "status": "deleted"
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/faq.html",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\doc\\faq.html",
+      "bytes": 63702,
+      "status": "deleted"
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/fate.html",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\doc\\fate.html",
+      "bytes": 18768,
+      "status": "deleted"
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/ffmpeg-all.html",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\doc\\ffmpeg-all.html",
+      "bytes": 3170258,
+      "status": "deleted"
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/ffmpeg-bitstream-filters.html",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\doc\\ffmpeg-bitstream-filters.html",
+      "bytes": 73014,
+      "status": "deleted"
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/ffmpeg-codecs.html",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\doc\\ffmpeg-codecs.html",
+      "bytes": 362715,
+      "status": "deleted"
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/ffmpeg-devices.html",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\doc\\ffmpeg-devices.html",
+      "bytes": 114015,
+      "status": "deleted"
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/ffmpeg-filters.html",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\doc\\ffmpeg-filters.html",
+      "bytes": 1723294,
+      "status": "deleted"
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/ffmpeg-formats.html",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\doc\\ffmpeg-formats.html",
+      "bytes": 346962,
+      "status": "deleted"
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/ffmpeg-protocols.html",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\doc\\ffmpeg-protocols.html",
+      "bytes": 134892,
+      "status": "deleted"
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/ffmpeg-resampler.html",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\doc\\ffmpeg-resampler.html",
+      "bytes": 13818,
+      "status": "deleted"
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/ffmpeg-scaler.html",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\doc\\ffmpeg-scaler.html",
+      "bytes": 12981,
+      "status": "deleted"
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/ffmpeg-utils.html",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\doc\\ffmpeg-utils.html",
+      "bytes": 55775,
+      "status": "deleted"
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/ffmpeg.html",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\doc\\ffmpeg.html",
+      "bytes": 222447,
+      "status": "deleted"
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/ffplay-all.html",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\doc\\ffplay-all.html",
+      "bytes": 2446539,
+      "status": "deleted"
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/ffplay.html",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\doc\\ffplay.html",
+      "bytes": 43262,
+      "status": "deleted"
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/ffprobe-all.html",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\doc\\ffprobe-all.html",
+      "bytes": 2462431,
+      "status": "deleted"
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/ffprobe.html",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\doc\\ffprobe.html",
+      "bytes": 59074,
+      "status": "deleted"
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/general.html",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\doc\\general.html",
+      "bytes": 133600,
+      "status": "deleted"
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/git-howto.html",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\doc\\git-howto.html",
+      "bytes": 27737,
+      "status": "deleted"
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/libavcodec.html",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\doc\\libavcodec.html",
+      "bytes": 3147,
+      "status": "deleted"
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/libavdevice.html",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\doc\\libavdevice.html",
+      "bytes": 3026,
+      "status": "deleted"
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/libavfilter.html",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\doc\\libavfilter.html",
+      "bytes": 3092,
+      "status": "deleted"
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/libavformat.html",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\doc\\libavformat.html",
+      "bytes": 3122,
+      "status": "deleted"
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/libavutil.html",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\doc\\libavutil.html",
+      "bytes": 3621,
+      "status": "deleted"
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/libswresample.html",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\doc\\libswresample.html",
+      "bytes": 4005,
+      "status": "deleted"
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/libswscale.html",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\doc\\libswscale.html",
+      "bytes": 3621,
+      "status": "deleted"
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/mailing-list-faq.html",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\doc\\mailing-list-faq.html",
+      "bytes": 31209,
+      "status": "deleted"
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/nut.html",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\doc\\nut.html",
+      "bytes": 11279,
+      "status": "deleted"
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/platform.html",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\doc\\platform.html",
+      "bytes": 18861,
+      "status": "deleted"
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/style.min.css",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\doc\\style.min.css",
+      "bytes": 6523,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/ac3_parser.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavcodec\\ac3_parser.h",
+      "bytes": 1207,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/adts_parser.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavcodec\\adts_parser.h",
+      "bytes": 1354,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/avcodec.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavcodec\\avcodec.h",
+      "bytes": 110821,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/avdct.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavcodec\\avdct.h",
+      "bytes": 2767,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/bsf.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavcodec\\bsf.h",
+      "bytes": 25839,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/codec.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavcodec\\codec.h",
+      "bytes": 11922,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/codec_desc.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavcodec\\codec_desc.h",
+      "bytes": 4264,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/codec_id.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavcodec\\codec_id.h",
+      "bytes": 18734,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/codec_par.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavcodec\\codec_par.h",
+      "bytes": 8400,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/d3d11va.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavcodec\\d3d11va.h",
+      "bytes": 2610,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/defs.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavcodec\\defs.h",
+      "bytes": 13981,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/dirac.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavcodec\\dirac.h",
+      "bytes": 4126,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/dv_profile.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavcodec\\dv_profile.h",
+      "bytes": 3694,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/dxva2.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavcodec\\dxva2.h",
+      "bytes": 2128,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/exif.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavcodec\\exif.h",
+      "bytes": 8430,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/jni.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavcodec\\jni.h",
+      "bytes": 2263,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/mediacodec.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavcodec\\mediacodec.h",
+      "bytes": 3742,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/packet.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavcodec\\packet.h",
+      "bytes": 33047,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/qsv.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavcodec\\qsv.h",
+      "bytes": 3844,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/smpte_436m.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavcodec\\smpte_436m.h",
+      "bytes": 11580,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/vdpau.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavcodec\\vdpau.h",
+      "bytes": 4555,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/version.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavcodec\\version.h",
+      "bytes": 1619,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/version_major.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavcodec\\version_major.h",
+      "bytes": 1696,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/videotoolbox.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavcodec\\videotoolbox.h",
+      "bytes": 2445,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/vorbis_parser.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavcodec\\vorbis_parser.h",
+      "bytes": 2285,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavdevice/avdevice.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavdevice\\avdevice.h",
+      "bytes": 13506,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavdevice/version.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavdevice\\version.h",
+      "bytes": 1624,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavdevice/version_major.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavdevice\\version_major.h",
+      "bytes": 1200,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavfilter/avfilter.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavfilter\\avfilter.h",
+      "bytes": 45981,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavfilter/buffersink.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavfilter\\buffersink.h",
+      "bytes": 7102,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavfilter/buffersrc.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavfilter\\buffersrc.h",
+      "bytes": 7334,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavfilter/version.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavfilter\\version.h",
+      "bytes": 1653,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavfilter/version_major.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavfilter\\version_major.h",
+      "bytes": 1223,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavformat/avformat.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavformat\\avformat.h",
+      "bytes": 127549,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavformat/avio.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavformat\\avio.h",
+      "bytes": 31178,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavformat/version.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavformat\\version.h",
+      "bytes": 1652,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavformat/version_major.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavformat\\version_major.h",
+      "bytes": 2024,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/adler32.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\adler32.h",
+      "bytes": 1696,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/aes.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\aes.h",
+      "bytes": 1912,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/aes_ctr.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\aes_ctr.h",
+      "bytes": 2443,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/ambient_viewing_environment.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\ambient_viewing_environment.h",
+      "bytes": 2585,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/attributes.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\attributes.h",
+      "bytes": 6672,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/audio_fifo.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\audio_fifo.h",
+      "bytes": 5966,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/avassert.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\avassert.h",
+      "bytes": 4015,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/avconfig.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\avconfig.h",
+      "bytes": 180,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/avstring.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\avstring.h",
+      "bytes": 14962,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/avutil.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\avutil.h",
+      "bytes": 8702,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/base64.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\base64.h",
+      "bytes": 2285,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/blowfish.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\blowfish.h",
+      "bytes": 2394,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/bprint.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\bprint.h",
+      "bytes": 8818,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/bswap.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\bswap.h",
+      "bytes": 2788,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/buffer.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\buffer.h",
+      "bytes": 11998,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/camellia.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\camellia.h",
+      "bytes": 2139,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/cast5.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\cast5.h",
+      "bytes": 2561,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/channel_layout.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\channel_layout.h",
+      "bytes": 35181,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/common.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\common.h",
+      "bytes": 17359,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/container_fifo.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\container_fifo.h",
+      "bytes": 4855,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/cpu.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\cpu.h",
+      "bytes": 6899,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/crc.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\crc.h",
+      "bytes": 3259,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/csp.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\csp.h",
+      "bytes": 7304,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/des.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\des.h",
+      "bytes": 2514,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/detection_bbox.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\detection_bbox.h",
+      "bytes": 3524,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/dict.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\dict.h",
+      "bytes": 9521,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/display.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\display.h",
+      "bytes": 3472,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/dovi_meta.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\dovi_meta.h",
+      "bytes": 12730,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/downmix_info.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\downmix_info.h",
+      "bytes": 5373,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/encryption_info.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\encryption_info.h",
+      "bytes": 7056,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/error.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\error.h",
+      "bytes": 5555,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/eval.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\eval.h",
+      "bytes": 6600,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/executor.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\executor.h",
+      "bytes": 1924,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/ffversion.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\ffversion.h",
+      "bytes": 208,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/fifo.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\fifo.h",
+      "bytes": 8487,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/file.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\file.h",
+      "bytes": 3416,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/film_grain_params.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\film_grain_params.h",
+      "bytes": 9190,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/frame.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\frame.h",
+      "bytes": 44367,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/gain_map.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\gain_map.h",
+      "bytes": 4771,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hash.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\hash.h",
+      "bytes": 8457,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hdr_dynamic_metadata.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\hdr_dynamic_metadata.h",
+      "bytes": 18538,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hdr_dynamic_vivid_metadata.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\hdr_dynamic_vivid_metadata.h",
+      "bytes": 8427,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hmac.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\hmac.h",
+      "bytes": 2865,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hwcontext.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\hwcontext.h",
+      "bytes": 24170,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hwcontext_amf.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\hwcontext_amf.h",
+      "bytes": 2292,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hwcontext_cuda.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\hwcontext_cuda.h",
+      "bytes": 4025,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hwcontext_d3d11va.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\hwcontext_d3d11va.h",
+      "bytes": 7653,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hwcontext_d3d12va.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\hwcontext_d3d12va.h",
+      "bytes": 6201,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hwcontext_drm.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\hwcontext_drm.h",
+      "bytes": 4673,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hwcontext_dxva2.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\hwcontext_dxva2.h",
+      "bytes": 2411,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hwcontext_mediacodec.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\hwcontext_mediacodec.h",
+      "bytes": 1988,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hwcontext_oh.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\hwcontext_oh.h",
+      "bytes": 1098,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hwcontext_opencl.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\hwcontext_opencl.h",
+      "bytes": 3098,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hwcontext_qsv.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\hwcontext_qsv.h",
+      "bytes": 2515,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hwcontext_vaapi.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\hwcontext_vaapi.h",
+      "bytes": 3784,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hwcontext_vdpau.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\hwcontext_vdpau.h",
+      "bytes": 1360,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hwcontext_videotoolbox.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\hwcontext_videotoolbox.h",
+      "bytes": 4745,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hwcontext_vulkan.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\hwcontext_vulkan.h",
+      "bytes": 11870,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/iamf.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\iamf.h",
+      "bytes": 21603,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/imgutils.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\imgutils.h",
+      "bytes": 16326,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/intfloat.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\intfloat.h",
+      "bytes": 1726,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/intreadwrite.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\intreadwrite.h",
+      "bytes": 19426,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/lfg.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\lfg.h",
+      "bytes": 2542,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/log.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\log.h",
+      "bytes": 14088,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/lzo.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\lzo.h",
+      "bytes": 2048,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/macros.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\macros.h",
+      "bytes": 2304,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/mastering_display_metadata.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\mastering_display_metadata.h",
+      "bytes": 4284,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/mathematics.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\mathematics.h",
+      "bytes": 9565,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/md5.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\md5.h",
+      "bytes": 2092,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/mem.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\mem.h",
+      "bytes": 20521,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/motion_vector.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\motion_vector.h",
+      "bytes": 1770,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/murmur3.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\murmur3.h",
+      "bytes": 3507,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/opt.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\opt.h",
+      "bytes": 46402,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/parseutils.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\parseutils.h",
+      "bytes": 7888,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/pixdesc.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\pixdesc.h",
+      "bytes": 16432,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/pixelutils.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\pixelutils.h",
+      "bytes": 2051,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/pixfmt.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\pixfmt.h",
+      "bytes": 48517,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/random_seed.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\random_seed.h",
+      "bytes": 1889,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/rational.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\rational.h",
+      "bytes": 6287,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/raw_color_params.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\raw_color_params.h",
+      "bytes": 5621,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/rc4.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\rc4.h",
+      "bytes": 2004,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/refstruct.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\refstruct.h",
+      "bytes": 12172,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/replaygain.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\replaygain.h",
+      "bytes": 1607,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/ripemd.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\ripemd.h",
+      "bytes": 2158,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/samplefmt.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\samplefmt.h",
+      "bytes": 10562,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/sha.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\sha.h",
+      "bytes": 2368,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/sha512.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\sha512.h",
+      "bytes": 2413,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/spherical.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\spherical.h",
+      "bytes": 8607,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/stereo3d.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\stereo3d.h",
+      "bytes": 7446,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/tdrdi.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\tdrdi.h",
+      "bytes": 5280,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/tea.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\tea.h",
+      "bytes": 2035,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/threadmessage.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\threadmessage.h",
+      "bytes": 3910,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/time.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\time.h",
+      "bytes": 1800,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/timecode.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\timecode.h",
+      "bytes": 7843,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/timestamp.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\timestamp.h",
+      "bytes": 2726,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/tree.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\tree.h",
+      "bytes": 5408,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/twofish.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\twofish.h",
+      "bytes": 2245,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/tx.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\tx.h",
+      "bytes": 7141,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/uuid.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\uuid.h",
+      "bytes": 4895,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/version.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\version.h",
+      "bytes": 4195,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/video_enc_params.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\video_enc_params.h",
+      "bytes": 5991,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/video_hint.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\video_hint.h",
+      "bytes": 3585,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/xtea.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libavutil\\xtea.h",
+      "bytes": 2834,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libswresample/swresample.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libswresample\\swresample.h",
+      "bytes": 22476,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libswresample/version.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libswresample\\version.h",
+      "bytes": 1707,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libswresample/version_major.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libswresample\\version_major.h",
+      "bytes": 1015,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libswscale/swscale.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libswscale\\swscale.h",
+      "bytes": 28916,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libswscale/version.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libswscale\\version.h",
+      "bytes": 1589,
+      "status": "deleted"
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libswscale/version_major.h",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\include\\libswscale\\version_major.h",
+      "bytes": 1176,
+      "status": "deleted"
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/avcodec-63.def",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\lib\\avcodec-63.def",
+      "bytes": 5306,
+      "status": "deleted"
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/avcodec.lib",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\lib\\avcodec.lib",
+      "bytes": 160438,
+      "status": "deleted"
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/avdevice-63.def",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\lib\\avdevice-63.def",
+      "bytes": 453,
+      "status": "deleted"
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/avdevice.lib",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\lib\\avdevice.lib",
+      "bytes": 14120,
+      "status": "deleted"
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/avfilter-12.def",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\lib\\avfilter-12.def",
+      "bytes": 2011,
+      "status": "deleted"
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/avfilter.lib",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\lib\\avfilter.lib",
+      "bytes": 58058,
+      "status": "deleted"
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/avformat-63.def",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\lib\\avformat-63.def",
+      "bytes": 3627,
+      "status": "deleted"
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/avformat.lib",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\lib\\avformat.lib",
+      "bytes": 126862,
+      "status": "deleted"
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/avutil-61.def",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\lib\\avutil-61.def",
+      "bytes": 15859,
+      "status": "deleted"
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/avutil.lib",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\lib\\avutil.lib",
+      "bytes": 517070,
+      "status": "deleted"
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/libavcodec.dll.a",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\lib\\libavcodec.dll.a",
+      "bytes": 138150,
+      "status": "deleted"
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/libavdevice.dll.a",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\lib\\libavdevice.dll.a",
+      "bytes": 11416,
+      "status": "deleted"
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/libavfilter.dll.a",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\lib\\libavfilter.dll.a",
+      "bytes": 48252,
+      "status": "deleted"
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/libavformat.dll.a",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\lib\\libavformat.dll.a",
+      "bytes": 129778,
+      "status": "deleted"
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/libavutil.dll.a",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\lib\\libavutil.dll.a",
+      "bytes": 432318,
+      "status": "deleted"
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/libswresample.dll.a",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\lib\\libswresample.dll.a",
+      "bytes": 15964,
+      "status": "deleted"
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/libswscale.dll.a",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\lib\\libswscale.dll.a",
+      "bytes": 27362,
+      "status": "deleted"
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/pkgconfig/libavcodec.pc",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\lib\\pkgconfig\\libavcodec.pc",
+      "bytes": 312,
+      "status": "deleted"
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/pkgconfig/libavdevice.pc",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\lib\\pkgconfig\\libavdevice.pc",
+      "bytes": 423,
+      "status": "deleted"
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/pkgconfig/libavfilter.pc",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\lib\\pkgconfig\\libavfilter.pc",
+      "bytes": 404,
+      "status": "deleted"
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/pkgconfig/libavformat.pc",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\lib\\pkgconfig\\libavformat.pc",
+      "bytes": 350,
+      "status": "deleted"
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/pkgconfig/libavutil.pc",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\lib\\pkgconfig\\libavutil.pc",
+      "bytes": 264,
+      "status": "deleted"
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/pkgconfig/libswresample.pc",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\lib\\pkgconfig\\libswresample.pc",
+      "bytes": 301,
+      "status": "deleted"
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/pkgconfig/libswscale.pc",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\lib\\pkgconfig\\libswscale.pc",
+      "bytes": 295,
+      "status": "deleted"
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/swresample-7.def",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\lib\\swresample-7.def",
+      "bytes": 475,
+      "status": "deleted"
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/swresample.lib",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\lib\\swresample.lib",
+      "bytes": 19876,
+      "status": "deleted"
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/swscale-10.def",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\lib\\swscale-10.def",
+      "bytes": 911,
+      "status": "deleted"
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/swscale.lib",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\ffmpeg\\lib\\swscale.lib",
+      "bytes": 33288,
+      "status": "deleted"
+    },
+    {
+      "group": "C5",
+      "path": "tools/mpv/doc/manual.pdf",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\mpv\\doc\\manual.pdf",
+      "bytes": 1043370,
+      "status": "deleted"
+    },
+    {
+      "group": "C5",
+      "path": "tools/mpv/doc/mpbindings.png",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\tools\\mpv\\doc\\mpbindings.png",
+      "bytes": 190376,
+      "status": "deleted"
+    },
+    {
+      "group": "JS-unused",
+      "path": "START_DENO.cmd",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\START_DENO.cmd",
+      "bytes": 813,
+      "status": "deleted"
+    },
+    {
+      "group": "JS-unused",
+      "path": "README_Deno.txt",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\README_Deno.txt",
+      "bytes": 228,
+      "status": "deleted"
+    },
+    {
+      "group": "JS-unused",
+      "path": "START_QUICKJS_CLASSIC.cmd",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\START_QUICKJS_CLASSIC.cmd",
+      "bytes": 862,
+      "status": "deleted"
+    },
+    {
+      "group": "JS-unused",
+      "path": "README_QuickJS_Classic.txt",
+      "absolutePath": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube\\README_QuickJS_Classic.txt",
+      "bytes": 239,
+      "status": "deleted"
+    }
+  ],
+  "emptyDirectories": [
+    ".checks-temp\\lowtube-features-f1b3f15dea1149099015dd4c24b5e90d",
+    ".checks-temp\\lowtube-rate-dfd7bc24c2fc4bed90f6f7b1e98fbeab",
+    "tools\\ffmpeg\\include\\libswresample",
+    "tools\\ffmpeg\\include\\libavdevice",
+    "tools\\ffmpeg\\include\\libavfilter",
+    "tools\\ffmpeg\\include\\libavformat",
+    "tools\\ffmpeg\\include\\libswscale",
+    "tools\\ffmpeg\\include\\libavcodec",
+    "tools\\ffmpeg\\include\\libavutil",
+    "tools\\ffmpeg\\lib\\pkgconfig",
+    "tools\\ffmpeg\\include",
+    "tools\\ffmpeg\\lib",
+    "tools\\ffmpeg\\doc",
+    "download-cache",
+    "tools\\mpv\\doc",
+    ".checks-temp"
+  ],
+  "deletedFiles": 256,
+  "deletedBytes": 216871705,
+  "changedProtectedFiles": [],
+  "postCleanupChecks": {
+    "nodeSmoke": "PASS",
+    "ytDlpVersion": "2026.08.19",
+    "quickJsVersion": "0.17.0",
+    "mpvVersion": "v0.41.0-1175-g492bae076",
+    "ffmpegVersion": "N-127541-gec33c154fa-20261014",
+    "ffprobeVersion": "N-127541-gec33c154fa-20261014",
+    "networkOrMediaGpuChecks": false,
+    "applicationSourceChanged": false,
+    "rebuildPerformed": false
+  }
+}

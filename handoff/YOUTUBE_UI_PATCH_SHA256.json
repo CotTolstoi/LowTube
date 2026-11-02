@@ -1,0 +1,218 @@
+{
+  "LowTube.Benchmark.exe": {
+    "bytes": 67584,
+    "sha256": "f8ceb8fb1002d9f7e52c2e266a232b930511dda34ad7c065b355b97fdccf70e8"
+  },
+  "LowTube.Hybrid.Compare.exe": {
+    "bytes": 19456,
+    "sha256": "f56ae9c6de56db2bc944d6d276a6e6abec2859b84b1339b1de39aa6f792c4247"
+  },
+  "LowTube.Hybrid.exe": {
+    "bytes": 33792,
+    "sha256": "d720ee16e192cccd8fd4eec969735f91dc0703a414884f2f6efb7e03605299d9"
+  },
+  "LowTube.exe": {
+    "bytes": 627712,
+    "sha256": "5a149d3d28b31d1fa183caa453dbab69a56bbc2dccd37f738901196988ad838c"
+  },
+  "README_CODEX_UK.md": {
+    "bytes": 8952,
+    "sha256": "b66b47559908c483348d838ba6d2e2b5fe25696193b2aca57fa69ac0a383f781"
+  },
+  "Run-Checks.ps1": {
+    "bytes": 2248,
+    "sha256": "1598f8c683e20798aa40a39084ff02e882d79032803418b057ad037870feaf38"
+  },
+  "handoff/ARCHITECTURE.md": {
+    "bytes": 5661,
+    "sha256": "183af9b663f304de371ee02f8564da7ab445fd72bd46af75943cd764c8ca3d06"
+  },
+  "handoff/DEVELOPMENT_PLAN_UK.md": {
+    "bytes": 10924,
+    "sha256": "3354d5dd0d417e5cb33366278f391378857644c37a95e6a6e12cc4cb59692a77"
+  },
+  "handoff/INNERTUBE_PATCH_SHA256.json": {
+    "bytes": 2889,
+    "sha256": "bd8e2fc2986b6eb61e7c2a0590d377a3ee922c478431f65be8183baaf378d7bc"
+  },
+  "handoff/INNERTUBE_VALIDATION_UK.md": {
+    "bytes": 12596,
+    "sha256": "e373f4c5bb89a454e8506d2b046a417eafa09f202f2f43d2ffccc15fdc9c21ba"
+  },
+  "handoff/OSC_CLOSE_PATCH_SHA256.json": {
+    "bytes": 6092,
+    "sha256": "02aaa2ea046c5ef9faf81e4ea9f1fa6691cf545187a469c7003f516db09649f6"
+  },
+  "handoff/OSC_CLOSE_VALIDATION_UK.md": {
+    "bytes": 5322,
+    "sha256": "53d15e7790bb1b0866bfd5e800d18414690a9fa0c6ec782da2187f01fe304c64"
+  },
+  "handoff/PLAYBACK_STOP_PATCH_SHA256.json": {
+    "bytes": 5643,
+    "sha256": "1477d6469198dec74e09854897aa143b0d6899a0c7939f1600422180dc5f9936"
+  },
+  "handoff/PLAYBACK_STOP_VALIDATION_UK.md": {
+    "bytes": 6437,
+    "sha256": "84cb5c2074e7c36e105f3a44a190cd3e92192d1a80a747cf56c807edcfea488d"
+  },
+  "handoff/PROJECT_STATE.md": {
+    "bytes": 12780,
+    "sha256": "cec51797e61ff7a2edcfe8db4acc911c57c5d4d548d36414164296cd9be223bf"
+  },
+  "handoff/RELIABILITY_PATCH_SHA256.json": {
+    "bytes": 3482,
+    "sha256": "4d292ac52f2e3f2d5519b9bee674db68968bd4a578bfefce300ac58d32f62f99"
+  },
+  "handoff/STREAM_OPEN_PATCH_SHA256.json": {
+    "bytes": 4484,
+    "sha256": "5d28c85d76b582f6967e5e993a60d895f12d7125e68287b9eda4c8f467c3163d"
+  },
+  "handoff/STREAM_OPEN_VALIDATION_UK.md": {
+    "bytes": 7018,
+    "sha256": "7ad605d5ac4fe1643bcfd31334c68de20e97f3973d51a7505c48f67ac0101953"
+  },
+  "handoff/YOUTUBE_UI_VALIDATION_UK.md": {
+    "bytes": 7556,
+    "sha256": "9d751e0744ec9709d3f291b2869cb15af2902cf319d2debff2fae1bbbf4e6b66"
+  },
+  "handoff/previews/lowtube_ui_dark.png": {
+    "bytes": 153792,
+    "sha256": "2ba1d85205939690b81ea5debf11592c91d6767fdf22e2e15a6ea8cf9b2f720a"
+  },
+  "handoff/previews/lowtube_ui_light.png": {
+    "bytes": 154848,
+    "sha256": "0015fa8c1f4c0531e9390baa9dd07069f4ef42269bad8ef978383e9116990349"
+  },
+  "handoff/previews/lowtube_ui_uk_compact.png": {
+    "bytes": 88760,
+    "sha256": "4af5d64704aaa17be3f9c1032870f4d508aecffa1728fd96788238a8486c243e"
+  },
+  "player/lowtube.lua": {
+    "bytes": 15716,
+    "sha256": "aa13e4f5cf40303ec1be325c99e9a196efbaa7e3591bde6f688a9b62f23d0e36"
+  },
+  "player/lowtube_osc.lua": {
+    "bytes": 105961,
+    "sha256": "c0f008838f1453b70964315347df6dbcc142099a5886111a1047cbc7a0741a12"
+  },
+  "src/AssemblyInfo.cs": {
+    "bytes": 333,
+    "sha256": "ceeb30df5349dffd0a694b0fae83e915a47fcf5626e426e0b1800bf5db2044ef"
+  },
+  "src/BackgroundFeeds.cs": {
+    "bytes": 19606,
+    "sha256": "3bd2f3a39e9cec9c8b9a5e81748e2ee09b269be213d662a981db5fa92f6f2fc9"
+  },
+  "src/Core.cs": {
+    "bytes": 33612,
+    "sha256": "f85f8cca44bac4162c6d14093bbaa97262f273af7c7cd43db9ab4f621ab262e1"
+  },
+  "src/FormatCache.cs": {
+    "bytes": 4278,
+    "sha256": "b7f4d314bf8f66582ecee2e05cab10d7c6c4b790c49548ed8791808a80d71ba7"
+  },
+  "src/I18n.cs": {
+    "bytes": 109424,
+    "sha256": "75777d7dff48c432159fe0ad9a3fde0c386e9111ab78739dbfc3352e61100d8a"
+  },
+  "src/InnerTube.cs": {
+    "bytes": 25811,
+    "sha256": "2781e6e4bc1cfddf6b89f110f3838a02a70f3c2e8be16bb6b3cb4ceab545c645"
+  },
+  "src/InnerTubeFailures.cs": {
+    "bytes": 3350,
+    "sha256": "32d498b5704869fb44458d30f070fda8eb5e759768abc11874cf74c4385701f8"
+  },
+  "src/InnerTubeJson.cs": {
+    "bytes": 13969,
+    "sha256": "3acabdf4a9ebe60d297df07364ac546256b568547122892f168cf6480327a965"
+  },
+  "src/LibraryFeatures.cs": {
+    "bytes": 12827,
+    "sha256": "f9e1962a91d8a5a49b0d060cbe8c7da00fe4a952558f3d32e9b6928cc61f1b2b"
+  },
+  "src/MainForm.cs": {
+    "bytes": 68140,
+    "sha256": "55ba22664f68fd4c8456161c13a6b68ea22a3180a923d78d6d84f4a2aac54a8a"
+  },
+  "src/Player.cs": {
+    "bytes": 32826,
+    "sha256": "14b118d912d3abcc96f6de48d94308ba4f3a88e677c0e25c97bf1597fda9dbb2"
+  },
+  "src/SavedSession.cs": {
+    "bytes": 11074,
+    "sha256": "68624d80edce81598946f9f477653f9f6a5b1a8928b1a3ba93c3ed9e02322869"
+  },
+  "src/StartupTrace.cs": {
+    "bytes": 12460,
+    "sha256": "c5232a1bcdf8c66a4b05e07be5fabd6a824bd1873ebcd23eb0d4c7502920fe99"
+  },
+  "src/StreamContinuity.cs": {
+    "bytes": 12612,
+    "sha256": "d9ffb7710cfaf4f3829594fccb551b08b19551bfe7e33c0c0515c8ac7f235533"
+  },
+  "src/StreamOpenRecovery.cs": {
+    "bytes": 4093,
+    "sha256": "1fc6911c38ef8ca867d88d0850aa10eabb80b5ac722151e5e7c1a4e124d1da07"
+  },
+  "src/Theme.cs": {
+    "bytes": 5296,
+    "sha256": "0d9117c9f4b96fc355df5e28bb3fc4520e3455ab08b9cdfe7e376f64e650f75e"
+  },
+  "src/VideoGrid.cs": {
+    "bytes": 11370,
+    "sha256": "8db0c46b796b819e871ff68a735059a190c495e5fefe80e0cbc84dd436d79c03"
+  },
+  "src/WorkspaceFeatures.cs": {
+    "bytes": 23324,
+    "sha256": "0cb98b35d90c3125c6f0cac5aa239dde5021dd710c1e998cc800828898f2cdef"
+  },
+  "src/YouTubeShell.cs": {
+    "bytes": 4821,
+    "sha256": "a8d057d5960d0cc72651d6c8788a048cf79dea0c7934fde84b4908ff1c53dacb"
+  },
+  "src/YouTubeUi.cs": {
+    "bytes": 6502,
+    "sha256": "a3cf1776b347384f63a63d3b6648ff3a14fb3c163bc21cb732a2b875e9d70d9b"
+  },
+  "tests/ContinuityTests.cs": {
+    "bytes": 7421,
+    "sha256": "9018740b17fcd7888e7860aeefa59eecf38669fe0124630f52b4ce7656a74b46"
+  },
+  "tests/CoreTests.cs": {
+    "bytes": 56471,
+    "sha256": "b368cb814f734b1bbdd15c866d6d889af9aa5458570070427083e82cc92c4655"
+  },
+  "tests/FeatureTests.cs": {
+    "bytes": 7646,
+    "sha256": "c5ebbaf2db180071487214410ff90442487f6b4d0d8634ba802b424385285a5d"
+  },
+  "tests/InnerTubeReliabilityTests.cs": {
+    "bytes": 14250,
+    "sha256": "a8374339085ac51fa4d1a1e46fc4c92f5375db2c217849f9bf70efa69db9e96b"
+  },
+  "tests/InnerTubeTests.cs": {
+    "bytes": 21057,
+    "sha256": "cc25a7f492943e2c1ada583e625ff01a85e80068d1657d9dd7d51535a72520d9"
+  },
+  "tests/PlaybackSelectionTests.cs": {
+    "bytes": 3301,
+    "sha256": "8e5ae47bb2545893dc53594da5ede99a0cc193c3bf55b3a9514bbfe5e3225bb3"
+  },
+  "tests/StreamOpenTests.cs": {
+    "bytes": 5386,
+    "sha256": "cd5e124a29185cdd864442470d267b9371f417d1c267a4219b71afebd4e03436"
+  },
+  "tests/WindowsPlayerStopTests.cs": {
+    "bytes": 13198,
+    "sha256": "c3be21a6a643872cd5840d467e7aae5662a7e55a5e27da34c53dab27da8cc83c"
+  },
+  "tests/WindowsStreamOpenTests.cs": {
+    "bytes": 4618,
+    "sha256": "407d968c747b13869ed7ed276e97388eb359a6cc4b918a62a4e4891545d4b0f6"
+  },
+  "tests/WindowsUiTests.cs": {
+    "bytes": 8450,
+    "sha256": "33c75ac7f193b197cbbd26054983f35a51fe451951d8a06f288b2636bf4aa07f"
+  }
+}

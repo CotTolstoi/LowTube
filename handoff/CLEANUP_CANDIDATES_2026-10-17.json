@@ -1,0 +1,1564 @@
+{
+  "date": "2026-10-17",
+  "root": "C:\\Users\\sv176\\Desktop\\LowTube\\LowTube",
+  "status": "review_only_nothing_deleted",
+  "units": "bytes",
+  "snapshot_files": 602,
+  "snapshot_bytes": 673128314,
+  "safe_bytes": 179751005,
+  "optional_archives_bytes": 1690271,
+  "optional_tools_bytes": 35428287,
+  "all_candidates_bytes": 216869563,
+  "groups": {
+    "A1": {
+      "files": 6,
+      "bytes": 179233060
+    },
+    "A2": {
+      "files": 12,
+      "bytes": 292864
+    },
+    "A3": {
+      "files": 18,
+      "bytes": 225081
+    },
+    "B": {
+      "files": 4,
+      "bytes": 1690271
+    },
+    "C1": {
+      "files": 1,
+      "bytes": 19156992
+    },
+    "C2": {
+      "files": 35,
+      "bytes": 11915383
+    },
+    "C3": {
+      "files": 146,
+      "bytes": 1358223
+    },
+    "C4": {
+      "files": 28,
+      "bytes": 1763943
+    },
+    "C5": {
+      "files": 2,
+      "bytes": 1233746
+    }
+  },
+  "files": [
+    {
+      "group": "A1",
+      "path": "download-cache/20b2f500c9d94fc417ea770d37c4f27e4c26a707e54052973a0591cb663169c7-ffmpeg-master-latest-win64-gpl-shared.zip",
+      "bytes": 88848730,
+      "reason": "Копії завантажених пакетів; робочі інструменти збережено в tools."
+    },
+    {
+      "group": "A1",
+      "path": "download-cache/256feca8e274e5da655e2a284fabafd9f554365eb164862089dacd4e8276d282-7zr.exe",
+      "bytes": 602624,
+      "reason": "Копії завантажених пакетів; робочі інструменти збережено в tools."
+    },
+    {
+      "group": "A1",
+      "path": "download-cache/2aeabf0092c3262d6b2609824418f7dd7ed1f1df939f73b2b15645230cac0d77-qjs-windows-x86_64.exe",
+      "bytes": 2151363,
+      "reason": "Копії завантажених пакетів; робочі інструменти збережено в tools."
+    },
+    {
+      "group": "A1",
+      "path": "download-cache/2b0ff57b049cda1bbcea2240eec20467018713c1efe1f7360c2681859b90ed71-node-v22.23.3-win-x64.zip",
+      "bytes": 35574076,
+      "reason": "Копії завантажених пакетів; робочі інструменти збережено в tools."
+    },
+    {
+      "group": "A1",
+      "path": "download-cache/30b4c14aafab6082becff7881e41b76df46dc43ea7633479410a91e29da492bf-yt-dlp_win.zip",
+      "bytes": 18087041,
+      "reason": "Копії завантажених пакетів; робочі інструменти збережено в tools."
+    },
+    {
+      "group": "A1",
+      "path": "download-cache/f9becefe40e2a29d2ce5f3ab231ff094f9cf3e4038ff014cfe4a0c09ad90e79e-mpv-x86_64-20261015-git-492bae0768.7z",
+      "bytes": 33969226,
+      "reason": "Копії завантажених пакетів; робочі інструменти збережено в tools."
+    },
+    {
+      "group": "A2",
+      "path": "Test.BenchPlanTests.exe",
+      "bytes": 11776,
+      "reason": "Не потрібні для запуску; штатні тести збирає Run-Checks.ps1, StreamProbe — одноразовий діагностичний helper."
+    },
+    {
+      "group": "A2",
+      "path": "Test.ContinuityTests.exe",
+      "bytes": 16384,
+      "reason": "Не потрібні для запуску; штатні тести збирає Run-Checks.ps1, StreamProbe — одноразовий діагностичний helper."
+    },
+    {
+      "group": "A2",
+      "path": "Test.CoreTests.exe",
+      "bytes": 73216,
+      "reason": "Не потрібні для запуску; штатні тести збирає Run-Checks.ps1, StreamProbe — одноразовий діагностичний helper."
+    },
+    {
+      "group": "A2",
+      "path": "Test.FeatureTests.exe",
+      "bytes": 19456,
+      "reason": "Не потрібні для запуску; штатні тести збирає Run-Checks.ps1, StreamProbe — одноразовий діагностичний helper."
+    },
+    {
+      "group": "A2",
+      "path": "Test.GoogleTests.exe",
+      "bytes": 11776,
+      "reason": "Не потрібні для запуску; штатні тести збирає Run-Checks.ps1, StreamProbe — одноразовий діагностичний helper."
+    },
+    {
+      "group": "A2",
+      "path": "Test.InnerTubeReliabilityTests.exe",
+      "bytes": 27648,
+      "reason": "Не потрібні для запуску; штатні тести збирає Run-Checks.ps1, StreamProbe — одноразовий діагностичний helper."
+    },
+    {
+      "group": "A2",
+      "path": "Test.InnerTubeTests.exe",
+      "bytes": 41984,
+      "reason": "Не потрібні для запуску; штатні тести збирає Run-Checks.ps1, StreamProbe — одноразовий діагностичний helper."
+    },
+    {
+      "group": "A2",
+      "path": "Test.PlaybackSelectionTests.exe",
+      "bytes": 7680,
+      "reason": "Не потрібні для запуску; штатні тести збирає Run-Checks.ps1, StreamProbe — одноразовий діагностичний helper."
+    },
+    {
+      "group": "A2",
+      "path": "Test.StreamOpenTests.exe",
+      "bytes": 15360,
+      "reason": "Не потрібні для запуску; штатні тести збирає Run-Checks.ps1, StreamProbe — одноразовий діагностичний helper."
+    },
+    {
+      "group": "A2",
+      "path": "Test.StreamProbe.exe",
+      "bytes": 9728,
+      "reason": "Не потрібні для запуску; штатні тести збирає Run-Checks.ps1, StreamProbe — одноразовий діагностичний helper."
+    },
+    {
+      "group": "A2",
+      "path": "Test.WindowsPlayerStopTests.exe",
+      "bytes": 37888,
+      "reason": "Не потрібні для запуску; штатні тести збирає Run-Checks.ps1, StreamProbe — одноразовий діагностичний helper."
+    },
+    {
+      "group": "A2",
+      "path": "Test.WindowsStreamOpenTests.exe",
+      "bytes": 19968,
+      "reason": "Не потрібні для запуску; штатні тести збирає Run-Checks.ps1, StreamProbe — одноразовий діагностичний helper."
+    },
+    {
+      "group": "A3",
+      "path": ".checks-temp/StreamProbe.cs",
+      "bytes": 2530,
+      "reason": "Логи, синтетичні тестові JSON, одноразові probe/packaging-скрипти. Не частина робочого застосунку; останні результати описані в handoff."
+    },
+    {
+      "group": "A3",
+      "path": ".checks-temp/checks-full.log",
+      "bytes": 22712,
+      "reason": "Логи, синтетичні тестові JSON, одноразові probe/packaging-скрипти. Не частина робочого застосунку; останні результати описані в handoff."
+    },
+    {
+      "group": "A3",
+      "path": ".checks-temp/checks.log",
+      "bytes": 16261,
+      "reason": "Логи, синтетичні тестові JSON, одноразові probe/packaging-скрипти. Не частина робочого застосунку; останні результати описані в handoff."
+    },
+    {
+      "group": "A3",
+      "path": ".checks-temp/lowtube-features-f1b3f15dea1149099015dd4c24b5e90d/cancel.json.tmp",
+      "bytes": 389,
+      "reason": "Логи, синтетичні тестові JSON, одноразові probe/packaging-скрипти. Не частина робочого застосунку; останні результати описані в handoff."
+    },
+    {
+      "group": "A3",
+      "path": ".checks-temp/lowtube-rate-dfd7bc24c2fc4bed90f6f7b1e98fbeab/jobs.json",
+      "bytes": 954,
+      "reason": "Логи, синтетичні тестові JSON, одноразові probe/packaging-скрипти. Не частина робочого застосунку; останні результати описані в handoff."
+    },
+    {
+      "group": "A3",
+      "path": ".checks-temp/osc-close-2026-10-17-final.log",
+      "bytes": 28512,
+      "reason": "Логи, синтетичні тестові JSON, одноразові probe/packaging-скрипти. Не частина робочого застосунку; останні результати описані в handoff."
+    },
+    {
+      "group": "A3",
+      "path": ".checks-temp/osc-close-2026-10-17.log",
+      "bytes": 28947,
+      "reason": "Логи, синтетичні тестові JSON, одноразові probe/packaging-скрипти. Не частина робочого застосунку; останні результати описані в handoff."
+    },
+    {
+      "group": "A3",
+      "path": ".checks-temp/package_0_11_3.py",
+      "bytes": 2280,
+      "reason": "Логи, синтетичні тестові JSON, одноразові probe/packaging-скрипти. Не частина робочого застосунку; останні результати описані в handoff."
+    },
+    {
+      "group": "A3",
+      "path": ".checks-temp/package_0_11_4.py",
+      "bytes": 1942,
+      "reason": "Логи, синтетичні тестові JSON, одноразові probe/packaging-скрипти. Не частина робочого застосунку; останні результати описані в handoff."
+    },
+    {
+      "group": "A3",
+      "path": ".checks-temp/package_0_11_5.py",
+      "bytes": 2060,
+      "reason": "Логи, синтетичні тестові JSON, одноразові probe/packaging-скрипти. Не частина робочого застосунку; останні результати описані в handoff."
+    },
+    {
+      "group": "A3",
+      "path": ".checks-temp/package_0_11_6.py",
+      "bytes": 1909,
+      "reason": "Логи, синтетичні тестові JSON, одноразові probe/packaging-скрипти. Не частина робочого застосунку; останні результати описані в handoff."
+    },
+    {
+      "group": "A3",
+      "path": ".checks-temp/package_patch.py",
+      "bytes": 2055,
+      "reason": "Логи, синтетичні тестові JSON, одноразові probe/packaging-скрипти. Не частина робочого застосунку; останні результати описані в handoff."
+    },
+    {
+      "group": "A3",
+      "path": ".checks-temp/playback-stop-final.log",
+      "bytes": 27907,
+      "reason": "Логи, синтетичні тестові JSON, одноразові probe/packaging-скрипти. Не частина робочого застосунку; останні результати описані в handoff."
+    },
+    {
+      "group": "A3",
+      "path": ".checks-temp/playback-stop.log",
+      "bytes": 28530,
+      "reason": "Логи, синтетичні тестові JSON, одноразові probe/packaging-скрипти. Не частина робочого застосунку; останні результати описані в handoff."
+    },
+    {
+      "group": "A3",
+      "path": ".checks-temp/public.log",
+      "bytes": 3393,
+      "reason": "Логи, синтетичні тестові JSON, одноразові probe/packaging-скрипти. Не частина робочого застосунку; останні результати описані в handoff."
+    },
+    {
+      "group": "A3",
+      "path": ".checks-temp/stage1-checks.log",
+      "bytes": 24946,
+      "reason": "Логи, синтетичні тестові JSON, одноразові probe/packaging-скрипти. Не частина робочого застосунку; останні результати описані в handoff."
+    },
+    {
+      "group": "A3",
+      "path": ".checks-temp/stage1-public.log",
+      "bytes": 3454,
+      "reason": "Логи, синтетичні тестові JSON, одноразові probe/packaging-скрипти. Не частина робочого застосунку; останні результати описані в handoff."
+    },
+    {
+      "group": "A3",
+      "path": ".checks-temp/stream-checks.log",
+      "bytes": 26300,
+      "reason": "Логи, синтетичні тестові JSON, одноразові probe/packaging-скрипти. Не частина робочого застосунку; останні результати описані в handoff."
+    },
+    {
+      "group": "B",
+      "path": "LowTube_0.11.3_patch_2026-10-15.zip",
+      "bytes": 399111,
+      "reason": "Історичні версії, не побайтові дублікати. Усі їхні шляхи присутні в останньому кумулятивному патчі 0.11.6; втрачається можливість взяти ці старі версії саме з архівів."
+    },
+    {
+      "group": "B",
+      "path": "LowTube_0.11.4_patch_2026-10-15.zip",
+      "bytes": 438522,
+      "reason": "Історичні версії, не побайтові дублікати. Усі їхні шляхи присутні в останньому кумулятивному патчі 0.11.6; втрачається можливість взяти ці старі версії саме з архівів."
+    },
+    {
+      "group": "B",
+      "path": "LowTube_0.11.5_patch_2026-10-15.zip",
+      "bytes": 467910,
+      "reason": "Історичні версії, не побайтові дублікати. Усі їхні шляхи присутні в останньому кумулятивному патчі 0.11.6; втрачається можливість взяти ці старі версії саме з архівів."
+    },
+    {
+      "group": "B",
+      "path": "LowTube_InnerTube_patch_2026-10-15.zip",
+      "bytes": 384728,
+      "reason": "Історичні версії, не побайтові дублікати. Усі їхні шляхи присутні в останньому кумулятивному патчі 0.11.6; втрачається можливість взяти ці старі версії саме з архівів."
+    },
+    {
+      "group": "C1",
+      "path": "tools/ffmpeg/ffplay.exe",
+      "bytes": 19156992,
+      "reason": "У коді/скриптах LowTube викликів ffplay не знайдено. FFmpeg/FFprobe та всі DLL залишити."
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/bootstrap.min.css",
+      "bytes": 109483,
+      "reason": "Локальна HTML-документація; запуск LowTube її не використовує. LICENSE.txt залишити."
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/community.html",
+      "bytes": 13505,
+      "reason": "Локальна HTML-документація; запуск LowTube її не використовує. LICENSE.txt залишити."
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/default.css",
+      "bytes": 2494,
+      "reason": "Локальна HTML-документація; запуск LowTube її не використовує. LICENSE.txt залишити."
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/developer.html",
+      "bytes": 65770,
+      "reason": "Локальна HTML-документація; запуск LowTube її не використовує. LICENSE.txt залишити."
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/drawvg-reference.html",
+      "bytes": 147341,
+      "reason": "Локальна HTML-документація; запуск LowTube її не використовує. LICENSE.txt залишити."
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/faq.html",
+      "bytes": 63702,
+      "reason": "Локальна HTML-документація; запуск LowTube її не використовує. LICENSE.txt залишити."
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/fate.html",
+      "bytes": 18768,
+      "reason": "Локальна HTML-документація; запуск LowTube її не використовує. LICENSE.txt залишити."
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/ffmpeg-all.html",
+      "bytes": 3170258,
+      "reason": "Локальна HTML-документація; запуск LowTube її не використовує. LICENSE.txt залишити."
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/ffmpeg-bitstream-filters.html",
+      "bytes": 73014,
+      "reason": "Локальна HTML-документація; запуск LowTube її не використовує. LICENSE.txt залишити."
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/ffmpeg-codecs.html",
+      "bytes": 362715,
+      "reason": "Локальна HTML-документація; запуск LowTube її не використовує. LICENSE.txt залишити."
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/ffmpeg-devices.html",
+      "bytes": 114015,
+      "reason": "Локальна HTML-документація; запуск LowTube її не використовує. LICENSE.txt залишити."
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/ffmpeg-filters.html",
+      "bytes": 1723294,
+      "reason": "Локальна HTML-документація; запуск LowTube її не використовує. LICENSE.txt залишити."
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/ffmpeg-formats.html",
+      "bytes": 346962,
+      "reason": "Локальна HTML-документація; запуск LowTube її не використовує. LICENSE.txt залишити."
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/ffmpeg-protocols.html",
+      "bytes": 134892,
+      "reason": "Локальна HTML-документація; запуск LowTube її не використовує. LICENSE.txt залишити."
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/ffmpeg-resampler.html",
+      "bytes": 13818,
+      "reason": "Локальна HTML-документація; запуск LowTube її не використовує. LICENSE.txt залишити."
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/ffmpeg-scaler.html",
+      "bytes": 12981,
+      "reason": "Локальна HTML-документація; запуск LowTube її не використовує. LICENSE.txt залишити."
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/ffmpeg-utils.html",
+      "bytes": 55775,
+      "reason": "Локальна HTML-документація; запуск LowTube її не використовує. LICENSE.txt залишити."
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/ffmpeg.html",
+      "bytes": 222447,
+      "reason": "Локальна HTML-документація; запуск LowTube її не використовує. LICENSE.txt залишити."
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/ffplay-all.html",
+      "bytes": 2446539,
+      "reason": "Локальна HTML-документація; запуск LowTube її не використовує. LICENSE.txt залишити."
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/ffplay.html",
+      "bytes": 43262,
+      "reason": "Локальна HTML-документація; запуск LowTube її не використовує. LICENSE.txt залишити."
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/ffprobe-all.html",
+      "bytes": 2462431,
+      "reason": "Локальна HTML-документація; запуск LowTube її не використовує. LICENSE.txt залишити."
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/ffprobe.html",
+      "bytes": 59074,
+      "reason": "Локальна HTML-документація; запуск LowTube її не використовує. LICENSE.txt залишити."
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/general.html",
+      "bytes": 133600,
+      "reason": "Локальна HTML-документація; запуск LowTube її не використовує. LICENSE.txt залишити."
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/git-howto.html",
+      "bytes": 27737,
+      "reason": "Локальна HTML-документація; запуск LowTube її не використовує. LICENSE.txt залишити."
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/libavcodec.html",
+      "bytes": 3147,
+      "reason": "Локальна HTML-документація; запуск LowTube її не використовує. LICENSE.txt залишити."
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/libavdevice.html",
+      "bytes": 3026,
+      "reason": "Локальна HTML-документація; запуск LowTube її не використовує. LICENSE.txt залишити."
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/libavfilter.html",
+      "bytes": 3092,
+      "reason": "Локальна HTML-документація; запуск LowTube її не використовує. LICENSE.txt залишити."
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/libavformat.html",
+      "bytes": 3122,
+      "reason": "Локальна HTML-документація; запуск LowTube її не використовує. LICENSE.txt залишити."
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/libavutil.html",
+      "bytes": 3621,
+      "reason": "Локальна HTML-документація; запуск LowTube її не використовує. LICENSE.txt залишити."
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/libswresample.html",
+      "bytes": 4005,
+      "reason": "Локальна HTML-документація; запуск LowTube її не використовує. LICENSE.txt залишити."
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/libswscale.html",
+      "bytes": 3621,
+      "reason": "Локальна HTML-документація; запуск LowTube її не використовує. LICENSE.txt залишити."
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/mailing-list-faq.html",
+      "bytes": 31209,
+      "reason": "Локальна HTML-документація; запуск LowTube її не використовує. LICENSE.txt залишити."
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/nut.html",
+      "bytes": 11279,
+      "reason": "Локальна HTML-документація; запуск LowTube її не використовує. LICENSE.txt залишити."
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/platform.html",
+      "bytes": 18861,
+      "reason": "Локальна HTML-документація; запуск LowTube її не використовує. LICENSE.txt залишити."
+    },
+    {
+      "group": "C2",
+      "path": "tools/ffmpeg/doc/style.min.css",
+      "bytes": 6523,
+      "reason": "Локальна HTML-документація; запуск LowTube її не використовує. LICENSE.txt залишити."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/ac3_parser.h",
+      "bytes": 1207,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/adts_parser.h",
+      "bytes": 1354,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/avcodec.h",
+      "bytes": 110821,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/avdct.h",
+      "bytes": 2767,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/bsf.h",
+      "bytes": 25839,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/codec.h",
+      "bytes": 11922,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/codec_desc.h",
+      "bytes": 4264,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/codec_id.h",
+      "bytes": 18734,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/codec_par.h",
+      "bytes": 8400,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/d3d11va.h",
+      "bytes": 2610,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/defs.h",
+      "bytes": 13981,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/dirac.h",
+      "bytes": 4126,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/dv_profile.h",
+      "bytes": 3694,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/dxva2.h",
+      "bytes": 2128,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/exif.h",
+      "bytes": 8430,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/jni.h",
+      "bytes": 2263,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/mediacodec.h",
+      "bytes": 3742,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/packet.h",
+      "bytes": 33047,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/qsv.h",
+      "bytes": 3844,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/smpte_436m.h",
+      "bytes": 11580,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/vdpau.h",
+      "bytes": 4555,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/version.h",
+      "bytes": 1619,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/version_major.h",
+      "bytes": 1696,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/videotoolbox.h",
+      "bytes": 2445,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavcodec/vorbis_parser.h",
+      "bytes": 2285,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavdevice/avdevice.h",
+      "bytes": 13506,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavdevice/version.h",
+      "bytes": 1624,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavdevice/version_major.h",
+      "bytes": 1200,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavfilter/avfilter.h",
+      "bytes": 45981,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavfilter/buffersink.h",
+      "bytes": 7102,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavfilter/buffersrc.h",
+      "bytes": 7334,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavfilter/version.h",
+      "bytes": 1653,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavfilter/version_major.h",
+      "bytes": 1223,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavformat/avformat.h",
+      "bytes": 127549,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavformat/avio.h",
+      "bytes": 31178,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavformat/version.h",
+      "bytes": 1652,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavformat/version_major.h",
+      "bytes": 2024,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/adler32.h",
+      "bytes": 1696,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/aes.h",
+      "bytes": 1912,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/aes_ctr.h",
+      "bytes": 2443,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/ambient_viewing_environment.h",
+      "bytes": 2585,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/attributes.h",
+      "bytes": 6672,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/audio_fifo.h",
+      "bytes": 5966,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/avassert.h",
+      "bytes": 4015,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/avconfig.h",
+      "bytes": 180,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/avstring.h",
+      "bytes": 14962,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/avutil.h",
+      "bytes": 8702,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/base64.h",
+      "bytes": 2285,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/blowfish.h",
+      "bytes": 2394,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/bprint.h",
+      "bytes": 8818,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/bswap.h",
+      "bytes": 2788,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/buffer.h",
+      "bytes": 11998,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/camellia.h",
+      "bytes": 2139,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/cast5.h",
+      "bytes": 2561,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/channel_layout.h",
+      "bytes": 35181,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/common.h",
+      "bytes": 17359,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/container_fifo.h",
+      "bytes": 4855,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/cpu.h",
+      "bytes": 6899,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/crc.h",
+      "bytes": 3259,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/csp.h",
+      "bytes": 7304,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/des.h",
+      "bytes": 2514,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/detection_bbox.h",
+      "bytes": 3524,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/dict.h",
+      "bytes": 9521,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/display.h",
+      "bytes": 3472,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/dovi_meta.h",
+      "bytes": 12730,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/downmix_info.h",
+      "bytes": 5373,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/encryption_info.h",
+      "bytes": 7056,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/error.h",
+      "bytes": 5555,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/eval.h",
+      "bytes": 6600,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/executor.h",
+      "bytes": 1924,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/ffversion.h",
+      "bytes": 208,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/fifo.h",
+      "bytes": 8487,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/file.h",
+      "bytes": 3416,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/film_grain_params.h",
+      "bytes": 9190,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/frame.h",
+      "bytes": 44367,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/gain_map.h",
+      "bytes": 4771,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hash.h",
+      "bytes": 8457,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hdr_dynamic_metadata.h",
+      "bytes": 18538,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hdr_dynamic_vivid_metadata.h",
+      "bytes": 8427,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hmac.h",
+      "bytes": 2865,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hwcontext.h",
+      "bytes": 24170,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hwcontext_amf.h",
+      "bytes": 2292,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hwcontext_cuda.h",
+      "bytes": 4025,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hwcontext_d3d11va.h",
+      "bytes": 7653,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hwcontext_d3d12va.h",
+      "bytes": 6201,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hwcontext_drm.h",
+      "bytes": 4673,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hwcontext_dxva2.h",
+      "bytes": 2411,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hwcontext_mediacodec.h",
+      "bytes": 1988,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hwcontext_oh.h",
+      "bytes": 1098,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hwcontext_opencl.h",
+      "bytes": 3098,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hwcontext_qsv.h",
+      "bytes": 2515,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hwcontext_vaapi.h",
+      "bytes": 3784,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hwcontext_vdpau.h",
+      "bytes": 1360,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hwcontext_videotoolbox.h",
+      "bytes": 4745,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/hwcontext_vulkan.h",
+      "bytes": 11870,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/iamf.h",
+      "bytes": 21603,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/imgutils.h",
+      "bytes": 16326,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/intfloat.h",
+      "bytes": 1726,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/intreadwrite.h",
+      "bytes": 19426,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/lfg.h",
+      "bytes": 2542,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/log.h",
+      "bytes": 14088,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/lzo.h",
+      "bytes": 2048,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/macros.h",
+      "bytes": 2304,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/mastering_display_metadata.h",
+      "bytes": 4284,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/mathematics.h",
+      "bytes": 9565,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/md5.h",
+      "bytes": 2092,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/mem.h",
+      "bytes": 20521,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/motion_vector.h",
+      "bytes": 1770,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/murmur3.h",
+      "bytes": 3507,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/opt.h",
+      "bytes": 46402,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/parseutils.h",
+      "bytes": 7888,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/pixdesc.h",
+      "bytes": 16432,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/pixelutils.h",
+      "bytes": 2051,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/pixfmt.h",
+      "bytes": 48517,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/random_seed.h",
+      "bytes": 1889,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/rational.h",
+      "bytes": 6287,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/raw_color_params.h",
+      "bytes": 5621,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/rc4.h",
+      "bytes": 2004,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/refstruct.h",
+      "bytes": 12172,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/replaygain.h",
+      "bytes": 1607,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/ripemd.h",
+      "bytes": 2158,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/samplefmt.h",
+      "bytes": 10562,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/sha.h",
+      "bytes": 2368,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/sha512.h",
+      "bytes": 2413,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/spherical.h",
+      "bytes": 8607,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/stereo3d.h",
+      "bytes": 7446,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/tdrdi.h",
+      "bytes": 5280,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/tea.h",
+      "bytes": 2035,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/threadmessage.h",
+      "bytes": 3910,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/time.h",
+      "bytes": 1800,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/timecode.h",
+      "bytes": 7843,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/timestamp.h",
+      "bytes": 2726,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/tree.h",
+      "bytes": 5408,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/twofish.h",
+      "bytes": 2245,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/tx.h",
+      "bytes": 7141,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/uuid.h",
+      "bytes": 4895,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/version.h",
+      "bytes": 4195,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/video_enc_params.h",
+      "bytes": 5991,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/video_hint.h",
+      "bytes": 3585,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libavutil/xtea.h",
+      "bytes": 2834,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libswresample/swresample.h",
+      "bytes": 22476,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libswresample/version.h",
+      "bytes": 1707,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libswresample/version_major.h",
+      "bytes": 1015,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libswscale/swscale.h",
+      "bytes": 28916,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libswscale/version.h",
+      "bytes": 1589,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C3",
+      "path": "tools/ffmpeg/include/libswscale/version_major.h",
+      "bytes": 1176,
+      "reason": "SDK-заголовки; Build-All.ps1 збирає C# і не компілює нативний код FFmpeg."
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/avcodec-63.def",
+      "bytes": 5306,
+      "reason": "Файли SDK для нативного компонування; поточній C#-збірці не потрібні. Це не runtime DLL."
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/avcodec.lib",
+      "bytes": 160438,
+      "reason": "Файли SDK для нативного компонування; поточній C#-збірці не потрібні. Це не runtime DLL."
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/avdevice-63.def",
+      "bytes": 453,
+      "reason": "Файли SDK для нативного компонування; поточній C#-збірці не потрібні. Це не runtime DLL."
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/avdevice.lib",
+      "bytes": 14120,
+      "reason": "Файли SDK для нативного компонування; поточній C#-збірці не потрібні. Це не runtime DLL."
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/avfilter-12.def",
+      "bytes": 2011,
+      "reason": "Файли SDK для нативного компонування; поточній C#-збірці не потрібні. Це не runtime DLL."
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/avfilter.lib",
+      "bytes": 58058,
+      "reason": "Файли SDK для нативного компонування; поточній C#-збірці не потрібні. Це не runtime DLL."
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/avformat-63.def",
+      "bytes": 3627,
+      "reason": "Файли SDK для нативного компонування; поточній C#-збірці не потрібні. Це не runtime DLL."
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/avformat.lib",
+      "bytes": 126862,
+      "reason": "Файли SDK для нативного компонування; поточній C#-збірці не потрібні. Це не runtime DLL."
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/avutil-61.def",
+      "bytes": 15859,
+      "reason": "Файли SDK для нативного компонування; поточній C#-збірці не потрібні. Це не runtime DLL."
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/avutil.lib",
+      "bytes": 517070,
+      "reason": "Файли SDK для нативного компонування; поточній C#-збірці не потрібні. Це не runtime DLL."
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/libavcodec.dll.a",
+      "bytes": 138150,
+      "reason": "Файли SDK для нативного компонування; поточній C#-збірці не потрібні. Це не runtime DLL."
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/libavdevice.dll.a",
+      "bytes": 11416,
+      "reason": "Файли SDK для нативного компонування; поточній C#-збірці не потрібні. Це не runtime DLL."
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/libavfilter.dll.a",
+      "bytes": 48252,
+      "reason": "Файли SDK для нативного компонування; поточній C#-збірці не потрібні. Це не runtime DLL."
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/libavformat.dll.a",
+      "bytes": 129778,
+      "reason": "Файли SDK для нативного компонування; поточній C#-збірці не потрібні. Це не runtime DLL."
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/libavutil.dll.a",
+      "bytes": 432318,
+      "reason": "Файли SDK для нативного компонування; поточній C#-збірці не потрібні. Це не runtime DLL."
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/libswresample.dll.a",
+      "bytes": 15964,
+      "reason": "Файли SDK для нативного компонування; поточній C#-збірці не потрібні. Це не runtime DLL."
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/libswscale.dll.a",
+      "bytes": 27362,
+      "reason": "Файли SDK для нативного компонування; поточній C#-збірці не потрібні. Це не runtime DLL."
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/pkgconfig/libavcodec.pc",
+      "bytes": 312,
+      "reason": "Файли SDK для нативного компонування; поточній C#-збірці не потрібні. Це не runtime DLL."
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/pkgconfig/libavdevice.pc",
+      "bytes": 423,
+      "reason": "Файли SDK для нативного компонування; поточній C#-збірці не потрібні. Це не runtime DLL."
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/pkgconfig/libavfilter.pc",
+      "bytes": 404,
+      "reason": "Файли SDK для нативного компонування; поточній C#-збірці не потрібні. Це не runtime DLL."
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/pkgconfig/libavformat.pc",
+      "bytes": 350,
+      "reason": "Файли SDK для нативного компонування; поточній C#-збірці не потрібні. Це не runtime DLL."
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/pkgconfig/libavutil.pc",
+      "bytes": 264,
+      "reason": "Файли SDK для нативного компонування; поточній C#-збірці не потрібні. Це не runtime DLL."
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/pkgconfig/libswresample.pc",
+      "bytes": 301,
+      "reason": "Файли SDK для нативного компонування; поточній C#-збірці не потрібні. Це не runtime DLL."
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/pkgconfig/libswscale.pc",
+      "bytes": 295,
+      "reason": "Файли SDK для нативного компонування; поточній C#-збірці не потрібні. Це не runtime DLL."
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/swresample-7.def",
+      "bytes": 475,
+      "reason": "Файли SDK для нативного компонування; поточній C#-збірці не потрібні. Це не runtime DLL."
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/swresample.lib",
+      "bytes": 19876,
+      "reason": "Файли SDK для нативного компонування; поточній C#-збірці не потрібні. Це не runtime DLL."
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/swscale-10.def",
+      "bytes": 911,
+      "reason": "Файли SDK для нативного компонування; поточній C#-збірці не потрібні. Це не runtime DLL."
+    },
+    {
+      "group": "C4",
+      "path": "tools/ffmpeg/lib/swscale.lib",
+      "bytes": 33288,
+      "reason": "Файли SDK для нативного компонування; поточній C#-збірці не потрібні. Це не runtime DLL."
+    },
+    {
+      "group": "C5",
+      "path": "tools/mpv/doc/manual.pdf",
+      "bytes": 1043370,
+      "reason": "Локальна документація; низькорівневі бібліотеки, installer та виконувані файли залишити."
+    },
+    {
+      "group": "C5",
+      "path": "tools/mpv/doc/mpbindings.png",
+      "bytes": 190376,
+      "reason": "Локальна документація; низькорівневі бібліотеки, installer та виконувані файли залишити."
+    }
+  ]
+}

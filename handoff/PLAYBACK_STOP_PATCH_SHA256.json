@@ -1,0 +1,162 @@
+{
+  "LowTube.Benchmark.exe": {
+    "bytes": 67584,
+    "sha256": "74cf49d19143d33df50653f1ff54bf36d66cf7cb7e6a9852d9a1879d0960526b"
+  },
+  "LowTube.Hybrid.Compare.exe": {
+    "bytes": 19456,
+    "sha256": "c512bb106f9b93fb01308e5a2fbb2c9ab1209f3f229ae201a775bd4173c44e72"
+  },
+  "LowTube.Hybrid.exe": {
+    "bytes": 33792,
+    "sha256": "7c0c6a91103ecd44997b5f36cae619c44f0c35fbed05166acbc84a8e2d42ce0e"
+  },
+  "LowTube.exe": {
+    "bytes": 613376,
+    "sha256": "b85cdb10bc51a9e8a6e7ce08dae85b0138caa52daca15b84742c9db13497f335"
+  },
+  "README_CODEX_UK.md": {
+    "bytes": 6881,
+    "sha256": "6c62eddd07659ee8bb5bb58774452df926622102d877ae1ea6a9e97096af4b93"
+  },
+  "Run-Checks.ps1": {
+    "bytes": 2178,
+    "sha256": "c003e989911fb893293aa0f90daec91407ee4e24596ccef112c63c5c74995b28"
+  },
+  "handoff/ARCHITECTURE.md": {
+    "bytes": 4286,
+    "sha256": "d51b5f3c9eb017c2a7fd15f5eb861e10e2def332c1f2fa6043fed18154cb42c0"
+  },
+  "handoff/DEVELOPMENT_PLAN_UK.md": {
+    "bytes": 10924,
+    "sha256": "3354d5dd0d417e5cb33366278f391378857644c37a95e6a6e12cc4cb59692a77"
+  },
+  "handoff/INNERTUBE_PATCH_SHA256.json": {
+    "bytes": 2889,
+    "sha256": "bd8e2fc2986b6eb61e7c2a0590d377a3ee922c478431f65be8183baaf378d7bc"
+  },
+  "handoff/INNERTUBE_VALIDATION_UK.md": {
+    "bytes": 12596,
+    "sha256": "e373f4c5bb89a454e8506d2b046a417eafa09f202f2f43d2ffccc15fdc9c21ba"
+  },
+  "handoff/PLAYBACK_STOP_VALIDATION_UK.md": {
+    "bytes": 6437,
+    "sha256": "84cb5c2074e7c36e105f3a44a190cd3e92192d1a80a747cf56c807edcfea488d"
+  },
+  "handoff/PROJECT_STATE.md": {
+    "bytes": 8182,
+    "sha256": "ad3674241edc643419a56ff104417dcb8237d4c69110402f118bb6d973b06cc3"
+  },
+  "handoff/RELIABILITY_PATCH_SHA256.json": {
+    "bytes": 3482,
+    "sha256": "4d292ac52f2e3f2d5519b9bee674db68968bd4a578bfefce300ac58d32f62f99"
+  },
+  "handoff/STREAM_OPEN_PATCH_SHA256.json": {
+    "bytes": 4484,
+    "sha256": "5d28c85d76b582f6967e5e993a60d895f12d7125e68287b9eda4c8f467c3163d"
+  },
+  "handoff/STREAM_OPEN_VALIDATION_UK.md": {
+    "bytes": 7018,
+    "sha256": "7ad605d5ac4fe1643bcfd31334c68de20e97f3973d51a7505c48f67ac0101953"
+  },
+  "player/lowtube.lua": {
+    "bytes": 15716,
+    "sha256": "aa13e4f5cf40303ec1be325c99e9a196efbaa7e3591bde6f688a9b62f23d0e36"
+  },
+  "src/AssemblyInfo.cs": {
+    "bytes": 333,
+    "sha256": "96c5e973fae364e2c1a055754632da078e8724deeda2af8130d2919693bef74e"
+  },
+  "src/BackgroundFeeds.cs": {
+    "bytes": 19606,
+    "sha256": "3bd2f3a39e9cec9c8b9a5e81748e2ee09b269be213d662a981db5fa92f6f2fc9"
+  },
+  "src/Core.cs": {
+    "bytes": 33612,
+    "sha256": "f85f8cca44bac4162c6d14093bbaa97262f273af7c7cd43db9ab4f621ab262e1"
+  },
+  "src/FormatCache.cs": {
+    "bytes": 4278,
+    "sha256": "b7f4d314bf8f66582ecee2e05cab10d7c6c4b790c49548ed8791808a80d71ba7"
+  },
+  "src/I18n.cs": {
+    "bytes": 108989,
+    "sha256": "427bb3b90915ab69a210eaa5eb0202795eb26b4104018d6d143209e29447522f"
+  },
+  "src/InnerTube.cs": {
+    "bytes": 25811,
+    "sha256": "2781e6e4bc1cfddf6b89f110f3838a02a70f3c2e8be16bb6b3cb4ceab545c645"
+  },
+  "src/InnerTubeFailures.cs": {
+    "bytes": 3350,
+    "sha256": "32d498b5704869fb44458d30f070fda8eb5e759768abc11874cf74c4385701f8"
+  },
+  "src/InnerTubeJson.cs": {
+    "bytes": 13969,
+    "sha256": "3acabdf4a9ebe60d297df07364ac546256b568547122892f168cf6480327a965"
+  },
+  "src/MainForm.cs": {
+    "bytes": 65290,
+    "sha256": "c36feea76a8c152911313b6fc625a24cd47638b29761d387db159db3b62b6ad5"
+  },
+  "src/Player.cs": {
+    "bytes": 31568,
+    "sha256": "1d9c6b8aee8d2e28c3c389204f4e0d7a2606a01f461e500316069c009169c2d3"
+  },
+  "src/SavedSession.cs": {
+    "bytes": 11074,
+    "sha256": "68624d80edce81598946f9f477653f9f6a5b1a8928b1a3ba93c3ed9e02322869"
+  },
+  "src/StartupTrace.cs": {
+    "bytes": 12460,
+    "sha256": "e4a1c3d0b513a83e05ef4713603630211e1d63f9d2d37762de484df3a413b20d"
+  },
+  "src/StreamContinuity.cs": {
+    "bytes": 12612,
+    "sha256": "d9ffb7710cfaf4f3829594fccb551b08b19551bfe7e33c0c0515c8ac7f235533"
+  },
+  "src/StreamOpenRecovery.cs": {
+    "bytes": 4093,
+    "sha256": "1fc6911c38ef8ca867d88d0850aa10eabb80b5ac722151e5e7c1a4e124d1da07"
+  },
+  "src/WorkspaceFeatures.cs": {
+    "bytes": 23151,
+    "sha256": "f28c6949a719fb4a6db4a7e47f210068e964b57c5b47eab1770f9b37b2c54b42"
+  },
+  "tests/ContinuityTests.cs": {
+    "bytes": 7421,
+    "sha256": "9018740b17fcd7888e7860aeefa59eecf38669fe0124630f52b4ce7656a74b46"
+  },
+  "tests/CoreTests.cs": {
+    "bytes": 56471,
+    "sha256": "908a5518201cf7fb1904ef884ffa6a6fd3af9b1b219602c4523f2435e0faf923"
+  },
+  "tests/FeatureTests.cs": {
+    "bytes": 7646,
+    "sha256": "c5ebbaf2db180071487214410ff90442487f6b4d0d8634ba802b424385285a5d"
+  },
+  "tests/InnerTubeReliabilityTests.cs": {
+    "bytes": 14250,
+    "sha256": "a8374339085ac51fa4d1a1e46fc4c92f5375db2c217849f9bf70efa69db9e96b"
+  },
+  "tests/InnerTubeTests.cs": {
+    "bytes": 21057,
+    "sha256": "cc25a7f492943e2c1ada583e625ff01a85e80068d1657d9dd7d51535a72520d9"
+  },
+  "tests/PlaybackSelectionTests.cs": {
+    "bytes": 3301,
+    "sha256": "8e5ae47bb2545893dc53594da5ede99a0cc193c3bf55b3a9514bbfe5e3225bb3"
+  },
+  "tests/StreamOpenTests.cs": {
+    "bytes": 5386,
+    "sha256": "cd5e124a29185cdd864442470d267b9371f417d1c267a4219b71afebd4e03436"
+  },
+  "tests/WindowsPlayerStopTests.cs": {
+    "bytes": 8197,
+    "sha256": "a5ca86fb405a92a255eb22aca467a0ad9ffd868f0fac71026679f0efa15cf63a"
+  },
+  "tests/WindowsStreamOpenTests.cs": {
+    "bytes": 4618,
+    "sha256": "407d968c747b13869ed7ed276e97388eb359a6cc4b918a62a4e4891545d4b0f6"
+  }
+}

@@ -1,0 +1,44 @@
+﻿GOOGLE SIGN-IN — LOWTUBE 0.5
+This build supports the official Google OAuth desktop flow in your browser.
+It has no registered OAuth client ID bundled. A one-time Google Cloud setup
+is required before the Sign in with Google button can complete a sign-in.
+
+1. Open https://console.cloud.google.com/ and create/select your project.
+2. APIs & Services > Library: enable YouTube Data API v3.
+3. Open Google Auth Platform. Configure Branding (app name and your contact
+   email) and Audience. For personal testing choose External / Testing and
+   add your Google email to Test users. Workspace policies may restrict this.
+4. Data Access: add https://www.googleapis.com/auth/youtube.readonly .
+5. Clients > Create client > Desktop app. Download the client JSON.
+   Do not choose Web application, Android, or a service-account key.
+6. In LowTube: Account > Import OAuth client JSON. Select that file.
+7. Click Sign in with Google. Choose your account on accounts.google.com
+   and grant YouTube read access. Return to LowTube after the browser callback.
+8. Open Google subscriptions in the left menu. It reads your subscribed
+   channels via the official API, then obtains their recent public videos.
+   All subscription pages are read; up to 3000 recent videos are displayed.
+   Local subscriptions are independent and are not overwritten.
+
+Testing projects normally require signing in again after seven days.
+API disabled, quota limits, administrator restrictions or a revoked grant
+can prevent access. Complete your own project setup; do not use someone
+else's application identity. Wider distribution needs the applicable Google
+verification and publishing steps; this build is not Google-verified.
+
+OAuth does not provide personal Home recommendations, watch history, or
+media download URLs. Recommendations remain topic-based; Local history is
+this app's history. Existing experimental YouTube history / authenticated
+media remain under Account > Firefox / cookies settings. OAuth tokens are
+never passed to yt-dlp, mpv, the public video feeds or thumbnail requests.
+
+Google access/refresh tokens are encrypted for your Windows user with DPAPI
+in %LOCALAPPDATA%\LowTube\google-session.bin. Client configuration is in
+google-client.json. Passwords are entered only on Google's website.
+Disconnect removes the local token. Revoke Google access also withdraws
+the Google authorization for this OAuth client; subscriptions are unchanged.
+You can also manage grants at https://myaccount.google.com/connections .
+Closing the dialog or Cancel sign-in stops waiting; timeout is five minutes.
+
+The complete browser-to-Google flow requires your registered client and
+account and has not been live-tested with this build. Local callback/state,
+PKCE, cancellation and C# compilation have been tested. See VALIDATION.txt.

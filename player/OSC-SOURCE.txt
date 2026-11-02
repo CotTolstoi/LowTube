@@ -1,0 +1,8 @@
+LowTube controller adaptation, 2026-10-12
+Source: https://github.com/mpv-player/mpv/blob/v0.41.0/player/lua/osc.lua
+Changes: audio-track button replaced by LowTube settings gear; subtitle selector
+hidden and bottom-bar space collapsed; right-click commands route to advanced
+settings; fade disabled. Built-in OSC disabled to prevent duplicate controls.
+Original transport, volume, seekbar, chapter, fullscreen and window controls retained.
+See MPV-Copyright.txt and MPV-LICENSE.GPL for upstream licensing. This third-party
+script is excluded from the application MIT license; modifications are GPLv2+.

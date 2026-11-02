@@ -1,0 +1,60 @@
+# Build outputs and external dependencies
+*.exe
+*.dll
+*.pdb
+*.obj
+*.lib
+*.7z
+*.zip
+bin/
+obj/
+tools/**
+!tools/README.md
+!tools/COMPONENT_SOURCES.md
+!tools/versions.json
+# Local setup/build/test artifacts
+/.checks-temp/
+/download-cache/
+/.setup-*/
+Test.*.exe
+*.tmp
+*.part
+*.log
+*.bak
+*.previous*
+.vs/
+# User data and credentials must stay outside source control
+settings.json
+history.json
+resume.json
+watch-queue.json
+downloads.json
+subscriptions.json
+local-playlists.json
+cookies*.txt
+*.cookies
+*.cookie
+client_secret*.json
+google-client.json
+google-token*
+.env
+.env.*
+*.key
+*.pem
+saved-session*
+session*.bin
+*.dpapi
+Downloads/
+BrowserProfiles/
+# Local diagnostics can contain environment or playback details
+setup-diagnostics.txt
+startup.txt
+playback-debug*.txt
+# Browser profile databases
+**/Cookies
+**/Login Data
+**/Web Data
+**/Local State
+# Local test outputs/cache
+__pycache__/
+*.pyc
