@@ -15,6 +15,14 @@ This is an existing C# 5 / .NET Framework 4.8 Windows Forms application, not WPF
 - User normally wants only changed files for patches. This archive is an explicitly requested complete project transfer.
 - Saved browser session import is local. Never commit, upload or print real cookies, OAuth tokens, browser profiles or user data.
 
+## Git workflow
+
+- Follow `GIT_WORKFLOW_UK.md`. Start by checking `git status --short --branch`; preserve any existing local changes.
+- Use one task branch from `main` per code or documentation task. Keep `main` at the last validated state; merge completed task branches only after review and relevant validation.
+- Stage explicit reviewed paths, not the whole workspace by default. Never add user settings, cookies, saved sessions, OAuth credentials, browser profiles, downloads, local diagnostics, build outputs, setup caches or release archives.
+- Do not configure a remote or push changes without an explicit user request. This checkout is local-only until its owner selects a remote and access policy.
+- Use small commits with `<type>: <short description>` messages. Report the commit and validation result when finishing a task.
+
 ## Implementation boundaries
 
 - Build via Build.ps1 / Build-All.ps1. Keep C# 5 compatibility (no modern syntax or new runtime dependencies without discussion).
