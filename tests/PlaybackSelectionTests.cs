@@ -22,6 +22,9 @@ public static class PlaybackSelectionTests {
   Check(Pick(Root(audio,Video("480",480),Video("720fps",720,false,"avc1",60),Video("1080av1",1080,false,"av01")),settings)=="480+a","lower fallback preserves H264 and 30 FPS caps");
   settings.H264=false;Check(Pick(Root(audio,Video("480",480),Video("1080av1",1080,false,"av01")),settings)=="1080av1+a","codec preference is retained when H264 limit is disabled");
   settings.H264=true;settings.Fps30=false;Check(Pick(Root(audio,Video("480",480),Video("720fps",720,false,"avc1",60)),settings)=="720fps+a","60 FPS remains available when cap is disabled");
+  settings.Fps30=true;settings.Height=720;bool fpsExplained=false;try{Pick(Root(audio,Video("720fps",720,false,"avc1",60)),settings);}catch(FormatSelectionException e){fpsExplained=!e.CanRefresh && e.Message.Contains("30 FPS");}Check(fpsExplained,"listed formats rejected by FPS policy are explained without pointless metadata refresh");
+  settings.Fps30=false;settings.H264=true;bool codecExplained=false;try{Pick(Root(audio,Video("720av1",720,false,"av01",30)),settings);}catch(FormatSelectionException e){codecExplained=!e.CanRefresh && e.Message.Contains("H.264");}Check(codecExplained,"listed formats rejected by H264 policy are explained without pointless metadata refresh");
+  bool emptyRefresh=false;try{Pick(Root(audio),settings);}catch(FormatSelectionException e){emptyRefresh=e.CanRefresh;}Check(emptyRefresh,"missing usable video stream is eligible for one fresh metadata attempt");
   settings.Height=240;bool rejected=false;try{Pick(root,settings);}catch(InvalidOperationException){rejected=true;}Check(rejected,"no lower stream fails visibly rather than raising resolution");
   settings.Height=1080;var invalid=Video("invalid",1080);invalid["height"]=Double.NaN;
   var drm=Video("drm",1080);drm["has_drm"]=true;

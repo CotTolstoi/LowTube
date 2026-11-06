@@ -1,4 +1,8 @@
-# State and next work — 2026-11-02
+# State and next work — 2026-11-06
+
+## Playback format selection diagnostics — 0.12.3
+
+The playback format picker distinguishes an extractor response with no usable video stream from formats excluded by the user's saved height, 30 FPS, or H.264 limits. Deterministic policy mismatches now report the specific restriction and do not trigger a redundant yt-dlp extraction; an empty/unusable stream response still gets one bounded fresh metadata attempt. The 0.12.4 docked UI remains parked in the sibling `new-ui-experiment` worktree on `experiment/new-ui-0124`.
 
 ## Playlist audio isolation and manual next — 0.12.3
 

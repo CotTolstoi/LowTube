@@ -426,6 +426,11 @@ namespace LowTube {
             }
             Dictionary<string,object> selected=null;bool retryFormats=false;
             try{selected=formatsOnly?root:FormatPicker.Select(root,settings,audio);}
+            catch(FormatSelectionException e){
+                metadata.Remove(key);ct.ThrowIfCancellationRequested();
+                if(trace!=null)trace.Event("format selection rejected; refresh="+e.CanRefresh);
+                if(!fresh && e.CanRefresh)retryFormats=true;else throw;
+            }
             catch(InvalidOperationException){
                 metadata.Remove(key);ct.ThrowIfCancellationRequested();
                 if(!fresh)retryFormats=true;else throw;

@@ -2,6 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 namespace LowTube {
+    public sealed class FormatSelectionException : InvalidOperationException {
+        public readonly bool CanRefresh;
+        public FormatSelectionException(string message,bool canRefresh):base(L.T(message)){CanRefresh=canRefresh;}
+    }
     // Choose the nearest available height below the cap; yt-dlp order breaks ties.
     public static class FormatPicker {
         static double Number(Dictionary<string,object> f,string key,double missing){double n;return Double.TryParse(Json.Str(f,key),System.Globalization.NumberStyles.Any,System.Globalization.CultureInfo.InvariantCulture,out n) && !Double.IsNaN(n) && !Double.IsInfinity(n)?n:missing;}
@@ -18,11 +22,19 @@ namespace LowTube {
             var result=new Dictionary<string,object>(root);result.Remove("requested_downloads");
             if(audio){if(sound==null)sound=all.Where(Audio).OrderBy(f=>Number(f,"tbr",Double.MaxValue)).ThenBy(f=>Number(f,"height",Double.MaxValue)).FirstOrDefault();if(sound==null)throw new InvalidOperationException(L.T("A separate audio stream is unavailable."));result["requested_formats"]=new object[]{sound};return result;}
             Rules.Filter(settings.Height,settings.Fps30); // validates cap
-            var candidates=all.Where(f=>Video(f) && Number(f,"height",0)>0 && Number(f,"height",Double.MaxValue)<=settings.Height && (!settings.Fps30 || Number(f,"fps",0)<=30) && (!settings.H264 || Json.Str(f,"vcodec").StartsWith("avc1",StringComparison.Ordinal)) && (Audio(f) || sound!=null))
+            var videoFormats=all.Where(f=>Video(f) && Number(f,"height",0)>0).ToList();
+            if(videoFormats.Count==0)throw new FormatSelectionException("yt-dlp returned no usable video stream. The format list may contain IDs without playable stream URLs. Refresh and check the extractor version or network.",true);
+            var underHeight=videoFormats.Where(f=>Number(f,"height",Double.MaxValue)<=settings.Height).ToList();
+            if(underHeight.Count==0)throw new FormatSelectionException("Video formats were returned, but none are at or below the selected height limit.",false);
+            var underFps=underHeight.Where(f=>!settings.Fps30 || Number(f,"fps",0)<=30).ToList();
+            if(underFps.Count==0)throw new FormatSelectionException("Video formats were returned below the height limit, but all exceed the 30 FPS limit.",false);
+            var underCodec=underFps.Where(f=>!settings.H264 || Json.Str(f,"vcodec").StartsWith("avc1",StringComparison.Ordinal)).ToList();
+            if(underCodec.Count==0)throw new FormatSelectionException("Video formats were returned below the height and FPS limits, but none use H.264.",false);
+            var candidates=underCodec.Where(f=>Audio(f) || sound!=null)
                 .OrderByDescending(f=>Number(f,"height",0)).ThenBy(f=>Audio(f)?1:0).ToList();
             var video=candidates.FirstOrDefault();
             object[] streams;
-            if(video==null)throw new InvalidOperationException(L.T("No available stream fits the height, FPS and codec limits. Open Available formats; your limits were not changed."));
+            if(video==null)throw new FormatSelectionException("Video formats match the selected height, FPS and codec limits, but yt-dlp returned no audio stream.",true);
             if(!Audio(video))streams=new object[]{video,sound};else streams=new object[]{video};
             result["requested_formats"]=streams;result["format_id"]=String.Join("+",streams.Cast<Dictionary<string,object>>().Select(f=>Json.Str(f,"format_id")));
             foreach(string key in new[]{"width","height","fps","vcodec","acodec","url","ext"}){object value;if(video.TryGetValue(key,out value))result[key]=value;}
