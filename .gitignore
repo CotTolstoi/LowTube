@@ -58,3 +58,4 @@ playback-debug*.txt
 # Local test outputs/cache
 __pycache__/
 *.pyc
+*.zip.sha256.txt
