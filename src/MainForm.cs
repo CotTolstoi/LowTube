@@ -15,6 +15,8 @@ namespace LowTube {
         List<Video> subscriptionFeed=new List<Video>();
         readonly Player player=new Player();
         CancellationTokenSource operation;
+        CancellationTokenSource startupSessionRefresh;
+        bool sessionRefreshNeedsSync;
         TextBox search,log;
         ListView videos;
         VideoGrid cards;Panel videoHost;Label feedTitle;CheckBox pin;bool updatingPin;
@@ -139,10 +141,13 @@ namespace LowTube {
                     string missing=await Task.Run(delegate{foreach(string name in new[]{"yt-dlp","mpv","ffmpeg","ffprobe","qjs"})try{Paths.Tool(name);}catch(FileNotFoundException){return name;}return "";});
                     if(closing)return;if(missing.Length>0)Append(L.T("Close LowTube and run SETUP.cmd first. Internet access is required to install components."));
                     else if(!File.Exists(Path.Combine(Paths.Root,"tools","yt-dlp","yt-dlp.exe")))Append(L.T("For faster HDD startup, close LowTube and run UPDATE_YTDLP.cmd once."));
+                    if(settings.Auth=="saved" && SavedSession.Exists && !String.IsNullOrWhiteSpace(BrowserSessions.Profile(settings))){
+                        await RefreshSessionAtStartup();
+                    }else if(settings.Auth=="saved" && SavedSession.Exists && String.IsNullOrWhiteSpace(BrowserSessions.Profile(settings)))Append(L.T("Automatic session refresh needs a selected browser profile. Connect YouTube in Account."));
                 }catch(Exception e){if(!closing)Error(e);}
-                finally{initializing=false;if(!closing){foreach(var control in locked)control.Enabled=true;UpdatePageButtons();StartupTrace.Mark("history and tool checks ready");}}
-                if(!closing){StartFeeds();await StartupTrace.Save();}
-                if(!closing)try{await player.Prepare(settings,Append);}catch(Exception e){if(!closing)Append(Rules.Redact(e.Message));}
+                finally{initializing=false;if(!closing && !closePending){foreach(var control in locked)control.Enabled=true;UpdatePageButtons();StartupTrace.Mark("history and tool checks ready");}}
+                if(!closing && !closePending){StartFeeds();await StartupTrace.Save();}
+                if(!closing && !closePending)try{await player.Prepare(settings,Append);}catch(Exception e){if(!closing)Append(Rules.Redact(e.Message));}
             };
             player.PlaybackEnded+=(endedSession,preparedNext)=>{if(!closing && !IsDisposed)BeginInvoke(new Action(async delegate{try{await OnEnded(endedSession,preparedNext);}catch(Exception e){Error(e);}}));};
             player.QuickSettingRequested+=delegate(string key,string value){if(!closing && !IsDisposed)BeginInvoke(new Action(async delegate{await VideoSettings(key,value);}));};
@@ -156,6 +161,18 @@ namespace LowTube {
             L.Changed+=languageChanged;Disposed+=delegate{L.Changed-=languageChanged;};Ui.Attach(this);
             ResumeLayout(true);StartupTrace.Mark("main controls ready");
             FormClosing+=async delegate(object sender,FormClosingEventArgs e){await CloseWorkspace(e);};
+        }
+        async Task RefreshSessionAtStartup(){
+            var own=new CancellationTokenSource();startupSessionRefresh=own;own.CancelAfter(15000);
+            try{
+                status.Text=L.T("Refreshing saved YouTube session…");
+                bool changed=await SavedSession.RefreshExistingBrowser(BrowserSessions.Browser(settings),BrowserSessions.Profile(settings),own.Token);
+                if(closing || closePending)return;
+                sessionRefreshNeedsSync=changed;
+                Append(L.T(changed?"Saved YouTube session refreshed from the selected browser.":"Saved YouTube session is already up to date."));
+            }catch(OperationCanceledException){if(!closing && !closePending)Append(L.T("Session refresh timed out; the previous session is unchanged."));}
+            catch(Exception){if(!closing && !closePending)Append(L.T("Could not refresh the YouTube session. The previous session is unchanged; reconnect it in Account if needed."));}
+            finally{if(startupSessionRefresh==own)startupSessionRefresh=null;own.Dispose();}
         }
         Button NavButton(string text,Action action){var b=Button(L.T(text),action,true);b.AutoSize=false;b.Size=new Size(174,42);b.TextAlign=ContentAlignment.MiddleLeft;b.Padding=new Padding(12,0,0,0);return b;}
         Video SelectedVideo(){return settings.CardView?cards.Selected:videos.SelectedItems.Count>0?(Video)videos.SelectedItems[0].Tag:null;}
@@ -330,7 +347,7 @@ namespace LowTube {
                 if(ct.IsCancellationRequested){player.Stop();ct.ThrowIfCancellationRequested();}
                 now.Text=L.T(audio?"Audio only: {0}":"Video: {0}",media.Title);
                 OpenCompactPlayer(info);RememberVideo(info,url);
-                Append(L.T(audio?"Audio is playing in the compact player. Closing it stops playback.":"Video is playing in mpv. F4 / right-click: settings; Space: pause; F: fullscreen; I: statistics."));
+                Append(L.T(audio?"Audio is playing in the compact player. Closing it stops playback.":"Video is playing in mpv. N: next video; F4 / right-click: settings; Space: pause; F: fullscreen; I: statistics."));
                 }catch(OperationCanceledException){queuePlaybackCancelled=true;throw;}catch(Exception e){trace.Failure(e);throw;}finally{playbackStarting=false;StartupTrace.Flush();}
             });
         }

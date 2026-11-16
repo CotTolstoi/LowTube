@@ -1,0 +1,6 @@
+Package validation
+Built previous source snapshot with Build.ps1.
+LowTube.exe FileVersion: 0.12.3.0
+Windows GUI/runtime playback and setup download were not run as part of archive assembly.
+Personal data and downloaded dependency tools are excluded.
+

@@ -1,9 +1,8 @@
-﻿LowTube — installation for Windows 10/11 x64
+LowTube 0.12.3 — beta tester package
 
-1. Extract the complete archive to a writable folder.
-2. Run SETUP.cmd and wait for it to finish. Internet access is required to download components.
-3. Run START.cmd. .NET Framework 4.8 is required.
+1. Run SETUP.cmd and allow it to download the application dependencies.
+2. Start LowTube with START.cmd.
 
-The installer is SETUP.cmd. It downloads yt-dlp, Node.js, QuickJS-NG, mpv, FFmpeg and 7-Zip; these third-party components are not included in this archive.
-User data is stored separately in %LOCALAPPDATA%\LowTube and is not included in the archive.
-BENCHMARK.cmd, HYBRID_EXPERIMENT.cmd and HYBRID_BENCHMARK.cmd start separate optional tools.
+This package contains the previous 0.12.3 build with a separate video player window, a compact audio-only window, video settings and player diagnostics in the playback controls, and the equalizer.
+
+Downloaded dependency tools and personal data are excluded. Browser sessions, cookies, local app data, and user profiles are not included.

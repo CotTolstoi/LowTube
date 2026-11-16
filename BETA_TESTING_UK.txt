@@ -1,0 +1,8 @@
+LowTube 0.12.3 — beta tester package
+
+1. Run SETUP.cmd and allow it to download the application dependencies.
+2. Start LowTube with START.cmd.
+
+This package contains the previous 0.12.3 build. It uses the separate video player window and compact audio-only window. Video settings and player diagnostics are available in the playback controls. The equalizer is included.
+
+The archive excludes downloaded dependency tools and all personal data, including browser sessions, cookies, local app data, and user profiles. Do not share your session files.

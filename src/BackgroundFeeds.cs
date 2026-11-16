@@ -35,12 +35,25 @@ namespace LowTube {
             catch(Exception e){if(!closing)Append(L.T("Background update failed: {0}",e.Message));}
             if(closing)return;feedsReady=true;
             try{QueueFeedRefresh();}catch(Exception e){Append(L.T("Background update failed: {0}",e.Message));}
+            if(sessionRefreshNeedsSync){sessionRefreshNeedsSync=false;QueueSessionRefreshSync();}
             feedTimer=new System.Windows.Forms.Timer{Interval=1000};feedTimer.Tick+=async delegate{
                 if(closing || feedModal || operation!=null)return;
                 try{if(DateTime.UtcNow>=nextFeedRefresh && feedActive==null)QueueFeedRefresh();await RunFeedJob();}
                 catch(Exception e){if(!closing)Append(L.T("Background update failed: {0}",e.Message));}
             };feedTimer.Start();
             if(currentTarget==":local-subscriptions" || currentTarget==":youtube-subscriptions")try{await SubscriptionView(currentTarget==":youtube-subscriptions",page);}catch(Exception e){Error(e);}
+        }
+        void QueueSessionRefreshSync(){
+            string stamp=SavedSession.Stamp;var config=FeedSettings();
+            QueueJob(new FeedJob{Key="session-refresh:"+stamp,Priority=2,Action=async ct=>{
+                var backend=new Backend(config);var channels=await backend.SessionChannels(ct,Append);
+                var subscriptions=await backend.Browse(":ytsubs",0,true,ct,Append);ct.ThrowIfCancellationRequested();
+                if(closing || closePending || settings.Auth!="saved" || SavedSession.Stamp!=stamp)return;
+                ContentFeeds.Save(new YouTubeSnapshot{SessionStamp=stamp,Channels=channels,Subscriptions=subscriptions});
+                QueueFeedRefresh();
+                if(currentTarget==":youtube-subscriptions"){ConfigureChannels(channels);await DisplaySubscriptionCache(true);}
+                Append(L.T("YouTube subscriptions refreshed after the session update."));
+            }});
         }
         bool MatchesFeedView(FeedJob job){return job.Target==currentTarget && job.ViewKind==ContentKind && job.ViewPage==page;}
         void FeedNotice(FeedJob job,string text){Append(text);if(MatchesFeedView(job) && operation==null)status.Text=text;}
