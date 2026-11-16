@@ -185,21 +185,14 @@ namespace LowTube {
         public Task<PlaylistBatch> BrowseVisiblePage(string target,int page,int size,bool account,string kind,CancellationToken ct,Action<string> progress,bool fresh=false){
             return Operation(ct,progress,async token=>{
                 if(account)RequireAccount();size=Paging.Size(size);long first=(long)Math.Max(0,page)*size;
-                if(first+size>MaxItems)throw new InnerTubeException(InnerTubeFailure.RequestBudget,L.T("InnerTube list limit reached. Refine the search or open a smaller list."));
+                if(!ContentFeeds.Kinds.Contains(kind))throw new ArgumentException("Invalid content kind.");
                 string videoId=ResumeRules.Key(target);
-                if(videoId.Length>0 && QueueRules.PlaylistUrl(target).Length==0){var video=Video.From(await GetMetadata(target,token));return new PlaylistBatch{Items=page==0 && (kind=="all" || video.Kind==kind)?new List<Video>{video}:new List<Video>(),HasMore=false};}
-                ListState old;if(fresh && (!lists.TryGetValue(target,out old) || !old.Incomplete))lists.Remove(target);
-                if(lists.TryGetValue(target,out old) && old.Offset>0)lists.Remove(target);
-                var state=await List(target,0,1,account,token);int requests=0;
+                if(videoId.Length>0 && QueueRules.PlaylistUrl(target).Length==0){if(page>0)return new PlaylistBatch();var video=Video.From(await GetMetadata(target,token));return new PlaylistBatch{Items=(kind=="all" || video.Kind==kind)?new List<Video>{video}:new List<Video>(),HasMore=false};}
+                string key=VisibleKey(target,kind);ListState old;if(fresh && (!lists.TryGetValue(key,out old) || !old.Incomplete))lists.Remove(key);
+                var state=await List(target,first,size,account,token,kind);
                 try{
-                    while(!state.Ended && state.Items.LongCount(v=>v!=null && (kind=="all" || v.Kind==kind))<first+size){
-                        if(state.Offset>0 || state.Items.Count>=MaxItems || ++requests>MaxRequests)throw new InnerTubeException(InnerTubeFailure.RequestBudget,L.T("InnerTube request limit reached. Reopen this list to continue."));
-                        token.ThrowIfCancellationRequested();var root=await Api(state.Api,new Dictionary<string,object>{{"continuation",state.Continuation}},token);if(account)RequireAccount();Append(state,root);
-                    }
-                    if(state.Offset>0)throw new InnerTubeException(InnerTubeFailure.RequestBudget,L.T("InnerTube list limit reached. Refine the search or open a smaller list."));
-                    var matching=state.Items.Where(v=>v!=null && (kind=="all" || v.Kind==kind)).ToList();
-                    return new PlaylistBatch{Items=matching.Skip((int)first).Take(size).Select(CopyVideo).ToList(),HasMore=matching.Count>first+size || !state.Ended};
-                }catch(Exception error){if(InnerTubeException.MayResume(error))state.Incomplete=true;else lists.Remove(target);throw;}
+                    return new PlaylistBatch{Items=first>=state.Offset+state.Items.Count?new List<Video>():state.Items.Skip((int)(first-state.Offset)).Take(size).Select(CopyVideo).ToList(),HasMore=state.Offset+state.Items.Count>first+size || !state.Ended};
+                }finally{Trim(state,null);}
             });
         }
         public Task<PlaylistBatch> Playlist(string target,int page,int size,bool account,CancellationToken ct,Action<string> progress){
@@ -236,11 +229,13 @@ namespace LowTube {
             return InnerTubeJson.Map(InnerTubeJson.At(root,"endpoint"));
         }
         static string Query(Uri uri,string name){foreach(string part in uri.Query.TrimStart('?').Split('&')){var pair=part.Split(new[]{'='},2);if(pair[0]==name)return pair.Length>1?Uri.UnescapeDataString(pair[1].Replace("+"," ")):"";}return "";}
-        async Task<ListState> List(string target,long first,int size,bool account,CancellationToken ct){
+        static string VisibleKey(string target,string kind){return ((char)0)+"visible:"+kind+":"+target;}
+        async Task<ListState> List(string target,long first,int size,bool account,CancellationToken ct,string visibleKind=null){
             if(first<0 || first+size<first)throw new ArgumentOutOfRangeException("first");
-            ListState state;lists.TryGetValue(target,out state);
-            if(state!=null && DateTime.UtcNow-state.Created>TimeSpan.FromMinutes(10)){lists.Remove(target);state=null;}
-            if(state!=null && first<state.Offset){lists.Remove(target);state=null;}
+            string key=visibleKind==null?target:VisibleKey(target,visibleKind);
+            ListState state;lists.TryGetValue(key,out state);
+            if(state!=null && DateTime.UtcNow-state.Created>TimeSpan.FromMinutes(10)){lists.Remove(key);state=null;}
+            if(state!=null && first<state.Offset){lists.Remove(key);state=null;}
             if(state!=null)state.Incomplete=false;
             int requests=0;
             try{
@@ -266,32 +261,34 @@ namespace LowTube {
                         }
                     }
                     fetch:
-                    var root=await Api(state.Api,body,ct);requests++;if(account)RequireAccount();Append(state,root);
-                    if(lists.Count>=4)lists.Remove(lists.OrderBy(x=>x.Value.Created).First().Key);lists[target]=state;
+                    var root=await Api(state.Api,body,ct);requests++;if(account)RequireAccount();Append(state,root,visibleKind,first);
+                    if(lists.Count>=4)lists.Remove(lists.OrderBy(x=>x.Value.Created).First().Key);lists[key]=state;
                 }
-                while(!state.Ended && (target==":ytchannels"?state.Channels.Count:state.Offset+state.Items.Count)<first+size){
+                while(!state.Ended && (target==":ytchannels" && visibleKind==null?state.Channels.Count:state.Offset+state.Items.Count)<first+size){
                     if(++requests>MaxRequests)throw new InnerTubeException(InnerTubeFailure.RequestBudget,L.T("InnerTube request limit reached. Reopen this list to continue."));
                     ct.ThrowIfCancellationRequested();
-                    var root=await Api(state.Api,new Dictionary<string,object>{{"continuation",state.Continuation}},ct);if(account)RequireAccount();Append(state,root);
+                    var root=await Api(state.Api,new Dictionary<string,object>{{"continuation",state.Continuation}},ct);if(account)RequireAccount();Append(state,root,visibleKind,first);
                 }
                 if(first<state.Offset)throw new InnerTubeException(InnerTubeFailure.InvalidResponse,L.T("InnerTube list limit reached. Refine the search or open a smaller list."));
                 return state;
             }catch(Exception error){
                 ListState cached;
-                if(InnerTubeException.MayResume(error) || error is WebException || (error is IOException && !(error is InvalidDataException))){if(state!=null && lists.TryGetValue(target,out cached) && Object.ReferenceEquals(cached,state))state.Incomplete=true;}
-                else lists.Remove(target);
+                if(state!=null)Trim(state,null);
+                if(InnerTubeException.MayResume(error) || error is WebException || (error is IOException && !(error is InvalidDataException))){if(state!=null && lists.TryGetValue(key,out cached) && Object.ReferenceEquals(cached,state))state.Incomplete=true;}
+                else lists.Remove(key);
                 throw;
             }
         }
-        static void Append(ListState state,Dictionary<string,object> root){
+        static void Append(ListState state,Dictionary<string,object> root,string visibleKind,long first){
             var page=InnerTubeJson.Parse(root);
             if(!page.Recognized)throw InnerTubeException.InvalidResponse();
             if(page.Items.Count>MaxItems)throw new InvalidOperationException(L.T("InnerTube list limit reached. Refine the search or open a smaller list."));
             if(page.Continuation.Length>0 && !state.Seen.Add(page.Continuation))throw new InvalidOperationException(L.T("InnerTube repeated a page token. Reopen this list to retry."));
             if(page.Continuation.Length>0){state.Tokens.Enqueue(page.Continuation);if(state.Tokens.Count>256)state.Seen.Remove(state.Tokens.Dequeue());}
-            state.Items.AddRange(page.Items);int trim=Math.Max(0,state.Items.Count-MaxItems);if(trim>0){state.Items.RemoveRange(0,trim);state.Offset+=trim;}
+            state.Items.AddRange(visibleKind==null?page.Items:page.Items.Where(v=>v!=null && (visibleKind=="all" || v.Kind==visibleKind)));Trim(state,visibleKind==null?(long?)null:first);
             state.Channels.AddRange(page.Channels.Take(Math.Max(0,MaxItems-state.Channels.Count)));state.Continuation=page.Continuation;state.Ended=page.Continuation.Length==0;
         }
+        static void Trim(ListState state,long? keepFrom){int trim=Math.Max(0,state.Items.Count-MaxItems);if(keepFrom.HasValue)trim=(int)Math.Min(trim,Math.Max(0,keepFrom.Value-state.Offset));if(trim>0){state.Items.RemoveRange(0,trim);state.Offset+=trim;}}
         static async Task<string> Http(InnerTubeRequest input,CancellationToken ct){
             var request=(HttpWebRequest)WebRequest.Create(Origin+input.Path);
             request.Method=input.Body==null?"GET":"POST";request.CookieContainer=input.Cookies;request.AllowAutoRedirect=false;

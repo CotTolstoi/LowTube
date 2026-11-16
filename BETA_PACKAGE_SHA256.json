@@ -1,0 +1,342 @@
+[
+  {
+    "path": "app.manifest",
+    "size": 742,
+    "sha256": "71cf2fd13ee454a10120ae3f1b81192859a658a7f12d53e075dd376e66fe42f3"
+  },
+  {
+    "path": "BETA_TESTING_UK.txt",
+    "size": 551,
+    "sha256": "dafe07536bebb918fc3d28aec239f2cf8bd60591f37fbe371d90b583e0a3cb38"
+  },
+  {
+    "path": "BUILD.cmd",
+    "size": 115,
+    "sha256": "53f2ce27737a4f1ead8c73cd5d5cced9a394e2b0eb887fba01b5e69d746a3dcd"
+  },
+  {
+    "path": "Build.ps1",
+    "size": 1004,
+    "sha256": "dc55e63b57d1dfedf8f0b3ab29fe847c9c9f2588572077325782b46f6f9e29e7"
+  },
+  {
+    "path": "GOOGLE_SIGN_IN_EN.txt",
+    "size": 2857,
+    "sha256": "3937c05f1022a4f8c3728169ff34efab57abaf90422ea8cf49b53078d4305e50"
+  },
+  {
+    "path": "GOOGLE_SIGN_IN_RU.txt",
+    "size": 4346,
+    "sha256": "df3e52af62692d0d33c70e9f5f51dac7615593f65b1ff00c1c6654dab1bce1fa"
+  },
+  {
+    "path": "GOOGLE_SIGN_IN_UK.txt",
+    "size": 4337,
+    "sha256": "bbbc4ea674ccb3374d4a4b1a164a0a23e52eca6edd02bf95d79b2e52808ddb6d"
+  },
+  {
+    "path": "HARDWARE_MODES.md",
+    "size": 3517,
+    "sha256": "ccfdbd80118dc40600a3765b197e799279a6cb8f15ab9e79d7b664f8cce80f07"
+  },
+  {
+    "path": "JS_RUNTIME_SMOKE.js",
+    "size": 138,
+    "sha256": "68a5883d60ab1f4d02e50fc4c94473376808e5c74cab5ec9bf367c1df5fbe89b"
+  },
+  {
+    "path": "LICENSE.txt",
+    "size": 1101,
+    "sha256": "1e8b6eadfda31c037e3fb6b60a5070e1ba3f6cc1b363f9c62c69887a4ba6befb"
+  },
+  {
+    "path": "LowTube.exe",
+    "size": 640512,
+    "sha256": "ccdfcb64eeb0b48da3188fa8290e0e6e9826fa0e3f870b8d318869f725802ac7"
+  },
+  {
+    "path": "LowTube.exe.config",
+    "size": 159,
+    "sha256": "f64c95239f1aa0b674748cfc4f3db09144c6925e0a687a02bd8d5c7f7d2e5f8f"
+  },
+  {
+    "path": "player/lowtube_osc.lua",
+    "size": 108957,
+    "sha256": "e07c50702372a66014dda8ac61e2250c610c6009bb88988b23a63e5ac0d64ea4"
+  },
+  {
+    "path": "player/lowtube.lua",
+    "size": 16186,
+    "sha256": "f98c3801916178804156c8ea6074c39d36b49f7bf134dbd6e76907caedbd8dd4"
+  },
+  {
+    "path": "player/MPV-Copyright.txt",
+    "size": 4174,
+    "sha256": "a09691405e4c9c294f02122d28de355b8c360be4b84accefb8a443e99d1d648c"
+  },
+  {
+    "path": "player/MPV-LICENSE.GPL",
+    "size": 18322,
+    "sha256": "498d32907f132c2cd7d3ae269f304aed87156293f63e724b83d9f62ed787d55a"
+  },
+  {
+    "path": "player/OSC-SOURCE.txt",
+    "size": 610,
+    "sha256": "84bc5d616ddfbce7813ca3a983919abc6502d6833e8d5b987432f3eee8228aaf"
+  },
+  {
+    "path": "README_EN.txt",
+    "size": 484,
+    "sha256": "67f19660c412f9948c1e85870eaf16a918bb39531f0e720b3c5492c7bc4220ed"
+  },
+  {
+    "path": "README_RU.txt",
+    "size": 838,
+    "sha256": "4800a22bfd7b1b38428fd29e5427d29e580483f29ddfcbdf97367667ece626e0"
+  },
+  {
+    "path": "README_UK.txt",
+    "size": 837,
+    "sha256": "95a06e6543a14d4812ccf9bfc37c6a92c7047108ca3e8c98893c83968c4fdee4"
+  },
+  {
+    "path": "SETUP.cmd",
+    "size": 221,
+    "sha256": "69837a9d9057d668a421b750a93da8f9b458fc03a0c7ff7c6920005758880b97"
+  },
+  {
+    "path": "Setup.ps1",
+    "size": 17273,
+    "sha256": "90997fb6882d964f6307abc4c46133fa964a7a5133cb297718f7ec8bd809ef1e"
+  },
+  {
+    "path": "SOURCES.md",
+    "size": 4734,
+    "sha256": "88c6381346031564965b194125c9098f853a56e7aae9072a9b8856792e23bf75"
+  },
+  {
+    "path": "src/AssemblyInfo.cs",
+    "size": 341,
+    "sha256": "bedc0dee6c6f46d76e9c1456c5b305d514640cbc3e8622f2303350c8ef164ed5"
+  },
+  {
+    "path": "src/AudioForm.cs",
+    "size": 9970,
+    "sha256": "7bee58898181e387e55701a444f5cd9d8422a92f7be60777d4a58197f88fbc42"
+  },
+  {
+    "path": "src/BackgroundFeeds.cs",
+    "size": 22494,
+    "sha256": "397baa98536a1add06bba7cdd56a70bee03ae899a9beb64241fbdc4072964fde"
+  },
+  {
+    "path": "src/BrowserDiscovery.cs",
+    "size": 9493,
+    "sha256": "cadb0bfd0bb8db998ce9c3d3e1da699ceaa423c57bcdba8710855d7dc21a940e"
+  },
+  {
+    "path": "src/BufferEditor.cs",
+    "size": 1644,
+    "sha256": "4520ee97e3d0152b854af2c7d746f2b2d314717f0d4959e5a609293e7d330e52"
+  },
+  {
+    "path": "src/ChannelsForm.cs",
+    "size": 4041,
+    "sha256": "6856dd54fcc4452e9931e19b81e788830203fc82645749288fb6c2ae53657f19"
+  },
+  {
+    "path": "src/ContentFeeds.cs",
+    "size": 3628,
+    "sha256": "e14c8de2318e609e9d9dd6b2944da5d3633daa36616133e6b88550b8b97c13ba"
+  },
+  {
+    "path": "src/ContinuityModels.cs",
+    "size": 4828,
+    "sha256": "13c5316a284004b0feeabb8cca62656846b02163e1fd62def29e0e1dae7a295f"
+  },
+  {
+    "path": "src/Core.cs",
+    "size": 35923,
+    "sha256": "238f1e4ff0fbd04dfd6f0fb2c1b5d885b73f1b4d7a1725d199c8d1f0ea3d9fbe"
+  },
+  {
+    "path": "src/DownloadForm.cs",
+    "size": 8168,
+    "sha256": "3b443714cd6719c9a3b69360c3d1a6a6f571c04731929a4a6abbfc2309a70680"
+  },
+  {
+    "path": "src/DownloadManager.cs",
+    "size": 4036,
+    "sha256": "9bbcc8e640bf0d0efc25734881c7a7f1448a876033dc86e43eeb1327241d04b3"
+  },
+  {
+    "path": "src/Equalizer.cs",
+    "size": 3476,
+    "sha256": "fee64aa2f9994f3daabe9f0998f1939f79385a4624b3fb525d9220e80efb0440"
+  },
+  {
+    "path": "src/EqualizerForm.cs",
+    "size": 5014,
+    "sha256": "4d768a7955479fce8ed2986b15b1e1382c678e2de08a0b0934c6ba19fd24350a"
+  },
+  {
+    "path": "src/FeedCache.cs",
+    "size": 7696,
+    "sha256": "2689d6679c369c97ce8c33a18fa0f8a358800eb8f1f40d115c6338b64ade6775"
+  },
+  {
+    "path": "src/FormatCache.cs",
+    "size": 4321,
+    "sha256": "5f9d345abf057503888ed5e9dc206368dbd6f7718f687abcab274e48bbea2fcb"
+  },
+  {
+    "path": "src/GoogleAccount.cs",
+    "size": 14131,
+    "sha256": "1477714190eb69f3c7f5f2ef2a817a3e01837cce0bf464375e4f5fb3a6ec2568"
+  },
+  {
+    "path": "src/GoogleAccountForm.cs",
+    "size": 4523,
+    "sha256": "c995f9a396e74e94b810653fe81348c8b5fc97b1c540702616f828267c71aca0"
+  },
+  {
+    "path": "src/I18n.cs",
+    "size": 114540,
+    "sha256": "ee67e27b9324adcb5ad847fd8bbddcdaf0df29a01731ac3ed8007b731f94f5c0"
+  },
+  {
+    "path": "src/InnerTube.cs",
+    "size": 28512,
+    "sha256": "0f7482230b32230f8638713e10b83066dafc51d24571f694d7aabf15a2ce9bc7"
+  },
+  {
+    "path": "src/InnerTubeFailures.cs",
+    "size": 3389,
+    "sha256": "db5e0a24c4767ae6a0e77dc0990bd0efa860d61c36e8c624920be7361c76cac8"
+  },
+  {
+    "path": "src/InnerTubeJson.cs",
+    "size": 14525,
+    "sha256": "d5c117f09714b085ef7f00b5e04966deea76084f0b2d255dfc3b9b0db7e36174"
+  },
+  {
+    "path": "src/JsonCodec.cs",
+    "size": 8089,
+    "sha256": "efa2f8754b76af71e57889f1d3d31af0f842b85dd5433a2779b46f82a9440105"
+  },
+  {
+    "path": "src/LibraryFeatures.cs",
+    "size": 12876,
+    "sha256": "3e997d50d7eed98a0f7ef8e1439eb29587f93fb2c55a52699ed29d4a97153dba"
+  },
+  {
+    "path": "src/LocalFeeds.cs",
+    "size": 8970,
+    "sha256": "ccdd3b35e769030c94844dabc1bb7257878c6a2f179885021e4f0c0a9df8ea5b"
+  },
+  {
+    "path": "src/MainForm.cs",
+    "size": 68304,
+    "sha256": "7c0d1b9b48e778cbb0f06dd5a47198713334b054851414c29409e0a3b22179cc"
+  },
+  {
+    "path": "src/Paging.cs",
+    "size": 938,
+    "sha256": "92950f8d5c4a09958d7d3743b61d943a788faed69cb95804c63e8074ffaf9408"
+  },
+  {
+    "path": "src/PlaybackLibrary.cs",
+    "size": 4123,
+    "sha256": "87c1aefbfbaf917f6017113e09dbe7115b2caa75214e4a22c7f66a228f902080"
+  },
+  {
+    "path": "src/PlaybackTrace.cs",
+    "size": 4023,
+    "sha256": "bc10b94025816f9efa5c157de55bffd5dcde994c6c3f233e5027862c29b19f78"
+  },
+  {
+    "path": "src/Player.cs",
+    "size": 34964,
+    "sha256": "4eaa015ad2b42c53a2aec3e1f5149dca2bb4c5c72436717906c7712cd06d2106"
+  },
+  {
+    "path": "src/PlayerTuning.cs",
+    "size": 1360,
+    "sha256": "9d977fa8f732a3a5446fd9ac9b856547bf8892198eea10d554316d04493a9a36"
+  },
+  {
+    "path": "src/SavedSession.cs",
+    "size": 13617,
+    "sha256": "d03c6e514e152a670831d4d47fa78341e165a91c73f339b015af9f9ed3d9338b"
+  },
+  {
+    "path": "src/StartupTrace.cs",
+    "size": 12609,
+    "sha256": "6fbc1b8ac3608420a4861d75b1237f26e6bd8ddca1468c5ac0f80033e5dca584"
+  },
+  {
+    "path": "src/StreamContinuity.cs",
+    "size": 13277,
+    "sha256": "d86681287370dde8eecb7309e8d52cb1ea3bea36e58e9b5de86f720480448cf3"
+  },
+  {
+    "path": "src/StreamOpenRecovery.cs",
+    "size": 4146,
+    "sha256": "33b186f597d15bfc0d7f42d1ca57baeae6ff686f22e76aa35bee5e9b3e464393"
+  },
+  {
+    "path": "src/Theme.cs",
+    "size": 4871,
+    "sha256": "6ee96561ba3a0e400b650c09d0a4a5eac63bf32313c4dd4fbf280d1510aa9f51"
+  },
+  {
+    "path": "src/Ui.cs",
+    "size": 2369,
+    "sha256": "5db3ebca7ded5bac56675848c72388a29f430b3969a1726bdfc2155f759cc802"
+  },
+  {
+    "path": "src/VideoGrid.cs",
+    "size": 8893,
+    "sha256": "30112ef3c1e2fdc8b0f9bb706b914c88b4d273dfd173b767ef61c7b2adc5e0ed"
+  },
+  {
+    "path": "src/VideoSettingsForm.cs",
+    "size": 9363,
+    "sha256": "522d0ac010007e7041f80f26a9c705e656b45c4b903a4b56f01aa1d95493bb72"
+  },
+  {
+    "path": "src/WorkspaceFeatures.cs",
+    "size": 23774,
+    "sha256": "53019a92fa03832ae26d8fe19303926e17d319e79fcb54aaa561e196268667b6"
+  },
+  {
+    "path": "START_NODE22.cmd",
+    "size": 819,
+    "sha256": "6053f6628682efd4bd25b2bb920013e070847b3b8b715f99c93ed890548c9a20"
+  },
+  {
+    "path": "START_PLAYBACK_DEBUG.cmd",
+    "size": 346,
+    "sha256": "fa6cb23c42153d319c26ffff0de7cbcc687a3b63e76205637916211868144ebd"
+  },
+  {
+    "path": "START_QUICKJS_NG.cmd",
+    "size": 812,
+    "sha256": "94f38dcc70865d5127acc3e13d37f2278d07efc750c6ea24df50626a89d920a3"
+  },
+  {
+    "path": "START.cmd",
+    "size": 178,
+    "sha256": "447cc3be419e02c36b7dbece2576cd8f67cc740f3276c093e175797fb8b0be9d"
+  },
+  {
+    "path": "UPDATE_YTDLP.cmd",
+    "size": 267,
+    "sha256": "530c3472caae76a414bc3f97e56d7ca50fa29ff9bf2cad2e4a177afdbe071ed4"
+  },
+  {
+    "path": "VALIDATION.txt",
+    "size": 257,
+    "sha256": "af9882667422183fe7f2d1e90b51c15eb384a128d8e7432a9f777ccb0ad5b446"
+  }
+]

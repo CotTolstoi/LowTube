@@ -88,7 +88,7 @@ local user_opts = {
     playlist_prev_mbtn_mid_command = "show-text ${playlist} 3000",
     playlist_prev_mbtn_right_command = "script-message lowtube-settings",
 
-    playlist_next_mbtn_left_command = "playlist-next",
+    playlist_next_mbtn_left_command = "script-message lowtube-next-request",
     playlist_next_mbtn_mid_command = "show-text ${playlist} 3000",
     playlist_next_mbtn_right_command = "script-message lowtube-settings",
 

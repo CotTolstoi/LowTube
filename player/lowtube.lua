@@ -19,6 +19,7 @@ local function settings()
 end
 mp.add_forced_key_binding('F4', 'lowtube-settings-key', settings)
 mp.add_forced_key_binding('MBTN_RIGHT', 'lowtube-settings-mouse', settings)
+mp.add_forced_key_binding('N', 'lowtube-next-video', function() mp.commandv('script-message', 'lowtube-next-request') end)
 -- mpv handles both streams and audio-clock synchronization. Hold user pause
 -- during a seek so already buffered audio cannot run ahead of a blocked frame.
 mp.register_event('seek', function()
@@ -161,7 +162,8 @@ mp.register_script_message('lowtube-load', function(payload)
  opts.safe_seek = data.safe_seek
  opts.language = data.language
  text = labels[opts.language] or labels.en
- mp.set_property_native('audio-files', data.audio ~= '' and {data.audio} or {})
+ -- audio-files is carried in loadfile's per-file options by the host. Do not
+ -- set it globally here: mpv keeps runtime option changes across replacements.
  local result, err = mp.command_native({name='loadfile', url=data.url, flags='replace', options=data.options})
  if result == nil and err then mp.commandv('script-message', 'lowtube-load-error') end
 end)

@@ -119,6 +119,7 @@ namespace LowTube {
         public event Action<Dictionary<string,object>> Progress;
         public event Action<string,string> PlaybackFailed;
         public event Action<string> PreparedStarted;
+        public event Action NextRequested;
         public event Action Stopped;
         string nextOwner,nextTicket;
         TaskCompletionSource<bool> staged,cancelledNext;
@@ -203,6 +204,9 @@ namespace LowTube {
                 int eq=arg.IndexOf('=');string key=arg.Substring(2,eq-2);
                 if(new[]{"title","cache-secs","demuxer-max-bytes","demuxer-max-back-bytes","cache-pause-wait","hwdec","hr-seek","ontop","border","user-agent","referrer","tls-ca-file","tls-verify","start","pause","volume","speed","af","vd-lavc-threads","scale","cscale","dscale","video-sync","framedrop","deband","interpolation","deinterlace","audio-pitch-correction","d3d11va-zero-copy"}.Contains(key))opts[key]=arg.Substring(eq+1);
             }
+            // External audio belongs to this file only. A global runtime option
+            // survives mpv playlist replacements and can leak the previous track.
+            opts["audio-files"]=!audio && media.AudioUrl.Length>0?new object[]{media.AudioUrl}:new object[0];
             opts["vid"]=audio?"no":"auto";if(!media.IsLive || position>0)opts["start"]=Math.Max(0,position).ToString("0.###",CultureInfo.InvariantCulture);
             return opts;
         }
@@ -327,6 +331,7 @@ namespace LowTube {
                                 if(args!=null && args.Length==1 && Object.Equals(args[0],"lowtube-load-error") && loaded!=null)loaded.TrySetException(new StreamOpenException("unknown"));
                                 if(args!=null && args.Length==3 && Object.Equals(args[0],"lowtube-quick") && QuickSettingRequested!=null)QuickSettingRequested(Convert.ToString(args[1]),Convert.ToString(args[2]));
                                 if(args!=null && args.Length==1 && Object.Equals(args[0],"lowtube-settings") && SettingsRequested!=null)SettingsRequested();
+                                if(args!=null && args.Length==1 && Object.Equals(args[0],"lowtube-next-request") && NextRequested!=null)NextRequested();
                             }
                         }
                     }

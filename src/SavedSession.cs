@@ -73,6 +73,27 @@ namespace LowTube {
             }
             return false;
         }
+        static IEnumerable<string> SignInKeys(string text,bool requireValid){
+            long now=(long)(DateTime.UtcNow-new DateTime(1970,1,1,0,0,0,DateTimeKind.Utc)).TotalSeconds;
+            foreach(string line in Filter(text).Split('\n')){
+                var fields=line.TrimEnd('\r').Split('\t');long expiry;
+                if(fields.Length==7 && Int64.TryParse(fields[4],out expiry) && (!requireValid || expiry==0 || expiry>now) && fields[6].Length>0 && new[]{"SID","SAPISID","__Secure-1PSID","__Secure-3PSID","__Secure-1PAPISID","__Secure-3PAPISID"}.Contains(fields[5]))
+                    yield return fields[0].Replace("#HttpOnly_","").TrimStart('.').ToLowerInvariant()+"\t"+fields[5]+"\t"+fields[6];
+            }
+        }
+        public static bool SameSignIn(string saved,string fresh){var old=new HashSet<string>(SignInKeys(saved,false),StringComparer.Ordinal);return SignInKeys(fresh,true).Any(old.Contains);}
+        public static bool SameCookies(string left,string right){return Filter(left).Split('\n').Where(x=>x.Length>0 && !x.StartsWith("# Netscape")).OrderBy(x=>x,StringComparer.Ordinal).SequenceEqual(Filter(right).Split('\n').Where(x=>x.Length>0 && !x.StartsWith("# Netscape")).OrderBy(x=>x,StringComparer.Ordinal));}
+        // The caller supplies the previously selected profile; no profile search or network request.
+        public static async Task<bool> RefreshExisting(Func<CancellationToken,Task<string>> export,Func<string> read,Func<string> stamp,Action<string> save,CancellationToken ct){
+            ct.ThrowIfCancellationRequested();string before=stamp();string saved=read();string fresh=await export(ct);ct.ThrowIfCancellationRequested();
+            if(!HasSignInCookies(fresh) || !SameSignIn(saved,fresh))throw new InvalidOperationException(L.T("Could not verify the saved YouTube account. Connect the browser session again in Account."));
+            if(stamp()!=before)throw new InvalidOperationException(L.T("The saved session changed during refresh. Try again in Account."));
+            if(SameCookies(saved,fresh))return false;
+            ct.ThrowIfCancellationRequested();save(fresh);return true;
+        }
+        public static Task<bool> RefreshExistingBrowser(string browser,string profile,CancellationToken ct){
+            return RefreshExisting(token=>ExportBrowser(browser,profile,token),ReadCookies,()=>Stamp,Save,ct);
+        }
         public static void Save(string text){
             byte[] bytes=ProtectedData.Protect(Encoding.UTF8.GetBytes(Filter(text)),entropy,DataProtectionScope.CurrentUser);
             Directory.CreateDirectory(Paths.Data);string temp=Store+"."+Guid.NewGuid().ToString("N")+".tmp";File.WriteAllBytes(temp,bytes);if(File.Exists(Store))File.Replace(temp,Store,null);else File.Move(temp,Store);Backend.ClearMetadataCache();

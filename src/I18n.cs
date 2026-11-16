@@ -6,6 +6,15 @@ namespace LowTube {
         public static string Language { get; private set; }
         public static event Action Changed;
         static readonly Dictionary<string,string[]> catalog=new Dictionary<string,string[]> {
+            {"Refreshing saved YouTube session…",new[]{"Оновлення збереженої сесії YouTube…","Обновление сохранённой сессии YouTube…"}},
+            {"Saved YouTube session refreshed from the selected browser.",new[]{"Збережену сесію YouTube оновлено з вибраного браузера.","Сохранённая сессия YouTube обновлена из выбранного браузера."}},
+            {"Saved YouTube session is already up to date.",new[]{"Збережена сесія YouTube вже актуальна.","Сохранённая сессия YouTube уже актуальна."}},
+            {"Session refresh timed out; the previous session is unchanged.",new[]{"Час оновлення сесії вичерпано; попередню сесію збережено.","Время обновления сессии истекло; предыдущая сессия сохранена."}},
+            {"Could not refresh the YouTube session. The previous session is unchanged; reconnect it in Account if needed.",new[]{"Не вдалося оновити сесію YouTube. Попередню сесію збережено; за потреби підключи її знову в розділі акаунта.","Не удалось обновить сессию YouTube. Предыдущая сессия сохранена; при необходимости подключите её заново в разделе аккаунта."}},
+            {"Could not verify the saved YouTube account. Connect the browser session again in Account.",new[]{"Не вдалося підтвердити збережений акаунт YouTube. Знову підключи сесію браузера в розділі акаунта.","Не удалось подтвердить сохранённый аккаунт YouTube. Снова подключите сессию браузера в разделе аккаунта."}},
+            {"The saved session changed during refresh. Try again in Account.",new[]{"Збережена сесія змінилася під час оновлення. Повтори дію в розділі акаунта.","Сохранённая сессия изменилась во время обновления. Повторите действие в разделе аккаунта."}},
+            {"Automatic session refresh needs a selected browser profile. Connect YouTube in Account.",new[]{"Для автоматичного оновлення сесії потрібен вибраний профіль браузера. Підключи YouTube у розділі акаунта.","Для автоматического обновления сессии нужен выбранный профиль браузера. Подключите YouTube в разделе аккаунта."}},
+            {"YouTube subscriptions refreshed after the session update.",new[]{"Підписки YouTube оновлено після оновлення сесії.","Подписки YouTube обновлены после обновления сессии."}},
             {"No suitable formats returned. Checking once more…",new[]{"Відповідних форматів не отримано. Повторна перевірка…","Подходящие форматы не получены. Повторная проверка…"}},
             {"No results on this page.",new[]{"На цій сторінці немає результатів.","На этой странице нет результатов."}},
             {"Sign in with Google in browser",new[]{"Увійти через Google у браузері","Войти через Google в браузере"}},
@@ -349,7 +358,7 @@ namespace LowTube {
             {"For faster HDD startup, close LowTube and run UPDATE_YTDLP.cmd once.",new[]{"Для швидшого запуску з HDD закрий LowTube й один раз запусти UPDATE_YTDLP.cmd.","Для более быстрого запуска с HDD закрой LowTube и один раз запусти UPDATE_YTDLP.cmd."}},
             {"Getting video information…",new[]{"Отримання даних відео…","Получение данных видео…"}},
             {"Starting mpv…",new[]{"Запуск mpv…","Запуск mpv…"}},
-            {"Video is playing in mpv. F4 / right-click: settings; Space: pause; F: fullscreen; I: statistics.",new[]{"Відео відтворюється в mpv. F4 / права кнопка: параметри; пробіл: пауза; F: повний екран; I: статистика.","Видео воспроизводится в mpv. F4 / правая кнопка: настройки; пробел: пауза; F: полный экран; I: статистика."}},
+            {"Video is playing in mpv. N: next video; F4 / right-click: settings; Space: pause; F: fullscreen; I: statistics.",new[]{"Відео відтворюється в mpv. N: наступне відео; F4 / права кнопка: параметри; пробіл: пауза; F: повний екран; I: статистика.","Видео воспроизводится в mpv. N: следующее видео; F4 / правая кнопка: настройки; пробел: пауза; F: полный экран; I: статистика."}},
             {"Start video playback first.",new[]{"Спочатку запусти відео.","Сначала запусти видео."}},
             {"Applying video settings…",new[]{"Застосування параметрів відео…","Применение настроек видео…"}},
             {"Video settings applied at {0}.",new[]{"Параметри відео застосовано на {0}.","Настройки видео применены на {0}."}},

@@ -41,6 +41,10 @@ namespace LowTube {
             notice.Click+=delegate{if(notice.Text.Length>0)ShowReport(L.T("Details"),notice.Text+Environment.NewLine+log.Text);};
             InitializeLibraryFeatures(nav);
             player.Progress+=OnPlaybackProgress;
+            player.NextRequested+=delegate{
+                if(closing || closePending || !IsHandleCreated)return;
+                try{BeginInvoke(new Action(async delegate{if(!closing && !closePending)await AdvanceQueue(true);}));}catch(InvalidOperationException){}
+            };
             player.PreparedStarted+=ticket=>{if(!closing && IsHandleCreated)BeginInvoke(new Action(delegate{AdoptPrepared(ticket);}));};
             player.Stopped+=()=>{if(!closing && IsHandleCreated){if(InvokeRequired)BeginInvoke(new Action(delegate{if(player.Session==null)OnPlayerStopped();}));else OnPlayerStopped();}};
             player.PlaybackFailed+=(failedSession,message)=>{if(!closing && IsHandleCreated)BeginInvoke(new Action(delegate{if(failedSession==resumeSession)RequestRecovery("mpv error");}));};
@@ -80,7 +84,7 @@ namespace LowTube {
             }catch(Exception){/* Periodic checkpoint remains available if IPC is already closed. */}
         }
         async Task CloseWorkspace(FormClosingEventArgs e){
-            if(closing)return;e.Cancel=true;if(closePending)return;closePending=true;
+            if(closing)return;e.Cancel=true;if(closePending)return;closePending=true;if(startupSessionRefresh!=null)startupSessionRefresh.Cancel();
             featureTimer.Stop();CancelRecovery();await InvalidatePrepared();if(recovering){player.Stop();await recoveryTask;}StopFeeds();if(operation!=null)operation.Cancel();
             await CapturePosition();resumeSession="";closing=true;
             try{await downloads.Shutdown();}catch(Exception){}
