@@ -1046,6 +1046,25 @@ class InnerTubeSearchRepository(context: Context? = null) {
 
     private data class VideoLink(val id: String, val kind: String)
 
+    /** Creates a local-library entry from a supported public YouTube video URL without a network lookup. */
+    fun videoFromUrl(input: String): VideoItem? {
+        val raw = input.trim()
+        val uri = runCatching { Uri.parse(raw) }.getOrNull() ?: return null
+        val scheme = uri.scheme?.lowercase() ?: return null
+        if (scheme !in setOf("http", "https") || uri.encodedAuthority?.contains('@') == true) return null
+        val host = uri.host?.lowercase().orEmpty()
+        if (host !in setOf("youtube.com", "www.youtube.com", "m.youtube.com", "music.youtube.com", "youtu.be")) return null
+        val expectedPort = if (scheme == "https") 443 else 80
+        if (uri.port != -1 && uri.port != expectedPort) return null
+        val link = extractVideoLink(raw) ?: return null
+        val canonicalUrl = if (link.kind == "shorts") {
+            "https://www.youtube.com/shorts/${link.id}"
+        } else {
+            "https://www.youtube.com/watch?v=${link.id}"
+        }
+        return VideoItem(id = link.id, title = canonicalUrl, kind = link.kind, url = canonicalUrl)
+    }
+
     private fun extractVideoLink(input: String): VideoLink? {
         if (isVideoId(input)) return VideoLink(input, "video")
         val uri = runCatching { Uri.parse(input) }.getOrNull() ?: return null

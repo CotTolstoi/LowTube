@@ -83,6 +83,12 @@
     <string name="delete_playlist">Delete playlist</string>
     <string name="delete_playlist_confirm">Delete “%1$s” and its saved videos?</string>
     <string name="playlist_name">Playlist name</string>
+    <string name="add_video_url">Add video URL</string>
+    <string name="add_video_url_help">Paste a public YouTube video, Shorts, or live URL. Playlist and channel links are not accepted.</string>
+    <string name="video_url_label">YouTube video URL</string>
+    <string name="invalid_video_url">Enter a supported YouTube video, Shorts, or live URL.</string>
+    <string name="playlist_no_longer_available">This local playlist is no longer available.</string>
+    <string name="add_video">Add</string>
     <string name="save">Save</string>
     <string name="cancel">Cancel</string>
     <string name="remove">Remove</string>

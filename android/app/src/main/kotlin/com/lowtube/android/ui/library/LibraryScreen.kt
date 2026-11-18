@@ -70,7 +70,8 @@ fun LibraryScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val feedRepository = remember(repository, context) { LocalSubscriptionFeedRepository(repository, InnerTubeSearchRepository(context.applicationContext)) }
+    val catalogue = remember(repository, context) { InnerTubeSearchRepository(context.applicationContext) }
+    val feedRepository = remember(repository, catalogue) { LocalSubscriptionFeedRepository(repository, catalogue) }
     var refresh by remember(refreshRevision) { mutableIntStateOf(refreshRevision) }
     val playlists = remember(refresh) { repository.playlists() }
     val channels = remember(refresh, accountEmail) { repository.channels(accountEmail) }
@@ -99,6 +100,10 @@ fun LibraryScreen(
     var showEditDialog by remember { mutableStateOf(false) }
     var showAddChannelDialog by remember { mutableStateOf(false) }
     var channelInput by remember { mutableStateOf("") }
+    var showAddVideoUrlDialog by remember { mutableStateOf(false) }
+    var videoUrlInput by remember { mutableStateOf("") }
+    var addVideoPlaylistId by remember { mutableStateOf<String?>(null) }
+    var videoUrlError by remember { mutableStateOf<String?>(null) }
     var deleteTarget by remember { mutableStateOf<LocalPlaylist?>(null) }
     var confirmHistoryClear by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -164,6 +169,12 @@ fun LibraryScreen(
                 item {
                     Column(Modifier.fillMaxWidth().padding(top = 12.dp)) {
                         Text(playlist.name, style = MaterialTheme.typography.titleLarge)
+                        TextButton(onClick = {
+                            addVideoPlaylistId = playlist.id
+                            videoUrlInput = ""
+                            videoUrlError = null
+                            showAddVideoUrlDialog = true
+                        }) { Text(stringResource(R.string.add_video_url)) }
                         if (videos.isNotEmpty()) {
                             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                 TextButton(onClick = { onPlayPlaylist(videos) }) { Text(stringResource(R.string.play_all)) }
@@ -359,6 +370,46 @@ fun LibraryScreen(
                 }) { Text(stringResource(R.string.save)) }
             },
             dismissButton = { TextButton(onClick = { editTarget = null; showEditDialog = false }) { Text(stringResource(R.string.cancel)) } },
+        )
+    }
+
+    if (showAddVideoUrlDialog) {
+        AlertDialog(
+            onDismissRequest = { showAddVideoUrlDialog = false },
+            title = { Text(stringResource(R.string.add_video_url)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.add_video_url_help), style = MaterialTheme.typography.bodySmall)
+                    OutlinedTextField(
+                        value = videoUrlInput,
+                        onValueChange = { videoUrlInput = it.take(2048); videoUrlError = null },
+                        label = { Text(stringResource(R.string.video_url_label)) },
+                        singleLine = true,
+                    )
+                    if (videoUrlError != null) Text(videoUrlError.orEmpty(), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    val video = catalogue.videoFromUrl(videoUrlInput)
+                    val playlistId = addVideoPlaylistId
+                    if (video == null) {
+                        videoUrlError = context.getString(R.string.invalid_video_url)
+                    } else if (playlistId == null) {
+                        videoUrlError = context.getString(R.string.playlist_no_longer_available)
+                    } else {
+                        runCatching { repository.addVideo(playlistId, video) }
+                            .onSuccess {
+                                showAddVideoUrlDialog = false
+                                addVideoPlaylistId = null
+                                videoUrlError = null
+                                refresh++
+                            }
+                            .onFailure { videoUrlError = it.message ?: context.getString(R.string.action_failed) }
+                    }
+                }, enabled = videoUrlInput.isNotBlank()) { Text(stringResource(R.string.add_video)) }
+            },
+            dismissButton = { TextButton(onClick = { showAddVideoUrlDialog = false; addVideoPlaylistId = null }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 

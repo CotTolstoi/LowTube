@@ -83,6 +83,12 @@
     <string name="delete_playlist">Видалити плейлист</string>
     <string name="delete_playlist_confirm">Видалити «%1$s» і збережені в ньому відео?</string>
     <string name="playlist_name">Назва плейлиста</string>
+    <string name="add_video_url">Додати URL відео</string>
+    <string name="add_video_url_help">Вставте публічне посилання на відео, Shorts або трансляцію YouTube. Посилання на плейлисти й канали не приймаються.</string>
+    <string name="video_url_label">URL відео YouTube</string>
+    <string name="invalid_video_url">Введіть підтримуване посилання на відео, Shorts або трансляцію YouTube.</string>
+    <string name="playlist_no_longer_available">Цей локальний плейлист більше недоступний.</string>
+    <string name="add_video">Додати</string>
     <string name="save">Зберегти</string>
     <string name="cancel">Скасувати</string>
     <string name="remove">Прибрати</string>

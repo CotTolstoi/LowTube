@@ -6,6 +6,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextClearance
+import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ApplicationProvider
 import com.lowtube.android.R
 import com.lowtube.android.data.LocalLibraryRepository
@@ -54,6 +56,55 @@ class LocalPlaylistPlaybackActionTest {
             composeTestRule.waitForIdle()
 
             assertEquals(listOf("video000001", "video000002"), requestedVideos.get().map { it.id })
+        } finally {
+            repository.close()
+            context.deleteDatabase(databaseName)
+        }
+    }
+
+    @Test
+    fun addVideoUrlRejectsPlaylistLinksAndStoresCanonicalVideoLink() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val resources: Resources = context.resources
+        val databaseName = "playlist-add-url-${System.currentTimeMillis()}.db"
+        val repository = LocalLibraryRepository(context, databaseName)
+        val playlistId = repository.createPlaylist("URL playlist")
+        try {
+            composeTestRule.setContent {
+                MaterialTheme {
+                    LibraryScreen(
+                        repository = repository,
+                        accountEmail = "",
+                        refreshRevision = 0,
+                        onBack = {},
+                        onPlay = {},
+                        onPlayPlaylist = {},
+                        onPickAudio = {},
+                        onPlayLocalAudio = {},
+                        onRemoveLocalAudio = {},
+                        onAddToQueue = {},
+                        onBrowseChannel = {},
+                        onAddChannel = {},
+                    )
+                }
+            }
+
+            composeTestRule.onNodeWithText("URL playlist").performClick()
+            composeTestRule.onNodeWithText(resources.getString(R.string.add_video_url)).performClick()
+            val urlField = composeTestRule.onNodeWithText(resources.getString(R.string.video_url_label))
+            urlField.performTextInput("https://www.youtube.com/playlist?list=PL1234567890")
+            composeTestRule.onNodeWithText(resources.getString(R.string.add_video)).performClick()
+            composeTestRule.onNodeWithText(resources.getString(R.string.invalid_video_url)).assertExists()
+
+            urlField.performTextClearance()
+            urlField.performTextInput("https://youtu.be/video000001?t=12")
+            composeTestRule.onNodeWithText(resources.getString(R.string.add_video)).performClick()
+            composeTestRule.waitForIdle()
+
+            val saved = repository.videos(playlistId).single()
+            assertEquals("video000001", saved.id)
+            assertEquals("https://www.youtube.com/watch?v=video000001", saved.url)
+            assertEquals(saved.url, saved.title)
         } finally {
             repository.close()
             context.deleteDatabase(databaseName)
