@@ -210,6 +210,7 @@ class YoutubePlayerClientComparisonDiagnosticTest {
                         "playerVariantNChallenge; video=$videoId; client=MWEB; outcome=${challenge.outcome}; " +
                             "candidateCount=${challenge.candidateCount}; transformedCount=${challenge.transformedCount}; " +
                             "batchAccepted=${challenge.batchAccepted}; recoveryAccepted=${challenge.recoveryAccepted}; " +
+                            "markerAccepted=${challenge.markerAccepted}; " +
                             "nOnlyAccepted=${challenge.nOnlyAccepted}; " +
                             "outputRejected=${challenge.outputRejected}; executionFailed=${challenge.executionFailed}; " +
                             "urlTransformFound=${challenge.urlTransformFound}; urlProgramBytes=${challenge.urlProgramBytes}; " +
@@ -578,15 +579,19 @@ class YoutubePlayerClientComparisonDiagnosticTest {
                 "async=${markerCandidates.count { it.isAsync }}; nMutators=$objectMutators",
         )
         val function = executable.functions.urlThrottling
-            ?: return NChallengeResult("transform_not_found", executableFormats.size, 0, "not_run")
-        val calls = executableFormats.map { (_, url) -> YoutubePlayerJavaScriptRuntime.FunctionCall(function, url) }
-        System.out.println("playerVariantNStage; stage=url_batch_start")
-        val results = kotlinx.coroutines.runBlocking {
-            runtime.executeFullPlayerFunctions(playerScript.source, calls)
+        val results = if (function == null) {
+            emptyList()
+        } else {
+            val calls = executableFormats.map { (_, url) -> YoutubePlayerJavaScriptRuntime.FunctionCall(function, url) }
+            System.out.println("playerVariantNStage; stage=url_batch_start")
+            kotlinx.coroutines.runBlocking { runtime.executeFullPlayerFunctions(playerScript.source, calls) }
+                .also {
+                    System.out.println("playerVariantNStage; stage=url_batch_complete")
+                    stage = "url_batch_complete"
+                }
         }
-        System.out.println("playerVariantNStage; stage=url_batch_complete")
-        stage = "url_batch_complete"
         var batchAccepted = 0
+        var markerAccepted = 0
         var recoveryAccepted = 0
         var nOnlyAccepted = 0
         var outputRejected = 0
@@ -594,7 +599,7 @@ class YoutubePlayerClientComparisonDiagnosticTest {
         val rejectedReasons = mutableMapOf<String, Int>()
         val recoveryReasons = mutableMapOf<String, Int>()
         val transformed = mutableListOf<String>()
-        executableFormats.zip(results).forEach { (candidate, result) ->
+        if (function != null) executableFormats.zip(results).forEach { (candidate, result) ->
             val accepted = result?.let { YoutubePlayerUrlTransformer.acceptUrlNTransform(candidate.second, it) }
             if (accepted != null) {
                 batchAccepted++
@@ -661,6 +666,27 @@ class YoutubePlayerClientComparisonDiagnosticTest {
                 }
             }
         }
+        val markerNames = executable.markerCandidateNames.take(MAX_MARKER_URL_CANDIDATES)
+        if (function == null && markerNames.isNotEmpty()) {
+            stage = "marker_url_batch_start"
+            val markerResults = runCatching {
+                kotlinx.coroutines.runBlocking {
+                    runtime.executeFullPlayerUrlObjectNTransforms(
+                        playerScript.source,
+                        markerNames,
+                        executableFormats.map { it.second },
+                    )
+                }
+            }.getOrDefault(emptyList())
+            executableFormats.zip(markerResults).forEach { (candidate, result) ->
+                val accepted = result.url?.let { YoutubePlayerUrlTransformer.acceptUrlNTransform(candidate.second, it) }
+                if (accepted != null) {
+                    markerAccepted++
+                    transformed.add(accepted)
+                }
+            }
+            stage = "marker_url_batch_complete"
+        }
         val range = if (probeRange) transformed.firstOrNull()?.let { boundedRange(it, userAgent) } else null
         val outcome = when {
             transformed.isEmpty() -> "transform_rejected"
@@ -686,6 +712,7 @@ class YoutubePlayerClientComparisonDiagnosticTest {
             executable.functions.throttling != null,
             executable.throttlingProgram?.length ?: 0,
             failureType = stage,
+            markerAccepted = markerAccepted,
         )
     }
 
@@ -904,6 +931,7 @@ class YoutubePlayerClientComparisonDiagnosticTest {
         val nTransformFound: Boolean = false,
         val nProgramBytes: Int = 0,
         val failureType: String = "none",
+        val markerAccepted: Int = 0,
     )
     private data class RangeResult(val status: Int, val bytes: Int)
 
