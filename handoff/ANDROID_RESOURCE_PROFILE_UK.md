@@ -252,3 +252,5 @@
 19.11.2026, Redmi Note 8 / Android13 API33, LowTube `MainActivity` у foreground після встановлення resolver fallback build, без відтворення чи завантаження: 10 s idle sample — CPU 0,0%; PSS 119 944 KiB (117,1 MiB), RSS 222 603 KiB (217,4 MiB); системна RAM 3 713,4 MiB / доступно 1 586,6 MiB. Це короткий idle snapshot, не benchmark і не вимір під час resolver-запиту чи відеодекодування.
 
 19.11.2026, Redmi Note 8 / Android13 API33, LowTube `MainActivity` foreground після встановлення rate-cap APK, без playback/download: 5 s idle snapshot — CPU 0,0%; PSS 119 205 KiB (116,4 MiB), RSS 222 831 KiB (217,6 MiB); RAM 3 713,4 MiB / доступно 1 458,8 MiB. Це короткий UI idle-зріз, не benchmark і не вимір під час передачі.
+
+19.11.2026, Redmi Note 8 / Android13 API33 після rate-cap instrumentation та повернення LowTube на Home, 5 s idle sample: CPU 0,0%; PSS 116 653 KiB (113,9 MiB), RSS 216 695 KiB (211,6 MiB); системна RAM 3 713,4 MiB / доступно 1 454,6 MiB. Це короткий post-test idle зріз, не benchmark і не transfer profile.
