@@ -8,6 +8,8 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import com.lowtube.android.R
 import com.lowtube.android.data.PlaybackStreamPreferences
+import org.junit.Assert.assertEquals
+import java.util.concurrent.atomic.AtomicInteger
 import org.junit.Rule
 import org.junit.Test
 
@@ -36,6 +38,23 @@ class SettingsTransferScreenTest {
         composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.playback_start_buffer_seconds)).assertExists()
         composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.resource_usage_title)).assertExists()
         composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.resource_usage_measure)).assertExists()
+        composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.subscription_feed_pace)).assertExists()
+    }
+
+    @Test
+    fun connectionPresetSelectionNotifiesSettingsOwner() {
+        val selectedPreset = AtomicInteger(-1)
+        showSettings { selectedPreset.set(it) }
+
+        composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.connection_preset_balanced))
+            .performScrollTo()
+            .performClick()
+        composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.connection_preset_slow)).performClick()
+        assertEquals(0, selectedPreset.get())
+
+        composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.connection_preset_slow)).performClick()
+        composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.connection_preset_fast)).performClick()
+        assertEquals(2, selectedPreset.get())
     }
 
     @Test
@@ -58,7 +77,7 @@ class SettingsTransferScreenTest {
         composeTestRule.onNodeWithText(errorMessage).assertDoesNotExist()
     }
 
-    private fun showSettings() {
+    private fun showSettings(onFeedRefreshPresetChanged: (Int) -> Unit = {}) {
         composeTestRule.setContent {
             SettingsScreen(
                 onDarkThemeChanged = {},
@@ -66,6 +85,7 @@ class SettingsTransferScreenTest {
                 discoveryTopic = "science and technology",
                 discoveryLanguage = "any",
                 onDiscoveryPreferencesChanged = { _, _ -> },
+                onFeedRefreshPresetChanged = onFeedRefreshPresetChanged,
                 playbackPreferences = PlaybackStreamPreferences(),
                 onPlaybackPreferencesChanged = {},
             )

@@ -31,6 +31,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -60,6 +61,8 @@ fun SettingsScreen(
     discoveryTopic: String,
     discoveryLanguage: String,
     onDiscoveryPreferencesChanged: (String, String) -> Unit,
+    feedRefreshPreset: Int = 1,
+    onFeedRefreshPresetChanged: (Int) -> Unit = {},
     playbackPreferences: PlaybackStreamPreferences,
     onPlaybackPreferencesChanged: (PlaybackStreamPreferences) -> Unit,
     playbackBufferPreferences: PlaybackBufferPreferences = PlaybackBufferPreferences(),
@@ -83,6 +86,8 @@ fun SettingsScreen(
     var qualityMenuExpanded by remember { mutableStateOf(false) }
     var downloadQualityMenuExpanded by remember { mutableStateOf(false) }
     var discoveryLanguageMenuExpanded by remember { mutableStateOf(false) }
+    var feedPresetMenuExpanded by remember { mutableStateOf(false) }
+    var selectedFeedPreset by remember(feedRefreshPreset) { mutableIntStateOf(feedRefreshPreset.coerceIn(0, 2)) }
     var transferMessage by remember { mutableStateOf<String?>(null) }
     var resourceSample by remember { mutableStateOf<ResourceUsageSample?>(null) }
     var resourceSampling by remember { mutableStateOf(false) }
@@ -105,7 +110,7 @@ fun SettingsScreen(
     }
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         if (uri != null) transferScope.launch {
-            val snapshot = SettingsTransferRepository.Snapshot(language, darkTheme, discoveryTopic, discoveryLanguage, playbackPreferences.maxHeight, playbackPreferences.h264Only, playbackPreferences.fps30Only, playbackPreferences.audioOnly, downloadPreferences.maxHeight, downloadPreferences.h264Only, downloadPreferences.fps30Only, downloadPreferences.limitKiB, resumePlayback, playbackBufferPreferences.maximumSeconds, playbackBufferPreferences.memoryLimitMiB, playbackBufferPreferences.backBufferMiB, playbackBufferPreferences.startupSeconds, autoRecover, autoNext, preloadNext)
+            val snapshot = SettingsTransferRepository.Snapshot(language, darkTheme, discoveryTopic, discoveryLanguage, playbackPreferences.maxHeight, playbackPreferences.h264Only, playbackPreferences.fps30Only, playbackPreferences.audioOnly, downloadPreferences.maxHeight, downloadPreferences.h264Only, downloadPreferences.fps30Only, downloadPreferences.limitKiB, resumePlayback, playbackBufferPreferences.maximumSeconds, playbackBufferPreferences.memoryLimitMiB, playbackBufferPreferences.backBufferMiB, playbackBufferPreferences.startupSeconds, autoRecover, autoNext, preloadNext, feedRefreshPreset)
             val result = runCatching {
                 val json = SettingsTransferRepository.encode(snapshot)
                 withContext(Dispatchers.IO) {
@@ -118,7 +123,7 @@ fun SettingsScreen(
     }
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) transferScope.launch {
-            val fallback = SettingsTransferRepository.Snapshot(language, darkTheme, discoveryTopic, discoveryLanguage, playbackPreferences.maxHeight, playbackPreferences.h264Only, playbackPreferences.fps30Only, playbackPreferences.audioOnly, downloadPreferences.maxHeight, downloadPreferences.h264Only, downloadPreferences.fps30Only, downloadPreferences.limitKiB, resumePlayback, playbackBufferPreferences.maximumSeconds, playbackBufferPreferences.memoryLimitMiB, playbackBufferPreferences.backBufferMiB, playbackBufferPreferences.startupSeconds, autoRecover, autoNext, preloadNext)
+            val fallback = SettingsTransferRepository.Snapshot(language, darkTheme, discoveryTopic, discoveryLanguage, playbackPreferences.maxHeight, playbackPreferences.h264Only, playbackPreferences.fps30Only, playbackPreferences.audioOnly, downloadPreferences.maxHeight, downloadPreferences.h264Only, downloadPreferences.fps30Only, downloadPreferences.limitKiB, resumePlayback, playbackBufferPreferences.maximumSeconds, playbackBufferPreferences.memoryLimitMiB, playbackBufferPreferences.backBufferMiB, playbackBufferPreferences.startupSeconds, autoRecover, autoNext, preloadNext, feedRefreshPreset)
             val result = runCatching {
                 val json = withContext(Dispatchers.IO) {
                     context.contentResolver.openInputStream(uri)?.use(::readSettingsTransfer)
@@ -137,6 +142,8 @@ fun SettingsScreen(
                 onAutoRecoverChanged(imported.autoRecover)
                 onAutoNextChanged(imported.autoNext)
                 onPreloadNextChanged(imported.preloadNext)
+                selectedFeedPreset = imported.feedPreset
+                onFeedRefreshPresetChanged(imported.feedPreset)
                 language = imported.language
                 onLanguageChanged(imported.language)
                 transferMessage = context.getString(R.string.settings_imported)
@@ -195,6 +202,25 @@ fun SettingsScreen(
                             onClick = {
                                 discoveryLanguageMenuExpanded = false
                                 onDiscoveryPreferencesChanged(discoveryTopic, code)
+                            },
+                        )
+                    }
+                }
+            }
+            Text(stringResource(R.string.subscription_feed_pace), style = MaterialTheme.typography.bodyMedium)
+            Text(stringResource(R.string.subscription_feed_pace_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            androidx.compose.foundation.layout.Box {
+                TextButton(onClick = { feedPresetMenuExpanded = true }) {
+                    Text(stringResource(SUBSCRIPTION_FEED_PRESETS[selectedFeedPreset].second))
+                }
+                DropdownMenu(expanded = feedPresetMenuExpanded, onDismissRequest = { feedPresetMenuExpanded = false }) {
+                    SUBSCRIPTION_FEED_PRESETS.forEachIndexed { index, option ->
+                        DropdownMenuItem(
+                            text = { Text(stringResource(option.second)) },
+                            onClick = {
+                                feedPresetMenuExpanded = false
+                                selectedFeedPreset = index
+                                onFeedRefreshPresetChanged(index)
                             },
                         )
                     }
@@ -402,6 +428,12 @@ private val DISCOVERY_LANGUAGES = listOf(
     "pt" to "Português",
     "ja" to "日本語",
     "ko" to "한국어",
+)
+
+private val SUBSCRIPTION_FEED_PRESETS = listOf(
+    0 to R.string.connection_preset_slow,
+    1 to R.string.connection_preset_balanced,
+    2 to R.string.connection_preset_fast,
 )
 
 @Composable

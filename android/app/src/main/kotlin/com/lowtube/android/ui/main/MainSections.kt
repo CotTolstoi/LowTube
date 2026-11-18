@@ -61,6 +61,7 @@ internal fun SubscriptionsTab(
     repository: LocalLibraryRepository,
     accountEmail: String,
     refreshRevision: Int,
+    feedRefreshPreset: Int = 1,
     youtubeSyncBusy: Boolean,
     youtubeSyncMessage: String,
     onSyncYouTubeSubscriptions: () -> Unit,
@@ -137,7 +138,7 @@ internal fun SubscriptionsTab(
                     refreshFailed = false
                     refreshJob = scope.launch {
                         try {
-                            val result = feedRepository.refreshBatch(AppLocale.language(context))
+                            val result = feedRepository.refreshBatch(AppLocale.language(context), feedRefreshPreset)
                             refreshMessage = context.getString(
                                 R.string.feed_refresh_summary,
                                 result.refreshedChannels,

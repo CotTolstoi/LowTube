@@ -35,12 +35,13 @@ class LocalSubscriptionFeedRepository(
     private val library: LocalLibraryRepository,
     private val innerTube: InnerTubeSearchRepository,
 ) {
-    suspend fun refreshBatch(language: String = "en"): SubscriptionFeedRefresh = withContext(Dispatchers.IO) {
+    suspend fun refreshBatch(language: String = "en", preset: Int = 1): SubscriptionFeedRefresh = withContext(Dispatchers.IO) {
         val channels = library.channels()
         if (channels.isEmpty()) return@withContext SubscriptionFeedRefresh(emptyList(), 0, emptyList(), 0)
 
-        val selected = library.channelsForFeedRefresh(channels, CHANNELS_PER_REFRESH)
-        val gate = Semaphore(MAX_CONCURRENT_REQUESTS)
+        val policy = SubscriptionFeedRefreshPolicy.fromPreset(preset)
+        val selected = library.channelsForFeedRefresh(channels, policy.channelsPerBatch)
+        val gate = Semaphore(policy.maxConcurrentRequests)
         val outcomes = coroutineScope {
             selected.map { channel ->
                 async {
@@ -216,8 +217,6 @@ class LocalSubscriptionFeedRepository(
     private data class ChannelResult(val channel: SavedChannel, val error: String?, val usedBrowseFallback: Boolean)
 
     companion object {
-        private const val CHANNELS_PER_REFRESH = 6
-        private const val MAX_CONCURRENT_REQUESTS = 2
         private const val MAX_RESPONSE_BYTES = 2 * 1024 * 1024
         private const val MAX_ITEMS_PER_CHANNEL = 30
         private const val MAX_XML_DEPTH = 32

@@ -58,6 +58,7 @@ fun LibraryScreen(
     repository: LocalLibraryRepository,
     accountEmail: String,
     refreshRevision: Int,
+    feedRefreshPreset: Int = 1,
     onBack: () -> Unit,
     onPlay: (VideoItem) -> Unit,
     onPlayPlaylist: (List<VideoItem>) -> Unit,
@@ -236,7 +237,7 @@ fun LibraryScreen(
                                     feedRefreshFailed = false
                                     feedJob = scope.launch {
                                         try {
-                                            feedRefreshResult = feedRepository.refreshBatch(AppLocale.language(context))
+                                            feedRefreshResult = feedRepository.refreshBatch(AppLocale.language(context), feedRefreshPreset)
                                             refresh++
                                         } catch (cancelled: CancellationException) {
                                             throw cancelled

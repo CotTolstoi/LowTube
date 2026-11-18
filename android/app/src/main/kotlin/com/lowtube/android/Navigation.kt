@@ -168,6 +168,7 @@ fun MainNavigation(
     var autoRecover by remember(context) { mutableStateOf(preferences.getBoolean("auto_recover", true)) }
     var autoNext by remember(context) { mutableStateOf(preferences.getBoolean("playback_auto_next", true)) }
     var preloadNext by remember(context) { mutableStateOf(preferences.getBoolean("playback_preload_next", true)) }
+    var feedRefreshPreset by remember(context) { mutableIntStateOf(preferences.getInt("feed_refresh_preset", 1).coerceIn(0, 2)) }
     var mainTab by rememberSaveable { mutableStateOf("home") }
     var returnMainTab by rememberSaveable { mutableStateOf("home") }
     val hasQueuedItems = remember(library, queueRevision) { library.queue().isNotEmpty() }
@@ -414,6 +415,7 @@ fun MainNavigation(
                     isFollowing = { channelId -> channelId in followedChannels || channelId in youtubeFollowedChannels },
                     discoveryTopic = discoveryTopic,
                     discoveryLanguage = discoveryLanguage,
+                    feedRefreshPreset = feedRefreshPreset,
                     libraryRepository = library,
                     libraryRevision = libraryRevision,
                     onAddChannel = addChannel,
@@ -427,6 +429,11 @@ fun MainNavigation(
                     onBack = navigateBack,
                     discoveryTopic = discoveryTopic,
                     discoveryLanguage = discoveryLanguage,
+                    feedRefreshPreset = feedRefreshPreset,
+                    onFeedRefreshPresetChanged = { preset ->
+                        feedRefreshPreset = preset.coerceIn(0, 2)
+                        preferences.edit().putInt("feed_refresh_preset", feedRefreshPreset).apply()
+                    },
                     onDiscoveryPreferencesChanged = { topic, language ->
                         discoveryTopic = topic.take(200)
                         discoveryLanguage = language
@@ -492,6 +499,7 @@ fun MainNavigation(
                     repository = library,
                     accountEmail = googleAccountEmail,
                     refreshRevision = libraryRevision,
+                    feedRefreshPreset = feedRefreshPreset,
                     onBack = navigateBack,
                     onPlay = { video -> selectedQueueRowId = null; selectedLocalAudio = null; selectedVideo = video; playbackRequestId++; backStack.add(Player) },
                     onPlayPlaylist = { videos ->

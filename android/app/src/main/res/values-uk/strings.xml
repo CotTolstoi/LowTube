@@ -44,6 +44,11 @@
     <string name="discovery_topic">Тема</string>
     <string name="discovery_topic_hint">До 200 символів; порожнє поле використовує тему за замовчуванням.</string>
     <string name="discovery_language">Мова пошуку</string>
+    <string name="subscription_feed_pace">Швидкість оновлення підписок</string>
+    <string name="subscription_feed_pace_hint">Керує розміром пакета й паралельністю запитів для кожного ручного оновлення.</string>
+    <string name="connection_preset_slow">Повільне з’єднання</string>
+    <string name="connection_preset_balanced">Збалансоване з’єднання</string>
+    <string name="connection_preset_fast">Швидке з’єднання</string>
     <string name="dark_theme">Темна тема</string>
     <string name="language">Мова</string>
     <string name="language_english">English</string>

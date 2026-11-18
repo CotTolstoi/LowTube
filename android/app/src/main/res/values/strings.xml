@@ -44,6 +44,11 @@
     <string name="discovery_topic">Topic</string>
     <string name="discovery_topic_hint">Up to 200 characters; leave blank for the default topic.</string>
     <string name="discovery_language">Search language</string>
+    <string name="subscription_feed_pace">Subscription update pace</string>
+    <string name="subscription_feed_pace_hint">Controls batch size and parallel requests for each manual refresh.</string>
+    <string name="connection_preset_slow">Slow connection</string>
+    <string name="connection_preset_balanced">Balanced connection</string>
+    <string name="connection_preset_fast">Fast connection</string>
     <string name="dark_theme">Dark theme</string>
     <string name="language">Language</string>
     <string name="language_english">English</string>
