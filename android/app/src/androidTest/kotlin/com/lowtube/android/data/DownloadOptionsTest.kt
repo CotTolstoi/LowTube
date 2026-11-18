@@ -1,11 +1,11 @@
 package com.lowtube.android.data
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import android.net.Uri
 import com.lowtube.android.model.VideoItem
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -16,7 +16,7 @@ class DownloadOptionsTest {
     private val video = VideoItem(id = "abcdefghijk", title = "Test video", url = "https://www.youtube.com/watch?v=abcdefghijk")
 
     @Test
-    fun videoOptionsHonorSeparateHeightCodecAndFrameRateLimits() {
+    fun videoOptionsHonorLimitsAndKeepResolvedNParameter() {
         val streaming = JSONObject().put(
             "formats",
             JSONArray()
@@ -26,36 +26,37 @@ class DownloadOptionsTest {
                 .put(videoFormat(37, 1080, 30, 5_000_000, "avc1.640028", "mp4a.40.2"))
                 .put(videoFormat(45, 720, 30, 2_500_000, "vp9", "opus", container = "webm"))
                 .put(videoFormat(99, 720, 30, 2_500_000, "avc1.64001F", "mp4a.40.2", host = "example.com"))
-                .put(videoFormat(100, 720, 30, 2_500_000, "avc1.64001F", "mp4a.40.2", query = "?n=unresolved")),
+                .put(videoFormat(100, 720, 30, 2_500_000, "avc1.64001F", "mp4a.40.2", query = "?n=transformed")),
         )
 
         val options = repository.downloadOptions(video, streaming, DownloadStreamPreferences(720, true, true), audioOnly = false)
 
-        assertEquals(listOf(22, 18), options.map { it.stream.itag })
+        assertEquals(listOf(100, 22, 18), options.map { it.stream.itag })
         assertEquals("MP4", options.first().container)
         assertEquals("avc1.64001F", options.first().stream.videoCodec)
         assertTrue(options.all { it.stream.videoHeight <= 720 && it.stream.fps <= 30.0 })
         assertTrue(options.all { it.stream.isMuxed && !it.audioOnly })
+        assertEquals("transformed", Uri.parse(options.first().stream.uri).getQueryParameter("n"))
     }
 
     @Test
-    fun audioOptionsAreSortedByBitrateAndRejectUnresolvedOrUntrustedUrls() {
+    fun audioOptionsAreSortedByBitrateAndKeepResolvedNParameter() {
         val streaming = JSONObject().put(
             "adaptiveFormats",
             JSONArray()
                 .put(audioFormat(140, 128_000, "mp4a.40.2", "audio/mp4"))
                 .put(audioFormat(251, 160_000, "opus", "audio/webm"))
-                .put(audioFormat(999, 320_000, "mp4a.40.2", "audio/mp4", query = "?n=unresolved"))
+                .put(audioFormat(999, 320_000, "mp4a.40.2", "audio/mp4", query = "?n=transformed"))
                 .put(audioFormat(998, 320_000, "mp4a.40.2", "audio/mp4", host = "example.com")),
         )
 
         val options = repository.downloadOptions(video, streaming, DownloadStreamPreferences(), audioOnly = true)
 
-        assertEquals(listOf(251, 140), options.map { it.stream.itag })
+        assertEquals(listOf(999, 251, 140), options.map { it.stream.itag })
         assertTrue(options.all { it.audioOnly && !it.stream.isMuxed })
-        assertEquals(160, options.first().bitrateKbps)
-        assertEquals("WebM", options.first().container)
-        assertFalse(options.any { it.stream.uri.contains("unresolved") })
+        assertEquals(320, options.first().bitrateKbps)
+        assertEquals("M4A", options.first().container)
+        assertEquals("transformed", Uri.parse(options.first().stream.uri).getQueryParameter("n"))
     }
 
     private fun videoFormat(

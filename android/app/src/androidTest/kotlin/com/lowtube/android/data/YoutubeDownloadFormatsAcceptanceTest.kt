@@ -42,7 +42,11 @@ class YoutubeDownloadFormatsAcceptanceTest {
 
             assertFalse("Expected at least one directly downloadable video format", videoOptions.isEmpty())
             assertTrue(videoOptions.all { it.stream.isMuxed && !it.audioOnly && it.stream.videoHeight <= 720 })
-            assertTrue(videoOptions.all { it.stream.uri.startsWith("https://") && Uri.parse(it.stream.uri).getQueryParameter("n").isNullOrBlank() })
+            assertTrue(videoOptions.all { option ->
+                val uri = Uri.parse(option.stream.uri)
+                val host = uri.host?.lowercase().orEmpty()
+                uri.scheme == "https" && (host == "googlevideo.com" || host.endsWith(".googlevideo.com"))
+            })
             val selected = videoOptions.first().stream
             val client = OkHttpClient.Builder().connectTimeout(10, TimeUnit.SECONDS).readTimeout(10, TimeUnit.SECONDS).build()
             val tempFile = File(context.cacheDir, "lowtube-bounded-range-${System.currentTimeMillis()}.part")

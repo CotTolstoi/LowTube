@@ -35,7 +35,6 @@ class DownloadRepository(context: Context) {
         val uri = Uri.parse(option.stream.uri)
         val host = uri.host?.lowercase().orEmpty()
         require(uri.scheme == "https" && (host == "googlevideo.com" || host.endsWith(".googlevideo.com"))) { "Selected download format has an untrusted stream address." }
-        require(uri.getQueryParameter("n").isNullOrBlank()) { "Selected download format still requires an unsupported n-signature transform." }
         require(option.stream.mimeType in SUPPORTED_MIME_TYPES) { "Selected download format is not supported." }
         require(if (option.audioOnly) option.stream.isAudioOnly else option.stream.isMuxed) { "Selected format is not a single-file download." }
         val fileName = buildFileName(video, option)
