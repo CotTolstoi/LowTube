@@ -14,6 +14,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.mapSaver
@@ -119,6 +120,7 @@ fun MainNavigation(
     var selectedVideo by rememberSaveable(stateSaver = videoItemSaver) { mutableStateOf<VideoItem?>(null) }
     var selectedLocalAudio by rememberSaveable(stateSaver = localAudioTrackSaver) { mutableStateOf<LocalAudioTrack?>(null) }
     var selectedQueueRowId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var playbackRequestId by rememberSaveable { mutableLongStateOf(0L) }
     var advancingQueue by remember { mutableStateOf(false) }
     var pendingDownload by remember { mutableStateOf<VideoItem?>(null) }
     var pendingDownloadOption by remember { mutableStateOf<DownloadFormatOption?>(null) }
@@ -208,6 +210,7 @@ fun MainNavigation(
                     selectedQueueRowId = next.rowId
                     selectedLocalAudio = null
                     selectedVideo = next.video
+                    playbackRequestId++
                     break
                 }
             } catch (failure: Exception) {
@@ -373,7 +376,7 @@ fun MainNavigation(
                     onOpenMiniPlayer = { if (selectedVideo != null) backStack.add(Player) },
                     onOpenQueue = { backStack.add(Queue) },
                     onOpenDownloads = { backStack.add(Downloads) },
-                    onPlay = { video -> selectedQueueRowId = null; selectedLocalAudio = null; selectedVideo = video; backStack.add(Player) },
+                    onPlay = { video -> selectedQueueRowId = null; selectedLocalAudio = null; selectedVideo = video; playbackRequestId++; backStack.add(Player) },
                     onResolveDownloadOptions = { video, audioOnly, callback ->
                         scope.launch {
                             callback(runCatching { downloads.options(video, downloadPreferences, audioOnly) })
@@ -490,7 +493,7 @@ fun MainNavigation(
                     accountEmail = googleAccountEmail,
                     refreshRevision = libraryRevision,
                     onBack = navigateBack,
-                    onPlay = { video -> selectedQueueRowId = null; selectedLocalAudio = null; selectedVideo = video; backStack.add(Player) },
+                    onPlay = { video -> selectedQueueRowId = null; selectedLocalAudio = null; selectedVideo = video; playbackRequestId++; backStack.add(Player) },
                     onPlayPlaylist = { videos ->
                         val first = videos.firstOrNull()
                         if (first != null) {
@@ -500,6 +503,7 @@ fun MainNavigation(
                                     selectedQueueRowId = null
                                     selectedLocalAudio = null
                                     selectedVideo = first
+                                    playbackRequestId++
                                     backStack.add(Player)
                                 }
                                 .onFailure { Toast.makeText(context, it.message ?: context.getString(R.string.action_failed), Toast.LENGTH_LONG).show() }
@@ -515,6 +519,7 @@ fun MainNavigation(
                             kind = "local-audio",
                             url = track.uri,
                         )
+                        playbackRequestId++
                         backStack.add(Player)
                     },
                     onRemoveLocalAudio = { track ->
@@ -549,7 +554,7 @@ fun MainNavigation(
                     repository = library,
                     refreshRevision = queueRevision,
                     onBack = navigateBack,
-                    onPlay = { entry -> selectedQueueRowId = entry.rowId; selectedLocalAudio = null; selectedVideo = entry.video; backStack.add(Player) },
+                    onPlay = { entry -> selectedQueueRowId = entry.rowId; selectedLocalAudio = null; selectedVideo = entry.video; playbackRequestId++; backStack.add(Player) },
                     onExpandPlaylist = { entry ->
                         if (expandingQueueRowId == null) {
                             expandingQueueRowId = entry.rowId
@@ -603,6 +608,7 @@ fun MainNavigation(
                 if (video == null) backStack.removeLastOrNull()
                 else PlaybackScreen(
                     video = video,
+                    playbackRequestId = playbackRequestId,
                     isFollowing = video.channelId in followedChannels || video.channelId in youtubeFollowedChannels,
                     onToggleFollow = toggleFollowChannel,
                     localAudioTrack = selectedLocalAudio,
@@ -635,7 +641,7 @@ fun MainNavigation(
                     onPreviousVideo = {
                         val previous = library.previousWatchedVideo(video.id)
                         if (previous == null) Toast.makeText(context, R.string.no_previous_video, Toast.LENGTH_SHORT).show()
-                        else { selectedQueueRowId = null; selectedLocalAudio = null; selectedVideo = previous }
+                        else { selectedQueueRowId = null; selectedLocalAudio = null; selectedVideo = previous; playbackRequestId++ }
                     },
                     onPlaybackSpeedChanged = { updated ->
                         playbackSpeed = updated.coerceIn(0.25f, 2f)

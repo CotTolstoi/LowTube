@@ -85,6 +85,7 @@ import kotlinx.coroutines.isActive
 @Composable
 fun PlaybackScreen(
     video: VideoItem,
+    playbackRequestId: Long,
     isFollowing: Boolean,
     onToggleFollow: (VideoItem) -> Boolean,
     localAudioTrack: LocalAudioTrack?,
@@ -114,7 +115,7 @@ fun PlaybackScreen(
         context.getSharedPreferences(PlaybackDecoderDiagnostics.PREFERENCES_NAME, Context.MODE_PRIVATE)
     }
     var controller by remember { mutableStateOf<MediaController?>(null) }
-    var decoderSnapshot by remember(video.id) { mutableStateOf(PlaybackDecoderDiagnostics.read(decoderPreferences)) }
+    var decoderSnapshot by remember(video.id, playbackRequestId) { mutableStateOf(PlaybackDecoderDiagnostics.read(decoderPreferences)) }
     var message by remember { mutableStateOf<String?>(null) }
     var speedMenuExpanded by remember { mutableStateOf(false) }
     var audioMenuExpanded by remember { mutableStateOf(false) }
@@ -124,22 +125,22 @@ fun PlaybackScreen(
     var externalSubtitleUri by rememberSaveable(video.id, localAudioTrack?.uri) { mutableStateOf("") }
     var availableAudioTracks by remember { mutableStateOf(emptyList<TrackOption>()) }
     var availableSubtitleTracks by remember { mutableStateOf(emptyList<TrackOption>()) }
-    var loading by remember(video.id) { mutableStateOf(true) }
-    var shouldResumePlayback by rememberSaveable(video.id, localAudioTrack?.uri) { mutableStateOf(true) }
-    var watchedVideo by remember(video.id) { mutableStateOf(video) }
-    var readyNotified by remember(video.id) { mutableStateOf(false) }
-    var endedHandled by remember(video.id) { mutableStateOf(false) }
-    var recoveryAttempts by remember(video.id, localAudioTrack?.uri) { mutableStateOf(0) }
-    var recoveryInProgress by remember(video.id, localAudioTrack?.uri) { mutableStateOf(false) }
-    var recoveryJob by remember(video.id, localAudioTrack?.uri) { mutableStateOf<kotlinx.coroutines.Job?>(null) }
-    var recoveryCompletion by remember(video.id, localAudioTrack?.uri) {
+    var loading by remember(video.id, playbackRequestId) { mutableStateOf(true) }
+    var shouldResumePlayback by rememberSaveable(video.id, playbackRequestId, localAudioTrack?.uri) { mutableStateOf(true) }
+    var watchedVideo by remember(video.id, playbackRequestId) { mutableStateOf(video) }
+    var readyNotified by remember(video.id, playbackRequestId) { mutableStateOf(false) }
+    var endedHandled by remember(video.id, playbackRequestId) { mutableStateOf(false) }
+    var recoveryAttempts by remember(video.id, playbackRequestId, localAudioTrack?.uri) { mutableStateOf(0) }
+    var recoveryInProgress by remember(video.id, playbackRequestId, localAudioTrack?.uri) { mutableStateOf(false) }
+    var recoveryJob by remember(video.id, playbackRequestId, localAudioTrack?.uri) { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+    var recoveryCompletion by remember(video.id, playbackRequestId, localAudioTrack?.uri) {
         mutableStateOf<CompletableDeferred<PlaybackException?>?>(null)
     }
     var preloadAttemptedVideoId by remember { mutableStateOf<String?>(null) }
     var stagedQueueEntry by remember { mutableStateOf<QueueEntry?>(null) }
     var stagedQueueJob by remember { mutableStateOf<Job?>(null) }
     var resolvingQueueRowId by remember { mutableStateOf<Long?>(null) }
-    var lastObservedDurationMs by remember(video.id) { mutableStateOf(0L) }
+    var lastObservedDurationMs by remember(video.id, playbackRequestId) { mutableStateOf(0L) }
     val playbackScope = rememberCoroutineScope()
     val latestAutoRecover by rememberUpdatedState(autoRecover)
     val latestAutoNext by rememberUpdatedState(autoNext)
@@ -160,6 +161,7 @@ fun PlaybackScreen(
     val latestOnPreloadedStarted by rememberUpdatedState(onPreloadedQueueEntryStarted)
     val latestPlaybackSpeed by rememberUpdatedState(playbackSpeed)
     val latestPlaybackPreferences by rememberUpdatedState(playbackPreferences)
+    val latestPlaybackRequestId by rememberUpdatedState(playbackRequestId)
     val genericTrackLabel = stringResource(R.string.track_generic)
     val audioPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
@@ -235,7 +237,7 @@ fun PlaybackScreen(
             }
         }
     }
-    val errorListener = remember(video.id, localAudioTrack?.uri, playbackPreferences.audioOnly, autoNext, onPlaybackReady, onAdvanceQueue, onPreloadedQueueEntryStarted) {
+    val errorListener = remember(video.id, playbackRequestId, localAudioTrack?.uri, playbackPreferences.audioOnly, autoNext, onPlaybackReady, onAdvanceQueue, onPreloadedQueueEntryStarted) {
         object : Player.Listener {
             override fun onTracksChanged(tracks: Tracks) {
                 val active = controller ?: return
@@ -386,7 +388,10 @@ fun PlaybackScreen(
                             )
                             applyPlaybackStreamPreferences(activeController, latestPlaybackPreferences)
                             val externalAudio = externalAudioConfiguration(activeController.currentMediaItem)
-                            activeController.setMediaItem(remoteMediaItem(stream, externalAudio), resumePositionMs)
+                            activeController.setMediaItem(
+                                remoteMediaItem(stream, externalAudio, latestPlaybackRequestId),
+                                resumePositionMs,
+                            )
                             activeController.prepare()
                             if (wasPlaying) activeController.play() else activeController.pause()
                             currentError = pending.await()
@@ -439,7 +444,7 @@ fun PlaybackScreen(
         }
     }
 
-    DisposableEffect(controller, video.id, localAudioTrack?.uri) {
+    DisposableEffect(controller, video.id, playbackRequestId, localAudioTrack?.uri) {
         onDispose {
             onPictureInPictureEligibilityChanged(false)
             recoveryJob?.cancel()
@@ -457,14 +462,19 @@ fun PlaybackScreen(
         }
     }
 
-    LaunchedEffect(controller, video.id, localAudioTrack?.uri, resumePlayback) {
+    LaunchedEffect(controller, video.id, playbackRequestId, localAudioTrack?.uri, resumePlayback) {
         val activeController = controller ?: return@LaunchedEffect
         loading = true
         message = null
         try {
-            if (activeController.currentMediaItem?.mediaId == video.id &&
-                activeController.playbackState != Player.STATE_IDLE &&
-                activeController.playbackState != Player.STATE_ENDED
+            val currentMediaItem = activeController.currentMediaItem
+            if (PlaybackRequestPolicy.shouldReuseCurrentItem(
+                    currentMediaId = currentMediaItem?.mediaId,
+                    currentRequestId = PlaybackRequestPolicy.requestId(currentMediaItem?.mediaMetadata?.extras),
+                    requestedMediaId = video.id,
+                    requestedRequestId = playbackRequestId,
+                    playbackState = activeController.playbackState,
+                )
             ) {
                 watchedVideo = video
                 loading = false
@@ -503,12 +513,15 @@ fun PlaybackScreen(
             }
             activeController.setPlaybackParameters(PlaybackParameters(playbackSpeed.coerceIn(0.25f, 2f)))
             val item = if (localAudioTrack != null) {
-                val metadata = MediaMetadata.Builder().setTitle(localAudioTrack.title).build()
+                val metadata = MediaMetadata.Builder().setTitle(localAudioTrack.title)
+                    .setExtras(Bundle().apply { putLong(PLAYBACK_REQUEST_ID_EXTRA, playbackRequestId) }).build()
                 MediaItem.Builder().setUri(localAudioTrack.uri).setMimeType(localAudioTrack.mimeType)
                     .setMediaMetadata(metadata).build()
-            } else remoteMediaItem(stream!!, externalAudioUri.takeIf(String::isNotBlank)?.let(Uri::parse)?.let {
-                externalAudioConfiguration(context, it)
-            })
+            } else remoteMediaItem(
+                stream!!,
+                externalAudioUri.takeIf(String::isNotBlank)?.let(Uri::parse)?.let { externalAudioConfiguration(context, it) },
+                playbackRequestId,
+            )
             val resumePositionMs = PlaybackResumePolicy.position(resumePlayback, localAudioTrack != null) {
                 library.resumePositionMs(video.id)
             }
@@ -523,11 +536,11 @@ fun PlaybackScreen(
         }
     }
 
-    LaunchedEffect(video.id) {
+    LaunchedEffect(video.id, playbackRequestId) {
         preloadAttemptedVideoId = null
     }
 
-    LaunchedEffect(controller, video.id, queueHeadRowId) {
+    LaunchedEffect(controller, video.id, playbackRequestId, queueHeadRowId) {
         val activeController = controller ?: return@LaunchedEffect
         val staged = stagedQueueEntry
         if (staged != null && staged.rowId != queueHeadRowId) {
@@ -544,7 +557,7 @@ fun PlaybackScreen(
         }
     }
 
-    LaunchedEffect(controller, video.id, autoNext, preloadNext, localAudioTrack?.uri) {
+    LaunchedEffect(controller, video.id, playbackRequestId, autoNext, preloadNext, localAudioTrack?.uri) {
         val activeController = controller ?: return@LaunchedEffect
         if (!autoNext || !preloadNext || localAudioTrack != null) {
             stagedQueueJob?.cancel()
@@ -556,7 +569,7 @@ fun PlaybackScreen(
         }
     }
 
-    LaunchedEffect(controller, video.id, localAudioTrack?.uri) {
+    LaunchedEffect(controller, video.id, playbackRequestId, localAudioTrack?.uri) {
         val activeController = controller ?: return@LaunchedEffect
         if (localAudioTrack != null) return@LaunchedEffect
         while (isActive) {
@@ -611,7 +624,7 @@ fun PlaybackScreen(
                     if (activeController.mediaItemCount > activeController.currentMediaItemIndex + 1) {
                         activeController.removeMediaItems(activeController.currentMediaItemIndex + 1, activeController.mediaItemCount)
                     }
-                    activeController.addMediaItem(remoteMediaItem(stream))
+                    activeController.addMediaItem(remoteMediaItem(stream, playbackRequestId = latestPlaybackRequestId))
                     stagedQueueEntry = candidate
                     Log.i("LowTubePlayback", "next queue item prepared")
                 } catch (failure: CancellationException) {
@@ -627,7 +640,7 @@ fun PlaybackScreen(
         }
     }
 
-    LaunchedEffect(controller, video.id, localAudioTrack?.uri) {
+    LaunchedEffect(controller, video.id, playbackRequestId, localAudioTrack?.uri) {
         val activeController = controller ?: return@LaunchedEffect
         if (localAudioTrack != null) return@LaunchedEffect
         while (true) {
@@ -877,12 +890,14 @@ private data class TrackOption(
 private fun remoteMediaItem(
     stream: ResolvedVideoStream,
     externalAudio: ExternalAudioConfiguration? = null,
+    playbackRequestId: Long? = null,
 ): MediaItem {
     val metadata = MediaMetadata.Builder()
         .setTitle(stream.video.title)
         .setArtist(stream.video.channel)
         .build()
-    val itemMetadata = if (externalAudio == null) metadata else metadataWithExternalAudio(metadata, externalAudio)
+    val withExternalAudio = if (externalAudio == null) metadata else metadataWithExternalAudio(metadata, externalAudio)
+    val itemMetadata = playbackRequestId?.let { metadataWithPlaybackRequestId(withExternalAudio, it) } ?: withExternalAudio
     val builder = MediaItem.Builder()
         .setMediaId(stream.video.id)
         .setUri(stream.uri)
@@ -893,6 +908,11 @@ private fun remoteMediaItem(
         builder.setMimeType(MimeTypes.APPLICATION_M3U8)
     }
     return builder.build()
+}
+
+private fun metadataWithPlaybackRequestId(metadata: MediaMetadata, requestId: Long): MediaMetadata {
+    val extras = Bundle(metadata.extras ?: Bundle()).apply { putLong(PLAYBACK_REQUEST_ID_EXTRA, requestId) }
+    return metadata.buildUpon().setExtras(extras).build()
 }
 
 internal data class ExternalAudioConfiguration(
