@@ -3,8 +3,11 @@ package com.lowtube.android.ui.playback
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.OpenableColumns
 import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
@@ -65,6 +68,7 @@ import com.lowtube.android.model.QueueEntry
 import com.lowtube.android.model.ResolvedVideoStream
 import com.lowtube.android.model.VideoItem
 import com.lowtube.android.playback.PlaybackService
+import com.lowtube.android.playback.PlaybackDecoderDiagnostics
 import com.lowtube.android.playback.EXTERNAL_AUDIO_LABEL
 import com.lowtube.android.playback.EXTERNAL_AUDIO_MIME_TYPE
 import com.lowtube.android.playback.EXTERNAL_AUDIO_URI
@@ -106,7 +110,11 @@ fun PlaybackScreen(
 ) {
     val context = LocalContext.current
     val repository = remember(context) { InnerTubeSearchRepository(context.applicationContext) }
+    val decoderPreferences = remember(context) {
+        context.getSharedPreferences(PlaybackDecoderDiagnostics.PREFERENCES_NAME, Context.MODE_PRIVATE)
+    }
     var controller by remember { mutableStateOf<MediaController?>(null) }
+    var decoderSnapshot by remember(video.id) { mutableStateOf(PlaybackDecoderDiagnostics.read(decoderPreferences)) }
     var message by remember { mutableStateOf<String?>(null) }
     var speedMenuExpanded by remember { mutableStateOf(false) }
     var audioMenuExpanded by remember { mutableStateOf(false) }
@@ -137,6 +145,16 @@ fun PlaybackScreen(
     val latestAutoNext by rememberUpdatedState(autoNext)
     val latestPreloadNext by rememberUpdatedState(preloadNext)
     val latestHasQueuedItems by rememberUpdatedState(hasQueuedItems)
+
+    DisposableEffect(decoderPreferences) {
+        val mainHandler = Handler(Looper.getMainLooper())
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { preferences, _ ->
+            val snapshot = PlaybackDecoderDiagnostics.read(preferences)
+            mainHandler.post { decoderSnapshot = snapshot }
+        }
+        decoderPreferences.registerOnSharedPreferenceChangeListener(listener)
+        onDispose { decoderPreferences.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
     val latestResolveNextQueueEntry by rememberUpdatedState(onResolveNextQueueEntry)
     val latestIsQueueHead by rememberUpdatedState(onIsQueueHead)
     val latestOnPreloadedStarted by rememberUpdatedState(onPreloadedQueueEntryStarted)
@@ -457,6 +475,7 @@ fun PlaybackScreen(
             }
             var stream: ResolvedVideoStream? = null
             var resolutionRetries = 0
+            PlaybackDecoderDiagnostics.clear(context)
             if (localAudioTrack == null) {
                 while (stream == null) {
                     stream = try {
@@ -668,6 +687,27 @@ fun PlaybackScreen(
             if (localAudioTrack == null) androidx.compose.foundation.layout.Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TextButton(onClick = onPreviousVideo, enabled = !loading) { Text(stringResource(R.string.previous_video)) }
                 if (hasQueuedItems) TextButton(onClick = onAdvanceQueue, enabled = !loading) { Text(stringResource(R.string.next_in_queue)) }
+            }
+            if (localAudioTrack == null && !playbackPreferences.audioOnly) {
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(stringResource(R.string.playback_diagnostics), style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        stringResource(
+                            R.string.video_decoder_name,
+                            decoderSnapshot.name.ifBlank { context.getString(R.string.video_decoder_waiting) },
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    if (decoderSnapshot.inputFormat.isNotBlank()) {
+                        Text(stringResource(R.string.video_input_format, decoderSnapshot.inputFormat), style = MaterialTheme.typography.bodySmall)
+                    }
+                    val hardwareStatus = when (decoderSnapshot.hardwareStatus) {
+                        PlaybackDecoderDiagnostics.HARDWARE_STATUS_HARDWARE -> R.string.video_hardware_yes
+                        PlaybackDecoderDiagnostics.HARDWARE_STATUS_SOFTWARE -> R.string.video_hardware_no
+                        else -> R.string.video_hardware_unknown
+                    }
+                    Text(stringResource(R.string.video_hardware_status, stringResource(hardwareStatus)), style = MaterialTheme.typography.bodySmall)
+                }
             }
             androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                 Text(stringResource(R.string.playback_speed), style = MaterialTheme.typography.bodyLarge)

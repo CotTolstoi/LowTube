@@ -16,6 +16,7 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import com.lowtube.android.model.VideoItem
+import com.lowtube.android.playback.PlaybackDecoderDiagnostics
 import com.lowtube.android.playback.configurePlaybackPreload
 import com.lowtube.android.playback.createPlaybackLoadControl
 import com.lowtube.android.playback.createPlaybackDataSourceFactory
@@ -55,6 +56,7 @@ class YoutubeResolverPlaybackAcceptanceTest {
             duration = "9:56",
             url = "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
         )
+        PlaybackDecoderDiagnostics.clear(context)
         val cpuStarted = Process.getElapsedCpuTime()
         val wallStarted = SystemClock.elapsedRealtime()
         val pssStarted = Debug.getPss()
@@ -63,6 +65,7 @@ class YoutubeResolverPlaybackAcceptanceTest {
         withContext(Dispatchers.Main.immediate) {
             val player = ExoPlayer.Builder(context).setLoadControl(createPlaybackLoadControl(context)).build().apply {
                 configurePlaybackPreload(this, true)
+                addAnalyticsListener(PlaybackDecoderDiagnostics.analyticsListener(context))
             }
             var failure: PlaybackException? = null
             player.addListener(object : Player.Listener {
@@ -109,9 +112,19 @@ class YoutubeResolverPlaybackAcceptanceTest {
                 assertNull(failure)
                 assertTrue("Expected media time to advance to the next item", player.currentPosition >= 1_000)
                 assertTrue("Playback must stop within the first 2 minutes", player.currentPosition < 120_000)
+                val decoderSnapshot = PlaybackDecoderDiagnostics.read(
+                    context.getSharedPreferences(PlaybackDecoderDiagnostics.PREFERENCES_NAME, Context.MODE_PRIVATE),
+                )
+                assertTrue("Media3 did not report the initialized video decoder", decoderSnapshot.name.isNotBlank())
+                assertTrue("Media3 did not report the input codec/format", decoderSnapshot.inputFormat.isNotBlank())
+                if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.Q) {
+                    assertEquals(PlaybackDecoderDiagnostics.HARDWARE_STATUS_UNKNOWN, decoderSnapshot.hardwareStatus)
+                }
                 System.out.println(
                     "preloadAcceptance=enabled; targetPreloadUs=${player.preloadConfiguration.targetPreloadDurationUs}; " +
                         "currentMediaItemIndex=${player.currentMediaItemIndex}; resumePlaybackAcceptance=disabled; " +
+                        "actualVideoDecoder=${decoderSnapshot.name}; inputFormat=${decoderSnapshot.inputFormat}; " +
+                        "hardwareAccelerationStatus=${decoderSnapshot.hardwareStatus}; " +
                         "savedPositionMs=$savedPositionMs; startPositionMs=$startPositionMs; " +
                         "mediaMs=${player.currentPosition}; cpuMs=${Process.getElapsedCpuTime() - cpuStarted}; " +
                         "wallMs=${SystemClock.elapsedRealtime() - wallStarted}; pssKiB=$pssStarted->${Debug.getPss()}; " +
@@ -120,6 +133,7 @@ class YoutubeResolverPlaybackAcceptanceTest {
             } finally {
                 player.pause()
                 player.release()
+                PlaybackDecoderDiagnostics.clear(context)
             }
         }
     }

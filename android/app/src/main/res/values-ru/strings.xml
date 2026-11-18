@@ -172,6 +172,14 @@
     <string name="watched">Просмотрено</string>
     <string name="now_playing">Сейчас воспроизводится</string>
     <string name="playback_speed">Скорость воспроизведения</string>
+    <string name="playback_diagnostics">Диагностика воспроизведения</string>
+    <string name="video_decoder_name">Видеодекодер: %1$s</string>
+    <string name="video_decoder_waiting">ожидание сведений о декодере</string>
+    <string name="video_input_format">Кодек/формат потока: %1$s</string>
+    <string name="video_hardware_status">Аппаратное ускорение: %1$s</string>
+    <string name="video_hardware_yes">Да</string>
+    <string name="video_hardware_no">Нет (программный декодер)</string>
+    <string name="video_hardware_unknown">Неизвестно для этой версии Android или недоступно</string>
     <string name="audio_track">Аудиодорожка</string>
     <string name="external_audio_choose">Загрузить аудиофайл…</string>
     <string name="external_audio_loaded_menu">Внешнее аудио: %1$s</string>

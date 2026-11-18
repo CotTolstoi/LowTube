@@ -172,6 +172,14 @@
     <string name="watched">Watched</string>
     <string name="now_playing">Now playing</string>
     <string name="playback_speed">Playback speed</string>
+    <string name="playback_diagnostics">Playback diagnostics</string>
+    <string name="video_decoder_name">Video decoder: %1$s</string>
+    <string name="video_decoder_waiting">waiting for decoder information</string>
+    <string name="video_input_format">Input codec/format: %1$s</string>
+    <string name="video_hardware_status">Hardware acceleration: %1$s</string>
+    <string name="video_hardware_yes">Yes</string>
+    <string name="video_hardware_no">No (software decoder)</string>
+    <string name="video_hardware_unknown">Unknown on this Android version or unavailable</string>
     <string name="audio_track">Audio track</string>
     <string name="external_audio_choose">Load audio file…</string>
     <string name="external_audio_loaded_menu">External audio: %1$s</string>

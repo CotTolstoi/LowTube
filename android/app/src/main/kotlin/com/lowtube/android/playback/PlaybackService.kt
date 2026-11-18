@@ -10,6 +10,7 @@ import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
@@ -25,6 +26,7 @@ import com.lowtube.android.MainActivity
 import com.lowtube.android.data.PlaybackBufferPreferences
 
 /** Owns Android media playback independently of the Activity lifecycle. */
+@OptIn(UnstableApi::class)
 class PlaybackService : MediaSessionService() {
     private var mediaSession: MediaSession? = null
     private var settings: SharedPreferences? = null
@@ -51,9 +53,14 @@ class PlaybackService : MediaSessionService() {
             )
             setHandleAudioBecomingNoisy(true)
         }
+        player.addAnalyticsListener(PlaybackDecoderDiagnostics.analyticsListener(this))
         player.addListener(object : Player.Listener {
             override fun onPlaybackStateChanged(playbackState: Int) {
                 if (playbackState == Player.STATE_BUFFERING) removeFutureItems(player)
+            }
+
+            override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                PlaybackDecoderDiagnostics.clear(this@PlaybackService)
             }
         })
         val preferenceListener = SharedPreferences.OnSharedPreferenceChangeListener { changed, key ->
