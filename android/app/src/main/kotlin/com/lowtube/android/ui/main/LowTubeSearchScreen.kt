@@ -47,6 +47,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -78,6 +79,7 @@ import com.lowtube.android.data.LocalSearchHistoryRepository
 import com.lowtube.android.ui.playback.MiniPlayerBar
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -132,6 +134,7 @@ fun LowTubeSearchScreen(
     var recentSearches by remember(searchHistory) { mutableStateOf(searchHistory.recent()) }
     var searchKind by rememberSaveable { mutableStateOf("all") }
     var recommendationKind by rememberSaveable { mutableStateOf("all") }
+    var autoLoadAttemptedToken by remember(state.query, state.isHome, state.homeCacheKey, selectedTab) { mutableStateOf<String?>(null) }
     var saveTarget by remember { mutableStateOf<VideoItem?>(null) }
     var downloadTarget by remember { mutableStateOf<VideoItem?>(null) }
     var downloadOptions by remember { mutableStateOf<List<DownloadFormatOption>?>(null) }
@@ -224,6 +227,32 @@ fun LowTubeSearchScreen(
 
     LaunchedEffect(state.query) {
         if (state.query.isNotEmpty()) query = state.query
+    }
+
+    LaunchedEffect(
+        selectedTab,
+        state.query,
+        state.isHome,
+        state.homeCacheKey,
+        state.continuation,
+        state.loading,
+        state.loadingMore,
+        visibleItems.size,
+    ) {
+        if (selectedTab != "search" && selectedTab != "home") return@LaunchedEffect
+        val continuation = state.continuation ?: return@LaunchedEffect
+        if (state.loading || state.loadingMore || visibleItems.isEmpty() || autoLoadAttemptedToken == continuation) return@LaunchedEffect
+
+        fun nearEnd(lastVisibleIndex: Int) = FeedAutoPaginationPolicy.shouldPrefetch(lastVisibleIndex, visibleItems.size)
+        val lastVisibleIndex = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
+        if (!listState.isScrollInProgress || !nearEnd(lastVisibleIndex)) {
+            snapshotFlow {
+                (listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1) to listState.isScrollInProgress
+            }.first { (index, isScrolling) -> isScrolling && nearEnd(index) }
+        }
+        if (autoLoadAttemptedToken == continuation) return@LaunchedEffect
+        autoLoadAttemptedToken = continuation
+        viewModel.loadMore(language, requestFailedMessage)
     }
 
     Scaffold(
@@ -779,4 +808,11 @@ internal fun channelBrowseUrl(input: String, requestedKind: String? = null): Str
         else -> return null
     }
     return "${current.baseUrl}/$suffix"
+}
+
+internal object FeedAutoPaginationPolicy {
+    private const val PREFETCH_DISTANCE = 4
+
+    fun shouldPrefetch(lastVisibleIndex: Int, itemCount: Int): Boolean =
+        itemCount > 0 && lastVisibleIndex >= 0 && lastVisibleIndex >= (itemCount - PREFETCH_DISTANCE).coerceAtLeast(0)
 }
