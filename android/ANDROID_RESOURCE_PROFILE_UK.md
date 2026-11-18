@@ -238,4 +238,6 @@
 
 18.11.2026 22:13 UTC (19.11 local), фізичний пристрій serial `8LZ5ZPO7J7QOEMMZ`, `MainActivity` залишалася foreground під час API23 Search→Queue acceptance на AVD: 10 s Home sample — CPU 0%, PSS 118,6 MiB, RSS 201,8 MiB, peak RSS 225,1 MiB; RAM 3 713 MiB / доступно 1 594 MiB. Це idle point sample, не benchmark; на Redmi відео не запускалося.
 
+18.11.2026 22:16 UTC (19.11 local), фізичний Android13/API33 serial `8LZ5ZPO7J7QOEMMZ` після bounded Search→Queue UI acceptance: перші 10 s після повернення `MainActivity` — CPU 31,8%, PSS 138,3 MiB, RSS 223,7 MiB, RAM 3 713/1 560 MiB; наступний settled 10 s Home sample — CPU 0%, PSS 116,4 MiB, RSS 202,9 MiB, peak RSS 228,4 MiB, RAM 3 713/1 559 MiB. `MainActivity` у foreground; жодне відео не відтворювалося. Point samples, не benchmark.
+
 18.11.2026 21:57 UTC, bounded video decoder acceptance на фізичному Android13/API33, максимум 2 хв дотримано: `c2.mtk.avc.decoder`, H.264 `avc1.4D401E`, системний hardware flag=true. За 16,276 s wall процес витратив 13,518 CPU s (~83,1% одного ядра); PSS 125 682→159 402 KiB, RSS 185 620→225 768 KiB; потік просунувся лише до 1 100 ms media time. Після повернення в Home один snapshot: CPU 0%, PSS 138,3 MiB, RSS 234,3 MiB; RAM 3 713 MiB / доступно 1 524 MiB. Короткий acceptance/post-test зріз, не benchmark; `MainActivity` знову foreground.

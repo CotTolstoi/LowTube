@@ -88,6 +88,8 @@
 
 ## Поточний зріз реалізації
 
+19.11.2026, Search→Queue route acceptance на фізичному Android13/API33: та сама opt-in MainActivity instrumentation, що пройшла на API23, відкрила `aqz-KE-bpKQ` через внутрішній YouTube URL route, додала Big Buck Bunny з overflow і знайшла його через More→Queue. `OK (1 test)` за 7,247 s; playback не запускався, cleanup прибрав fixture. Instrumentation закрила свою Activity, тому Redmi спершу повернувся до launcher/camera app; вручну запустив LowTube і підтвердив `MainActivity` foreground. Перше 10 s post-test Home sample було CPU 31,8%, PSS 138,3 MiB/RSS 223,7 MiB; settled наступні 10 s — CPU 0%, PSS 116,4 MiB/RSS 202,9 MiB, RAM 3 713/1 559 MiB. Короткі point samples, не benchmark.
+
 19.11.2026, Search→Queue UI route: додано opt-in `SearchToQueueUiAcceptanceTest` на MainActivity. На API23 AVD тест відправив підтримуваний YouTube `ACTION_VIEW`, дочекався картки Big Buck Bunny, відкрив її меню, вибрав Add to queue, відкрив More→Queue та перевірив той самий fixture у локальному SQLite queue. `OK (1 test)` за 4,638 s; тимчасовий fixture видалено, playback не запускався. Основний інтеграційний маршрут більше не має відкритого API23 acceptance; API33 acceptance і ручна перевірка залишаються.
 
 19.11.2026, EN/UK/RU catalog audit: усі 252 Android string resource keys є в кожному locale catalog; `android/tools/Verify-LocaleResourceParity.ps1` завершився з 0 missing/extra для UK та RU. API23 instrumentation test підтверджує, що language picker послідовно показує самоназви `English`, `Русский`, `Українська` у кожній UI-локалі; це зберігає розпізнаваність цільової мови. Попередня спроба перекласти ці назви скасована після перевірки. Це структурна перевірка ресурсів, не повна мовна редактура кожного екрану.
