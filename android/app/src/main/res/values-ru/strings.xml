@@ -65,6 +65,13 @@
     <string name="subscription_feed">Видео подписок</string>
     <string name="channel_filter">Канал: %1$s</string>
     <string name="all_channels">Все каналы</string>
+    <string name="all_categories">Все категории</string>
+    <string name="edit_channel_category">Задать категорию канала</string>
+    <string name="category_for_channel">Категория: %1$s</string>
+    <string name="channel_category_hint">Метка хранится только на этом устройстве. Оставьте поле пустым, чтобы удалить категорию.</string>
+    <string name="category_name">Название категории</string>
+    <string name="channel_category_saved">Категория канала сохранена</string>
+    <string name="remove_category">Удалить категорию</string>
     <string name="subscription_feed_filtered_empty">В кэше нет видео, соответствующих выбранным фильтрам.</string>
     <string name="refresh_feed">Обновить ленту</string>
     <string name="subscription_feed_empty">Кэшированных видео пока нет. Обновите ленту, чтобы загрузить последние публичные видео подписок.</string>

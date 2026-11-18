@@ -25,7 +25,7 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
     }
 
     override fun onCreate(db: SQLiteDatabase) {
-        db.execSQL("CREATE TABLE subscriptions (channel_id TEXT PRIMARY KEY NOT NULL, title TEXT NOT NULL, url TEXT NOT NULL, added_at INTEGER NOT NULL)")
+        db.execSQL("CREATE TABLE subscriptions (channel_id TEXT PRIMARY KEY NOT NULL, title TEXT NOT NULL, url TEXT NOT NULL, added_at INTEGER NOT NULL, category TEXT NOT NULL DEFAULT '')")
         db.execSQL("CREATE TABLE playlists (id TEXT PRIMARY KEY NOT NULL, name TEXT NOT NULL COLLATE NOCASE UNIQUE, created_at INTEGER NOT NULL)")
         db.execSQL("""CREATE TABLE playlist_items (
             row_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -56,6 +56,10 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
         if (oldVersion < 5) createSubscriptionFeedTables(db)
         if (oldVersion < 6) createLocalAudioTable(db)
         if (oldVersion < 7) createYouTubeSubscriptionTable(db)
+        if (oldVersion < 8) {
+            db.execSQL("ALTER TABLE subscriptions ADD COLUMN category TEXT NOT NULL DEFAULT ''")
+            if (oldVersion >= 7) db.execSQL("ALTER TABLE youtube_account_subscriptions ADD COLUMN category TEXT NOT NULL DEFAULT ''")
+        }
     }
 
     fun localAudioTracks(): List<LocalAudioTrack> = readableDatabase.rawQuery(
@@ -97,11 +101,31 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
     }
 
     fun localChannels(): List<SavedChannel> = readableDatabase.rawQuery(
-        "SELECT channel_id, title, url FROM subscriptions ORDER BY title COLLATE NOCASE", null,
+        "SELECT channel_id, title, url, category FROM subscriptions ORDER BY title COLLATE NOCASE", null,
     ).use { cursor ->
         buildList {
-            while (cursor.moveToNext()) add(SavedChannel(cursor.getString(0), cursor.getString(1), cursor.getString(2)))
+            while (cursor.moveToNext()) add(SavedChannel(cursor.getString(0), cursor.getString(1), cursor.getString(2), category = cursor.getString(3)))
         }
+    }
+
+    fun localSubscriptionCategories(): List<String> = readableDatabase.rawQuery(
+        "SELECT DISTINCT category FROM subscriptions WHERE TRIM(category)<>'' ORDER BY category COLLATE NOCASE", null,
+    ).use { cursor -> buildList { while (cursor.moveToNext()) add(cursor.getString(0)) } }
+
+    fun setChannelCategory(channelId: String, category: String, accountEmail: String = "") {
+        require(CHANNEL_ID.matches(channelId)) { "This item does not include a valid channel ID." }
+        val cleanCategory = category.trim()
+        require(cleanCategory.length <= MAX_CHANNEL_CATEGORY_LENGTH) { "Category names can be up to $MAX_CHANNEL_CATEGORY_LENGTH characters." }
+        val values = ContentValues().apply { put("category", cleanCategory) }
+        val db = writableDatabase
+        val updated = if (isFollowing(channelId)) {
+            db.update("subscriptions", values, "channel_id=?", arrayOf(channelId))
+        } else {
+            val owner = accountEmail.trim().lowercase()
+            require(owner.isNotBlank()) { "Sign in to categorize a YouTube account subscription." }
+            db.update("youtube_account_subscriptions", values, "channel_id=? AND owner_email=?", arrayOf(channelId, owner))
+        }
+        require(updated == 1) { "This channel is no longer in your subscriptions." }
     }
 
     fun channels(accountEmail: String = ""): List<SavedChannel> {
@@ -110,12 +134,12 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
         if (owner.isBlank()) return local
         val localIds = local.mapTo(HashSet()) { it.id }
         val account = readableDatabase.rawQuery(
-            "SELECT channel_id, title, url FROM youtube_account_subscriptions WHERE owner_email=? ORDER BY title COLLATE NOCASE", arrayOf(owner),
+            "SELECT channel_id, title, url, category FROM youtube_account_subscriptions WHERE owner_email=? ORDER BY title COLLATE NOCASE", arrayOf(owner),
         ).use { cursor ->
             buildList {
                 while (cursor.moveToNext()) {
                     val id = cursor.getString(0)
-                    if (id !in localIds) add(SavedChannel(id, cursor.getString(1), cursor.getString(2), true))
+                    if (id !in localIds) add(SavedChannel(id, cursor.getString(1), cursor.getString(2), true, cursor.getString(3)))
                 }
             }
         }
@@ -129,6 +153,9 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
         require(subscriptions.map { it.channelId }.distinct().size == subscriptions.size)
         require(subscriptions.all { CHANNEL_ID.matches(it.channelId) && it.title.isNotBlank() && it.title.length <= 250 })
         val db = writableDatabase
+        val existingCategories = db.rawQuery(
+            "SELECT channel_id, category FROM youtube_account_subscriptions WHERE owner_email=?", arrayOf(owner),
+        ).use { cursor -> buildMap { while (cursor.moveToNext()) put(cursor.getString(0), cursor.getString(1)) } }
         db.beginTransaction()
         try {
             db.delete("youtube_account_subscriptions", null, null)
@@ -139,6 +166,7 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
                     put("title", subscription.title)
                     put("url", "https://www.youtube.com/channel/${subscription.channelId}")
                     put("synced_at", syncedAt)
+                    put("category", existingCategories[subscription.channelId].orEmpty())
                 }
                 check(db.insert("youtube_account_subscriptions", null, values) != -1L) { "Could not save YouTube subscriptions." }
             }
@@ -160,7 +188,7 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
     }
 
     private fun createYouTubeSubscriptionTable(db: SQLiteDatabase) {
-        db.execSQL("CREATE TABLE youtube_account_subscriptions (channel_id TEXT PRIMARY KEY NOT NULL, owner_email TEXT NOT NULL, title TEXT NOT NULL, url TEXT NOT NULL, synced_at INTEGER NOT NULL)")
+        db.execSQL("CREATE TABLE youtube_account_subscriptions (channel_id TEXT PRIMARY KEY NOT NULL, owner_email TEXT NOT NULL, title TEXT NOT NULL, url TEXT NOT NULL, synced_at INTEGER NOT NULL, category TEXT NOT NULL DEFAULT '')")
         db.execSQL("CREATE INDEX youtube_account_subscriptions_expiry ON youtube_account_subscriptions(synced_at)")
     }
 
@@ -182,11 +210,15 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
             val count = readableDatabase.rawQuery("SELECT COUNT(*) FROM subscriptions", null).use { if (it.moveToFirst()) it.getInt(0) else 0 }
             require(count < MAX_CHANNELS) { "You can follow up to $MAX_CHANNELS local channels." }
         }
+        val existingCategory = readableDatabase.rawQuery(
+            "SELECT category FROM subscriptions WHERE channel_id=?", arrayOf(channelId),
+        ).use { cursor -> if (cursor.moveToFirst()) cursor.getString(0) else "" }
         val values = ContentValues().apply {
             put("channel_id", channelId)
             put("title", title.take(250))
             put("url", url.take(2048))
             put("added_at", System.currentTimeMillis())
+            put("category", existingCategory)
         }
         writableDatabase.insertWithOnConflict("subscriptions", null, values, SQLiteDatabase.CONFLICT_REPLACE)
     }
@@ -682,7 +714,7 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
         private const val MAX_PAGE_ITEMS = 100
         private const val MAX_QUEUE_CONTINUATION_LENGTH = 16 * 1024
         private const val DATABASE_NAME = "lowtube-library.db"
-        private const val DATABASE_VERSION = 7
+        private const val DATABASE_VERSION = 8
         private const val YOUTUBE_SUBSCRIPTION_TTL_MS = 30L * 24 * 60 * 60 * 1000
         private const val WATCH_LATER_ID = "__lowtube_watch_later__"
         private const val RESUME_THRESHOLD_MS = 5000L
@@ -693,5 +725,6 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
         private const val MAX_SUBSCRIPTION_FEED_ITEMS = 3000
         private const val MAX_LOCAL_AUDIO_URI_LENGTH = 4096
         private const val MAX_LOCAL_AUDIO_TITLE_LENGTH = 512
+        private const val MAX_CHANNEL_CATEGORY_LENGTH = 64
     }
 }

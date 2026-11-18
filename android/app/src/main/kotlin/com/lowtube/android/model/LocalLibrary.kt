@@ -2,7 +2,13 @@ package com.lowtube.android.model
 
 data class LocalPlaylist(val id: String, val name: String)
 
-data class SavedChannel(val id: String, val title: String, val url: String, val fromYouTubeAccount: Boolean = false)
+data class SavedChannel(
+    val id: String,
+    val title: String,
+    val url: String,
+    val fromYouTubeAccount: Boolean = false,
+    val category: String = "",
+)
 
 data class YouTubeSubscription(val channelId: String, val title: String)
 

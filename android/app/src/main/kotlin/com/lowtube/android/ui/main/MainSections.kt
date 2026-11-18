@@ -50,6 +50,7 @@ import com.lowtube.android.R
 import com.lowtube.android.data.InnerTubeSearchRepository
 import com.lowtube.android.data.LocalLibraryRepository
 import com.lowtube.android.data.LocalSubscriptionFeedRepository
+import com.lowtube.android.model.SavedChannel
 import com.lowtube.android.model.VideoItem
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -77,19 +78,35 @@ internal fun SubscriptionsTab(
     val revision = refreshRevision + localRevision
     val channels = remember(repository, revision, accountEmail) { repository.channels(accountEmail) }
     val channelIds = remember(channels) { channels.mapTo(HashSet()) { it.id } }
+    val categories = remember(channels) { channels.map { it.category.trim() }.filter(String::isNotEmpty).distinct().sortedBy(String::lowercase) }
+    val categoryByChannel = remember(channels) { channels.associate { it.id to it.category.trim() } }
     val videos = remember(feedRepository, revision, channelIds) { feedRepository.cached().filter { it.channelId in channelIds } }
     var selectedChannel by remember { mutableStateOf("") }
+    var selectedCategory by remember { mutableStateOf("") }
     var selectedKind by remember { mutableStateOf("all") }
     var addChannelDialog by remember { mutableStateOf(false) }
     var channelInput by remember { mutableStateOf("") }
+    var categoryTarget by remember { mutableStateOf<SavedChannel?>(null) }
+    var categoryInput by remember { mutableStateOf("") }
     var refreshJob by remember { mutableStateOf<Job?>(null) }
     var refreshMessage by remember { mutableStateOf<String?>(null) }
     var refreshFailed by remember { mutableStateOf(false) }
-    val visibleVideos = remember(videos, selectedChannel, selectedKind) {
+    val visibleVideos = remember(videos, selectedChannel, selectedCategory, selectedKind, categoryByChannel) {
         videos.filter {
             (selectedChannel.isBlank() || it.channelId == selectedChannel) &&
+                (selectedCategory.isBlank() || categoryByChannel[it.channelId] == selectedCategory) &&
                 (selectedKind == "all" || it.kind == selectedKind)
         }
+    }
+    fun saveChannelCategory(channel: SavedChannel, category: String) {
+        runCatching { repository.setChannelCategory(channel.id, category, accountEmail) }
+            .onSuccess {
+                localRevision++
+                selectedCategory = ""
+                categoryTarget = null
+                Toast.makeText(context, R.string.channel_category_saved, Toast.LENGTH_SHORT).show()
+            }
+            .onFailure { Toast.makeText(context, it.message ?: context.getString(R.string.action_failed), Toast.LENGTH_LONG).show() }
     }
 
     Column(modifier.fillMaxSize().padding(horizontal = 12.dp)) {
@@ -170,6 +187,32 @@ internal fun SubscriptionsTab(
                     onClick = { selectedChannel = if (selectedChannel == channel.id) "" else channel.id },
                     label = { Text(channel.title.ifBlank { channel.id }, maxLines = 1) },
                 )
+            }
+        }
+        val selectedCategoryChannel = channels.firstOrNull { it.id == selectedChannel }
+        if (selectedCategoryChannel != null) {
+            TextButton(onClick = {
+                categoryInput = selectedCategoryChannel.category
+                categoryTarget = selectedCategoryChannel
+            }) { Text(stringResource(R.string.edit_channel_category)) }
+        }
+        if (categories.isNotEmpty()) {
+            Row(
+                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                FilterChip(
+                    selected = selectedCategory.isBlank(),
+                    onClick = { selectedCategory = "" },
+                    label = { Text(stringResource(R.string.all_categories)) },
+                )
+                categories.forEach { category ->
+                    FilterChip(
+                        selected = selectedCategory == category,
+                        onClick = { selectedCategory = if (selectedCategory == category) "" else category },
+                        label = { Text(category, maxLines = 1) },
+                    )
+                }
             }
         }
         Row(
@@ -263,6 +306,34 @@ internal fun SubscriptionsTab(
                 ) { Text(stringResource(R.string.add_channel)) }
             },
             dismissButton = { TextButton(onClick = { addChannelDialog = false }) { Text(stringResource(R.string.cancel)) } },
+        )
+    }
+    categoryTarget?.let { target ->
+        AlertDialog(
+            onDismissRequest = { categoryTarget = null },
+            title = { Text(stringResource(R.string.category_for_channel, target.title)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.channel_category_hint))
+                    OutlinedTextField(
+                        value = categoryInput,
+                        onValueChange = { categoryInput = it.take(64) },
+                        label = { Text(stringResource(R.string.category_name)) },
+                        singleLine = true,
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    saveChannelCategory(target, categoryInput)
+                }) { Text(stringResource(R.string.save)) }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(onClick = { saveChannelCategory(target, "") }) { Text(stringResource(R.string.remove_category)) }
+                    TextButton(onClick = { categoryTarget = null }) { Text(stringResource(R.string.cancel)) }
+                }
+            },
         )
     }
 }

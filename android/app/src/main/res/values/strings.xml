@@ -65,6 +65,13 @@
     <string name="subscription_feed">Subscription videos</string>
     <string name="channel_filter">Channel: %1$s</string>
     <string name="all_channels">All channels</string>
+    <string name="all_categories">All categories</string>
+    <string name="edit_channel_category">Set channel category</string>
+    <string name="category_for_channel">Category for %1$s</string>
+    <string name="channel_category_hint">This label stays on this device. Leave it empty to remove the category.</string>
+    <string name="category_name">Category name</string>
+    <string name="channel_category_saved">Channel category saved</string>
+    <string name="remove_category">Remove category</string>
     <string name="subscription_feed_filtered_empty">No cached uploads match the selected filters.</string>
     <string name="refresh_feed">Refresh feed</string>
     <string name="subscription_feed_empty">No cached uploads yet. Refresh to load recent public videos from followed channels.</string>
