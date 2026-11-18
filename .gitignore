@@ -45,6 +45,9 @@ saved-session*
 session*.bin
 *.dpapi
 Downloads/
+# Keep Android source code distinct from user download directories on Windows.
+!android/app/src/main/kotlin/com/lowtube/android/downloads/
+!android/app/src/main/kotlin/com/lowtube/android/downloads/**
 BrowserProfiles/
 # Local diagnostics can contain environment or playback details
 setup-diagnostics.txt
