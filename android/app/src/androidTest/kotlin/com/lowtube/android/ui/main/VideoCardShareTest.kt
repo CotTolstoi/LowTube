@@ -4,6 +4,7 @@ import android.content.Intent
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import com.lowtube.android.R
 import com.lowtube.android.model.VideoItem
@@ -40,11 +41,38 @@ class VideoCardShareTest {
             }
         }
 
-        composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.more_actions)).performClick()
+        composeTestRule.onNodeWithContentDescription(composeTestRule.activity.getString(R.string.more_actions)).performClick()
         composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.share_link)).performClick()
 
         assertTrue("Share menu item should invoke the item's share action", shareRequested)
         assertFalse("Sharing must not start playback", playbackRequested)
+    }
+
+    @Test
+    fun queueActionRemainsAvailableFromOverflowMenu() {
+        var queueRequested = false
+        var playbackRequested = false
+        composeTestRule.setContent {
+            LowTubeTheme {
+                VideoCard(
+                    item = fixture(),
+                    isFollowing = false,
+                    onQueue = { queueRequested = true },
+                    onDownload = {},
+                    onSave = {},
+                    onToggleFollow = { true },
+                    onChannelClick = {},
+                    onShare = {},
+                    onClick = { playbackRequested = true },
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription(composeTestRule.activity.getString(R.string.more_actions)).performClick()
+        composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.add_to_queue)).performClick()
+
+        assertTrue("Queue action should remain available", queueRequested)
+        assertFalse("Queue action must not start playback", playbackRequested)
     }
 
     @Test

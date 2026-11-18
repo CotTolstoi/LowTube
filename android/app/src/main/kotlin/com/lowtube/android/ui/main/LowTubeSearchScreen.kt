@@ -2,6 +2,7 @@ package com.lowtube.android.ui.main
 
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +19,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
@@ -29,6 +31,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -50,6 +53,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
@@ -575,100 +580,104 @@ internal fun VideoCard(
     LaunchedEffect(isFollowing) { followed = isFollowing }
     Card(
         modifier = Modifier.fillMaxWidth().then(if (onClick == null) Modifier else Modifier.clickable(onClick = onClick)),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
     ) {
         Column {
             if (item.thumbnailUrl.isNotBlank()) {
                 AsyncImage(
                     model = item.thumbnailUrl,
                     contentDescription = item.title,
-                    modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f).clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)),
+                    modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f).clip(RoundedCornerShape(12.dp)),
                     contentScale = ContentScale.Crop,
                 )
             }
-            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(item.title, style = MaterialTheme.typography.titleMedium, maxLines = 2)
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.Top,
+            ) {
                 if (item.channel.isNotBlank()) {
-                    val canBrowseChannel = item.channelId.isNotBlank()
-                    Text(
-                        item.channel,
-                        modifier = if (canBrowseChannel) Modifier.clickable(onClick = onChannelClick) else Modifier,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = if (canBrowseChannel) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    Box(
+                        modifier = Modifier.size(40.dp).clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .clickable(enabled = item.channelId.isNotBlank(), onClick = onChannelClick),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(item.channel.trim().firstOrNull()?.uppercaseChar()?.toString().orEmpty(), style = MaterialTheme.typography.titleSmall)
+                    }
                 }
-                val details = listOf(item.duration.takeIf { it != "—" }, item.published.takeIf(String::isNotBlank), item.kind.takeIf { it != "video" })
-                    .filterNotNull().joinToString(" · ")
-                if (details.isNotBlank()) Text(details, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    androidx.compose.material3.TextButton(onClick = onQueue) { Text(stringResource(R.string.add_to_queue)) }
-                    Box {
-                        androidx.compose.material3.TextButton(onClick = { moreActionsExpanded = true }) {
-                            Text(stringResource(R.string.more_actions))
-                        }
-                        androidx.compose.material3.DropdownMenu(
-                            expanded = moreActionsExpanded,
-                            onDismissRequest = { moreActionsExpanded = false },
-                        ) {
-                            if (item.kind != "playlist") {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text(item.title, style = MaterialTheme.typography.bodyLarge, maxLines = 2)
+                    if (item.channel.isNotBlank()) {
+                        Text(
+                            item.channel,
+                            modifier = if (item.channelId.isNotBlank()) Modifier.clickable(onClick = onChannelClick) else Modifier,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                        )
+                    }
+                    val details = listOf(item.duration.takeIf { it != "—" }, item.published.takeIf(String::isNotBlank), item.kind.takeIf { it != "video" })
+                        .filterNotNull().joinToString(" · ")
+                    if (details.isNotBlank()) Text(details, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                }
+                Box {
+                    IconButton(
+                        onClick = { moreActionsExpanded = true },
+                        modifier = Modifier.semantics { contentDescription = context.getString(R.string.more_actions) },
+                    ) {
+                        Text("⋮", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    androidx.compose.material3.DropdownMenu(
+                        expanded = moreActionsExpanded,
+                        onDismissRequest = { moreActionsExpanded = false },
+                    ) {
+                        androidx.compose.material3.DropdownMenuItem(
+                            text = { Text(stringResource(R.string.add_to_queue)) },
+                            onClick = { moreActionsExpanded = false; onQueue() },
+                        )
+                        if (item.kind != "playlist") {
+                            androidx.compose.material3.DropdownMenuItem(
+                                text = { Text(stringResource(R.string.download)) },
+                                onClick = { moreActionsExpanded = false; onDownload() },
+                            )
+                            androidx.compose.material3.DropdownMenuItem(
+                                text = { Text(stringResource(R.string.save_for_later)) },
+                                onClick = { moreActionsExpanded = false; onSave() },
+                            )
+                            if (item.channelId.isNotBlank()) {
                                 androidx.compose.material3.DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.download)) },
-                                    onClick = {
-                                        moreActionsExpanded = false
-                                        onDownload()
-                                    },
+                                    text = { Text(stringResource(if (followed) R.string.followed else R.string.follow)) },
+                                    onClick = { moreActionsExpanded = false; followed = onToggleFollow() },
                                 )
-                                androidx.compose.material3.DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.save_for_later)) },
-                                    onClick = {
-                                        moreActionsExpanded = false
-                                        onSave()
-                                    },
-                                )
-                                if (item.channelId.isNotBlank()) {
-                                    androidx.compose.material3.DropdownMenuItem(
-                                        text = { Text(stringResource(if (followed) R.string.followed else R.string.follow)) },
-                                        onClick = {
-                                            moreActionsExpanded = false
-                                            followed = onToggleFollow()
-                                        },
-                                    )
-                                }
                             }
-                            androidx.compose.material3.DropdownMenuItem(
-                                text = { Text(stringResource(R.string.open_url)) },
-                                onClick = {
-                                    moreActionsExpanded = false
-                                    val uri = Uri.parse(item.url)
-                                    if (isTrustedYouTubeUri(uri)) {
-                                        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, uri)) }
-                                            .onFailure { Toast.makeText(context, R.string.action_failed, Toast.LENGTH_SHORT).show() }
-                                    } else {
-                                        Toast.makeText(context, R.string.action_failed, Toast.LENGTH_SHORT).show()
-                                    }
-                                },
-                            )
-                            androidx.compose.material3.DropdownMenuItem(
-                                text = { Text(stringResource(R.string.copy_url)) },
-                                onClick = {
-                                    moreActionsExpanded = false
-                                    val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                    clipboard.setPrimaryClip(ClipData.newPlainText(item.title, item.url))
-                                    Toast.makeText(context, R.string.url_copied, Toast.LENGTH_SHORT).show()
-                                },
-                            )
-                            androidx.compose.material3.DropdownMenuItem(
-                                text = { Text(stringResource(R.string.share_link)) },
-                                onClick = {
-                                    moreActionsExpanded = false
-                                    onShare()
-                                },
-                            )
                         }
+                        androidx.compose.material3.DropdownMenuItem(
+                            text = { Text(stringResource(R.string.open_url)) },
+                            onClick = {
+                                moreActionsExpanded = false
+                                val uri = Uri.parse(item.url)
+                                if (isTrustedYouTubeUri(uri)) {
+                                    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, uri)) }
+                                        .onFailure { Toast.makeText(context, R.string.action_failed, Toast.LENGTH_SHORT).show() }
+                                } else {
+                                    Toast.makeText(context, R.string.action_failed, Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                        )
+                        androidx.compose.material3.DropdownMenuItem(
+                            text = { Text(stringResource(R.string.copy_url)) },
+                            onClick = {
+                                moreActionsExpanded = false
+                                val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                clipboard.setPrimaryClip(ClipData.newPlainText(item.title, item.url))
+                                Toast.makeText(context, R.string.url_copied, Toast.LENGTH_SHORT).show()
+                            },
+                        )
+                        androidx.compose.material3.DropdownMenuItem(
+                            text = { Text(stringResource(R.string.share_link)) },
+                            onClick = { moreActionsExpanded = false; onShare() },
+                        )
                     }
                 }
             }
