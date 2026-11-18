@@ -45,4 +45,40 @@ class InnerTubeDownloadOptionsTest {
         assertEquals(1, options.size)
         assertTrue(options.single().stream.uri.contains("n=transformed-value"))
     }
+
+    @Test
+    fun preservesSelectedClientUserAgentOnDownloadStream() {
+        val video = VideoItem(
+            id = "aqz-KE-bpKQ",
+            title = "Big Buck Bunny",
+            duration = "9:56",
+            url = "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
+        )
+        val streaming = JSONObject(
+            """
+            {
+              "formats": [{
+                "url": "https://r1.googlevideo.com/videoplayback?itag=18&n=transformed-value",
+                "mimeType": "video/mp4; codecs=\"avc1.42001E, mp4a.40.2\"",
+                "audioQuality": "AUDIO_QUALITY_LOW",
+                "height": 360,
+                "fps": 30,
+                "itag": 18,
+                "bitrate": 500000
+              }]
+            }
+            """.trimIndent(),
+        )
+        val mwebUserAgent = "Mozilla/5.0 (iPad; CPU OS 16_7_10 like Mac OS X)"
+
+        val options = InnerTubeSearchRepository().downloadOptions(
+            video,
+            streaming,
+            DownloadStreamPreferences(),
+            audioOnly = false,
+            userAgent = mwebUserAgent,
+        )
+
+        assertEquals(mwebUserAgent, options.single().stream.userAgent)
+    }
 }

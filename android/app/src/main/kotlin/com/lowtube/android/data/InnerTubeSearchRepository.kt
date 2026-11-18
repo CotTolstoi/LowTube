@@ -154,7 +154,7 @@ class InnerTubeSearchRepository(context: Context? = null) {
     ): ResolvedVideoStream = withContext(Dispatchers.IO) {
         operationMutex.withLock {
             val resolved = resolvePlayerData(video, preferWebClient)
-            resolveStreams(resolved.video, resolved.streaming, preferences)
+            resolveStreams(resolved.video, resolved.streaming, preferences, resolved.userAgent)
         }
     }
 
@@ -175,24 +175,24 @@ class InnerTubeSearchRepository(context: Context? = null) {
         } else signatureTimestamp
         // Request fresh client-bound links first; watch-page links can be stale or rejected.
         val resolvedStreaming = resolvePlayerResponse(video.id, player, preferWebClient, requestSignatureTimestamp)
-            .takeIf(::hasDirectOrDash)
-            ?: pageStreaming?.takeIf(::hasDirectOrDash)
+            .takeIf { hasDirectOrDash(it.streaming) }
+            ?: pageStreaming?.takeIf(::hasDirectOrDash)?.let { ResolvedPlayerResponse(it, USER_AGENT) }
             ?: throw IOException("YouTube did not return a directly playable stream.")
-        val streaming = if (containsPlayerJsChallenge(resolvedStreaming)) {
+        val streaming = if (containsPlayerJsChallenge(resolvedStreaming.streaming)) {
             val runtime = playerJavaScriptRuntime
                 ?: throw IOException("This video requires a player signature transform, which is unavailable in this resolver context.")
             val playerScript = runCatching { playerScriptCache.load(playerScriptUrl) }
                 .getOrElse { throw IOException("YouTube's player script could not be loaded for this stream.", it) }
             val functions = playerTransforms(playerScript)
-            transformPlayerChallenges(resolvedStreaming, playerScript, functions, runtime)
-        } else resolvedStreaming
+            transformPlayerChallenges(resolvedStreaming.streaming, playerScript, functions, runtime)
+        } else resolvedStreaming.streaming
         val enrichedVideo = video.copy(
             title = details.optString("title").ifBlank { video.title },
             channel = details.optString("author").ifBlank { video.channel },
             channelId = details.optString("channelId").ifBlank { video.channelId },
             duration = details.optString("lengthSeconds").toLongOrNull()?.let { formatDuration(it.toString()) } ?: video.duration,
         )
-        return ResolvedPlayerData(enrichedVideo, streaming)
+        return ResolvedPlayerData(enrichedVideo, streaming, resolvedStreaming.userAgent)
     }
 
     /** Resolves a single-file progressive stream suitable for Android DownloadManager. */
@@ -212,7 +212,7 @@ class InnerTubeSearchRepository(context: Context? = null) {
     ): List<DownloadFormatOption> = withContext(Dispatchers.IO) {
         operationMutex.withLock {
             val resolved = resolvePlayerData(video, preferWebClient = true)
-            downloadOptions(resolved.video, resolved.streaming, preferences, audioOnly)
+            downloadOptions(resolved.video, resolved.streaming, preferences, audioOnly, resolved.userAgent)
         }
     }
 
@@ -230,6 +230,7 @@ class InnerTubeSearchRepository(context: Context? = null) {
         streaming: JSONObject,
         preferences: DownloadStreamPreferences,
         audioOnly: Boolean,
+        userAgent: String = USER_AGENT,
     ): List<DownloadFormatOption> {
         val formats = parsePlaybackFormats(streaming)
         return formats.asSequence()
@@ -247,7 +248,7 @@ class InnerTubeSearchRepository(context: Context? = null) {
                     .thenByDescending { it.json.optLong("bitrate", 0) },
             )
             .map { format ->
-                val stream = format.toStream(video, isAudioOnly = audioOnly)
+                val stream = format.toStream(video, isAudioOnly = audioOnly, userAgent = userAgent)
                 DownloadFormatOption(
                     key = "${stream.itag}|${stream.mimeType}|$audioOnly",
                     stream = stream,
@@ -261,7 +262,12 @@ class InnerTubeSearchRepository(context: Context? = null) {
             }.toList()
     }
 
-    private fun resolveStreams(video: VideoItem, streaming: JSONObject, preferences: PlaybackStreamPreferences): ResolvedVideoStream {
+    private fun resolveStreams(
+        video: VideoItem,
+        streaming: JSONObject,
+        preferences: PlaybackStreamPreferences,
+        userAgent: String,
+    ): ResolvedVideoStream {
         val formats = parsePlaybackFormats(streaming)
 
         val requestedVideo = formats.asSequence()
@@ -285,7 +291,7 @@ class InnerTubeSearchRepository(context: Context? = null) {
             val audio = audioCandidates.filter { it.codec.startsWith("mp4a") || it.mimeType == "audio/mp4" }
                 .maxByOrNull { it.json.optLong("bitrate", 0) }
                 ?: audioCandidates.maxByOrNull { it.json.optLong("bitrate", 0) }
-            if (audio != null) return audio.toStream(video, isAudioOnly = true)
+            if (audio != null) return audio.toStream(video, isAudioOnly = true, userAgent = userAgent)
             throw IOException("YouTube did not provide a direct audio-only stream for this video.")
         }
 
@@ -296,7 +302,7 @@ class InnerTubeSearchRepository(context: Context? = null) {
                 uri = dashUrl,
                 mimeType = "application/dash+xml",
                 video = video,
-                userAgent = USER_AGENT,
+                userAgent = userAgent,
                 durationMs = parseDurationMs(video.duration),
                 isDashManifest = true,
             )
@@ -304,18 +310,18 @@ class InnerTubeSearchRepository(context: Context? = null) {
 
         val selected = videoCandidates.firstOrNull { it.videoMuxed }
             ?: videoCandidates.firstOrNull()
-        if (selected != null) return selected.toStream(video)
+        if (selected != null) return selected.toStream(video, userAgent = userAgent)
 
         if (isTrustedStreamUrl(dashUrl)) return ResolvedVideoStream(
             uri = dashUrl,
             mimeType = "application/dash+xml",
             video = video,
-            userAgent = USER_AGENT,
+            userAgent = userAgent,
             durationMs = parseDurationMs(video.duration),
             isDashManifest = true,
         )
 
-        hlsManifestFallback(video, streaming)?.let { return it }
+        hlsManifestFallback(video, streaming, userAgent)?.let { return it }
 
         throw IOException("YouTube did not provide a playable stream that matches the current format preferences. This video may require a signature or client token which LowTube does not support yet.")
     }
@@ -345,7 +351,14 @@ class InnerTubeSearchRepository(context: Context? = null) {
         return formats
     }
 
-    private data class ResolvedPlayerData(val video: VideoItem, val streaming: JSONObject)
+    private data class ResolvedPlayerData(val video: VideoItem, val streaming: JSONObject, val userAgent: String)
+    private data class ResolvedPlayerResponse(val streaming: JSONObject, val userAgent: String)
+    private data class PlayerRequestClient(
+        val name: String,
+        val version: String,
+        val id: String,
+        val userAgent: String,
+    )
 
     /** Accepts direct URLs and signatureCipher entries whose signature is already plain text. */
     private fun playableFormatUrl(format: JSONObject): String? {
@@ -377,11 +390,11 @@ class InnerTubeSearchRepository(context: Context? = null) {
         val audioOnly: Boolean,
         val videoMuxed: Boolean,
     ) {
-        fun toStream(video: VideoItem, isAudioOnly: Boolean = false) = ResolvedVideoStream(
+        fun toStream(video: VideoItem, isAudioOnly: Boolean = false, userAgent: String = USER_AGENT) = ResolvedVideoStream(
             uri = url,
             mimeType = mimeType.ifBlank { if (isAudioOnly) "audio/mp4" else "video/mp4" },
             video = video,
-            userAgent = USER_AGENT,
+            userAgent = userAgent,
             durationMs = video.duration.split(':').mapNotNull(String::toLongOrNull).fold(0L) { value, part -> value * 60 + part } * 1000L,
             videoHeight = json.optInt("height", 0),
             fps = json.optDouble("fps", 0.0),
@@ -405,14 +418,14 @@ class InnerTubeSearchRepository(context: Context? = null) {
             isTrustedStreamUrl(streaming.optString("hlsManifestUrl"))
     }
 
-    internal fun hlsManifestFallback(video: VideoItem, streaming: JSONObject): ResolvedVideoStream? {
+    internal fun hlsManifestFallback(video: VideoItem, streaming: JSONObject, userAgent: String = USER_AGENT): ResolvedVideoStream? {
         val hlsUrl = streaming.optString("hlsManifestUrl")
         if (!isTrustedStreamUrl(hlsUrl)) return null
         return ResolvedVideoStream(
             uri = hlsUrl,
             mimeType = "application/x-mpegURL",
             video = video,
-            userAgent = USER_AGENT,
+            userAgent = userAgent,
             durationMs = parseDurationMs(video.duration),
             isHlsManifest = true,
         )
@@ -622,14 +635,18 @@ class InnerTubeSearchRepository(context: Context? = null) {
         pageResponse: JSONObject,
         preferWebClient: Boolean,
         requestSignatureTimestamp: Int,
-    ): JSONObject {
+    ): ResolvedPlayerResponse {
         if (apiKey.isBlank()) throw IOException("YouTube player configuration is incomplete. Retry the video.")
-        val clients = listOf(
-            Triple("ANDROID", "20.13.41", "3"),
-            Triple("WEB", clientVersion, "1"),
-        ).let { if (preferWebClient) it.reversed() else it }
+        val androidClient = PlayerRequestClient("ANDROID", "20.13.41", "3", USER_AGENT)
+        val webClient = PlayerRequestClient("WEB", clientVersion, "1", USER_AGENT)
+        val mwebClient = PlayerRequestClient("MWEB", MWEB_CLIENT_VERSION, "2", MWEB_USER_AGENT)
+        val clients = if (preferWebClient) {
+            listOf(webClient, androidClient, mwebClient)
+        } else {
+            listOf(androidClient, webClient, mwebClient)
+        }
         var lastStatus = ""
-        for ((name, version, clientId) in clients) {
+        for ((name, version, clientId, userAgent) in clients) {
             val client = JSONObject()
                 .put("clientName", name)
                 .put("clientVersion", version)
@@ -653,18 +670,18 @@ class InnerTubeSearchRepository(context: Context? = null) {
                 JSONObject().put("contentPlaybackContext", JSONObject().put("signatureTimestamp", requestSignatureTimestamp)),
             )
             try {
-                val response = playerRequest(payload.toString(), version, clientId)
+                val response = playerRequest(payload.toString(), version, clientId, userAgent)
                 val status = response.optJSONObject("playabilityStatus")
                 lastStatus = status?.optString("status").orEmpty()
                 val streaming = response.optJSONObject("streamingData")
                 if (streaming != null) playerClientStreamSummaryObserver?.invoke(playerClientStreamSummary(name, streaming))
-                if (streaming != null && hasDirectOrDash(streaming)) return streaming
+                if (streaming != null && hasDirectOrDash(streaming)) return ResolvedPlayerResponse(streaming, userAgent)
             } catch (_: IOException) {
                 // A failed anonymous client is followed by the next client.
             }
         }
         val streaming = pageResponse.optJSONObject("streamingData")
-        if (streaming != null) return streaming
+        if (streaming != null) return ResolvedPlayerResponse(streaming, USER_AGENT)
         throw IOException(if (lastStatus.isBlank()) "YouTube player API returned no streams. Retry on a different network." else "YouTube player API returned $lastStatus without a playable stream.")
     }
 
@@ -712,13 +729,13 @@ class InnerTubeSearchRepository(context: Context? = null) {
         )
     }
 
-    private fun playerRequest(body: String, version: String, clientId: String): JSONObject {
+    private fun playerRequest(body: String, version: String, clientId: String, userAgent: String): JSONObject {
         val connection = URL("https://www.youtube.com/youtubei/v1/player?key=${urlEncode(apiKey)}&prettyPrint=false").openConnection() as HttpURLConnection
         connection.requestMethod = "POST"
         connection.connectTimeout = PLAYER_TIMEOUT_MS
         connection.readTimeout = PLAYER_TIMEOUT_MS
         connection.doOutput = true
-        connection.setRequestProperty("User-Agent", USER_AGENT)
+        connection.setRequestProperty("User-Agent", userAgent)
         connection.setRequestProperty("Content-Type", "application/json")
         connection.setRequestProperty("Accept", "*/*")
         connection.setRequestProperty("Origin", "https://www.youtube.com")
@@ -1240,6 +1257,8 @@ class InnerTubeSearchRepository(context: Context? = null) {
         private const val MAX_MARKER_URL_CANDIDATES = 3
         private const val MAX_MARKER_URL_BATCH = 24
         private const val USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
+        private const val MWEB_CLIENT_VERSION = "2.20260708.05.00"
+        private const val MWEB_USER_AGENT = "Mozilla/5.0 (iPad; CPU OS 16_7_10 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1,gzip(gfe)"
         private const val MAX_CIPHER_LENGTH = 64 * 1024
         private val SIGNATURE_PARAMETER = Regex("[A-Za-z0-9_]{1,32}")
         private val VIDEO_ID = Regex("^[A-Za-z0-9_-]{11}$")
