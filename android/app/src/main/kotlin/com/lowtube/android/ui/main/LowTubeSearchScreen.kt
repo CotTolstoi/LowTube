@@ -151,16 +151,27 @@ fun LowTubeSearchScreen(
             ForYouMixer.blend(state.items, followedChannelItems)
         } else state.items
     }
-    val activeKind = if (selectedTab == "home") recommendationKind else searchKind
-    val visibleItems = remember(forYouItems, activeKind) {
-        if (activeKind == "all") forYouItems else forYouItems.filter { it.kind == activeKind }
+    val channelBrowse = remember(query, selectedTab) {
+        if (selectedTab == "search") channelBrowseTab(query) else null
+    }
+    val activeKind = when {
+        selectedTab == "home" -> recommendationKind
+        channelBrowse != null -> channelBrowse.kind
+        else -> searchKind
+    }
+    val visibleItems = remember(forYouItems, activeKind, channelBrowse) {
+        if (channelBrowse != null || activeKind == "all") forYouItems
+        else forYouItems.filter { it.kind == activeKind }
     }
     val executeSearch: (String) -> Unit = { input ->
         val normalized = input.trim()
         if (normalized.isNotEmpty()) {
             recentSearches = searchHistory.record(normalized)
+            val target = channelBrowseUrl(normalized) ?: normalized
+            query = target
+            searchKind = channelBrowseTab(target)?.kind ?: "all"
             onSelectedTabChanged("search")
-            viewModel.search(normalized, language, emptySearchMessage, requestFailedMessage)
+            viewModel.search(target, language, emptySearchMessage, requestFailedMessage)
         }
         searchFocused = false
         focusManager.clearFocus()
@@ -203,10 +214,11 @@ fun LowTubeSearchScreen(
 
     LaunchedEffect(channelBrowseRequest, language) {
         val request = channelBrowseRequest?.takeIf(String::isNotBlank) ?: return@LaunchedEffect
-        query = request
-        searchKind = "all"
+        val target = channelBrowseUrl(request, "video") ?: request
+        query = target
+        searchKind = channelBrowseTab(target)?.kind ?: "all"
         onSelectedTabChanged("search")
-        viewModel.search(request, language, emptySearchMessage, requestFailedMessage)
+        viewModel.search(target, language, emptySearchMessage, requestFailedMessage)
         onChannelBrowseConsumed()
     }
 
@@ -356,6 +368,11 @@ fun LowTubeSearchScreen(
                         "video" to R.string.filter_videos,
                         "shorts" to R.string.filter_shorts,
                         "live" to R.string.filter_live,
+                    ) else if (channelBrowse != null) listOf(
+                        "video" to R.string.filter_videos,
+                        "shorts" to R.string.filter_shorts,
+                        "live" to R.string.filter_live,
+                        "playlist" to R.string.filter_playlists,
                     ) else listOf(
                         "all" to R.string.filter_all,
                         "video" to R.string.filter_videos,
@@ -366,7 +383,20 @@ fun LowTubeSearchScreen(
                     filters.forEach { (value, label) ->
                         FilterChip(
                             selected = activeKind == value,
-                            onClick = { if (selectedTab == "home") recommendationKind = value else searchKind = value },
+                            onClick = {
+                                if (selectedTab == "home") {
+                                    recommendationKind = value
+                                } else if (channelBrowse != null) {
+                                    val target = channelBrowseUrl(query, value)
+                                    if (target != null) {
+                                        searchKind = value
+                                        query = target
+                                        viewModel.search(target, language, emptySearchMessage, requestFailedMessage)
+                                    }
+                                } else {
+                                    searchKind = value
+                                }
+                            },
                             label = { Text(stringResource(label)) },
                         )
                     }
@@ -714,4 +744,39 @@ internal fun createShareIntent(item: VideoItem): Intent {
 private fun isTrustedYouTubeUri(uri: Uri): Boolean {
     val host = uri.host?.lowercase(java.util.Locale.ROOT)
     return uri.scheme == "https" && host in setOf("youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be")
+}
+
+internal data class ChannelBrowseTab(val baseUrl: String, val kind: String)
+
+internal fun channelBrowseTab(input: String): ChannelBrowseTab? {
+    val uri = runCatching { Uri.parse(input) }.getOrNull() ?: return null
+    val host = uri.host?.lowercase(java.util.Locale.ROOT).orEmpty()
+    if (host !in setOf("youtube.com", "www.youtube.com", "m.youtube.com", "music.youtube.com")) return null
+    if (uri.scheme != "https" && uri.scheme != "http") return null
+    val segments = uri.pathSegments
+    val rootCount = when (segments.firstOrNull()) {
+        "channel" -> if (segments.getOrNull(1)?.matches(Regex("UC[A-Za-z0-9_-]{22}")) == true) 2 else return null
+        "c", "user" -> if (segments.getOrNull(1)?.matches(Regex("[A-Za-z0-9._-]{1,100}")) == true) 2 else return null
+        else -> if (segments.firstOrNull()?.matches(Regex("@[A-Za-z0-9._-]{3,30}")) == true) 1 else return null
+    }
+    val kind = when (segments.getOrNull(rootCount)) {
+        "shorts" -> "shorts"
+        "streams" -> "live"
+        "playlists" -> "playlist"
+        else -> "video"
+    }
+    val basePath = segments.take(rootCount).joinToString("/")
+    return ChannelBrowseTab("https://www.youtube.com/$basePath", kind)
+}
+
+internal fun channelBrowseUrl(input: String, requestedKind: String? = null): String? {
+    val current = channelBrowseTab(input) ?: return null
+    val suffix = when (requestedKind ?: current.kind) {
+        "all", "video" -> "videos"
+        "shorts" -> "shorts"
+        "live" -> "streams"
+        "playlist" -> "playlists"
+        else -> return null
+    }
+    return "${current.baseUrl}/$suffix"
 }
