@@ -1,0 +1,470 @@
+package com.lowtube.android.downloads
+
+import android.Manifest
+import android.app.ActivityManager
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
+import android.util.Log
+import androidx.core.content.ContextCompat
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import com.lowtube.android.data.DownloadJobStore
+import com.lowtube.android.data.DownloadStreamPreferences
+import com.lowtube.android.data.InnerTubeSearchRepository
+import com.lowtube.android.model.DownloadStatus
+import com.lowtube.android.model.ResolvedVideoStream
+import com.lowtube.android.model.VideoItem
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.json.JSONObject
+import okhttp3.OkHttpClient
+import java.io.BufferedReader
+import java.io.File
+import java.io.InputStreamReader
+import java.net.InetAddress
+import java.net.ServerSocket
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+
+/** Opt-in end-to-end foreground job check. Each service run is capped at 64 KiB; no playback or full file. */
+@RunWith(AndroidJUnit4::class)
+class DownloadServiceAcceptanceTest {
+    @Test
+    fun boundedTransportAcceptsResolvedNQueryParameter() {
+        runBlocking {
+            val context = ApplicationProvider.getApplicationContext<Context>()
+            val video = VideoItem("fixture", "Resolved n fixture", duration = "—", url = "https://www.youtube.com/watch?v=fixture")
+            val server = RangeResumeLoopbackServer()
+            val partial = File(context.cacheDir, "resolved-n-${System.currentTimeMillis()}.part")
+            val stream = ResolvedVideoStream(
+                uri = "${server.url}?n=already-transformed",
+                mimeType = "video/mp4",
+                video = video,
+                userAgent = "LowTube bounded URL test",
+                durationMs = 0L,
+                isMuxed = true,
+            )
+            try {
+                server.start()
+                val result = OkHttpDownloadTransport(OkHttpClient()).download(
+                    stream = stream,
+                    video = video,
+                    partialFile = partial,
+                    rateLimitKiB = 0,
+                    shouldCancel = { false },
+                    maxBytesThisAttempt = 16L,
+                    requirePartialResponse = true,
+                    allowLoopbackHttpForDebugTest = true,
+                )
+
+                assertEquals(16L, result.downloaded)
+                assertEquals("bytes=0-15", server.rangeHeader)
+                assertTrue(server.awaitClientClosed())
+            } finally {
+                server.close()
+                partial.delete()
+            }
+        }
+    }
+
+    @Test
+    fun foregroundJobPausesAtRangeCapAndResumesFromPartialOffset() {
+        runBlocking {
+        assumeTrue(
+            "Service acceptance is opt-in; pass -e runDownloadServiceAcceptance true",
+            InstrumentationRegistry.getArguments().getString("runDownloadServiceAcceptance") == "true",
+        )
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val video = VideoItem("aqz-KE-bpKQ", "Big Buck Bunny", duration = "9:56", url = "https://www.youtube.com/watch?v=aqz-KE-bpKQ")
+        val option = InnerTubeSearchRepository(context).resolveDownloadOptions(video, DownloadStreamPreferences(), audioOnly = false).first()
+        assertTrue(option.stream.isMuxed)
+        assertTrue(Uri.parse(option.stream.uri).getQueryParameter("n").isNullOrBlank())
+
+        val dbName = "lowtube-service-acceptance-${System.currentTimeMillis()}.db"
+        val partial = File(context.cacheDir, "$dbName.part")
+        val store = DownloadJobStore(context, dbName)
+        val videoJson = JSONObject().put("id", video.id).put("title", video.title).put("url", video.url).toString()
+        val id = store.insert(videoJson, option.key, false, "bounded-${video.id}.mp4", option.stream.mimeType, option.stream.userAgent, partial.absolutePath, CHUNK_BYTES)
+        try {
+            startService(context, dbName)
+            val first = waitForTerminalAttempt(store, id)
+            assertEquals("First bounded request did not pause: ${first.reason}", DownloadStatus.PAUSED, first.status)
+            assertEquals(CHUNK_BYTES, first.downloadedBytes)
+            assertEquals(CHUNK_BYTES, partial.length())
+            waitForServiceStopped(context)
+
+            store.update(id, DownloadStatus.PENDING)
+            startService(context, dbName)
+            val resumed = waitForTerminalAttempt(store, id)
+            assertEquals("Resumed bounded request did not pause: ${resumed.reason}", DownloadStatus.PAUSED, resumed.status)
+            assertEquals(CHUNK_BYTES * 2, resumed.downloadedBytes)
+            assertEquals(CHUNK_BYTES * 2, partial.length())
+            assertTrue("The service test must leave only a bounded partial file", partial.length() <= CHUNK_BYTES * 2)
+            Log.i(TAG, "serviceResumeStatus=${resumed.status}, bytes=${resumed.downloadedBytes}, total=${resumed.totalBytes}")
+        } finally {
+            context.stopService(Intent(context, DownloadService::class.java))
+            partial.delete()
+            store.remove(id)
+            store.close()
+            context.deleteDatabase(dbName)
+            (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(NOTIFICATION_ID)
+        }
+        }
+    }
+
+    @Test
+    fun serviceColdStartRequeuesPersistedRunningJobAndResumesPartialRange() {
+        runBlocking {
+            assumeTrue(
+                "Service recovery acceptance is opt-in; pass -e runDownloadServiceRecoveryAcceptance true",
+                InstrumentationRegistry.getArguments().getString("runDownloadServiceRecoveryAcceptance") == "true",
+            )
+            val context = ApplicationProvider.getApplicationContext<Context>()
+            val dbName = "lowtube-recovery-acceptance-${System.currentTimeMillis()}.db"
+            val partial = File(context.cacheDir, "$dbName.part")
+            val server = RangeResumeLoopbackServer()
+            val seedStore = DownloadJobStore(context, dbName)
+            var monitorStore: DownloadJobStore? = null
+            var id = 0L
+            val prefix = ByteArray(PREFIX_BYTES) { (0x41 + it).toByte() }
+            try {
+                val video = VideoItem("fixture", "Recovery fixture", duration = "—", url = "https://www.youtube.com/watch?v=fixture")
+                val videoJson = JSONObject().put("id", video.id).put("title", video.title).put("url", video.url).toString()
+                id = seedStore.insert(
+                    videoJson,
+                    "resume-loopback-test",
+                    false,
+                    "recovery-bounded.mp4",
+                    "video/mp4",
+                    "LowTube recovery acceptance",
+                    partial.absolutePath,
+                    maxBytesPerAttempt = RESUME_CHUNK_BYTES,
+                )
+                partial.writeBytes(prefix)
+                seedStore.update(id, DownloadStatus.RUNNING, downloaded = prefix.size.toLong(), total = RangeResumeLoopbackServer.TOTAL_BYTES)
+                seedStore.close()
+                val observer = DownloadJobStore(context, dbName)
+                monitorStore = observer
+
+                server.start()
+                startService(context, dbName, testStreamUrl = server.url)
+                val resumed = waitForTerminalAttempt(observer, id)
+                assertEquals("Persisted RUNNING job was not requeued: ${resumed.reason}", DownloadStatus.PAUSED, resumed.status)
+                assertEquals(PREFIX_BYTES + RESUME_CHUNK_BYTES, resumed.downloadedBytes)
+                assertEquals(PREFIX_BYTES + RESUME_CHUNK_BYTES, partial.length())
+                assertEquals(RangeResumeLoopbackServer.TOTAL_BYTES, resumed.totalBytes)
+                assertEquals("bytes=$PREFIX_BYTES-${PREFIX_BYTES + RESUME_CHUNK_BYTES - 1}", server.rangeHeader)
+                assertTrue("Existing partial bytes were overwritten", prefix.contentEquals(partial.readBytes().copyOf(prefix.size)))
+                assertTrue("Resume server did not observe the client close", server.awaitClientClosed())
+                waitForServiceStopped(context)
+                Log.i(TAG, "serviceRecoveryStatus=${resumed.status}, bytes=${resumed.downloadedBytes}, range=${server.rangeHeader}")
+            } finally {
+                context.stopService(Intent(context, DownloadService::class.java))
+                server.close()
+                partial.delete()
+                monitorStore?.close()
+                seedStore.close()
+                val cleanup = DownloadJobStore(context, dbName)
+                if (id > 0) cleanup.remove(id)
+                cleanup.close()
+                context.deleteDatabase(dbName)
+                (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(NOTIFICATION_ID)
+            }
+        }
+    }
+
+    @Test
+    fun servicePublishesCompleteBoundedFileAndRemovesPartial() {
+        runBlocking {
+            assumeTrue(
+                "Download publication acceptance is opt-in; pass -e runDownloadPublicationAcceptance true",
+                InstrumentationRegistry.getArguments().getString("runDownloadPublicationAcceptance") == "true",
+            )
+            val context = ApplicationProvider.getApplicationContext<Context>()
+            val storagePermissionAvailable = Build.VERSION.SDK_INT > 28 ||
+                (context.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
+                    context.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
+            assumeTrue("READ/WRITE_EXTERNAL_STORAGE must already be granted for API23 publication acceptance", storagePermissionAvailable)
+            val dbName = "lowtube-publication-acceptance-${System.currentTimeMillis()}.db"
+            val partial = File(context.cacheDir, "$dbName.part")
+            val server = RangeResumeLoopbackServer()
+            val store = DownloadJobStore(context, dbName)
+            var id = 0L
+            var publishedUri: Uri? = null
+            val publishedName = "lowtube-bounded-${System.currentTimeMillis()}.mp4"
+            try {
+                val video = VideoItem("fixture", "Publication fixture", duration = "—", url = "https://www.youtube.com/watch?v=fixture")
+                val videoJson = JSONObject().put("id", video.id).put("title", video.title).put("url", video.url).toString()
+                id = store.insert(
+                    videoJson,
+                    "publication-loopback-test",
+                    false,
+                    publishedName,
+                    "video/mp4",
+                    "LowTube publication acceptance",
+                    partial.absolutePath,
+                    maxBytesPerAttempt = RangeResumeLoopbackServer.TOTAL_BYTES,
+                )
+                server.start()
+                startService(context, dbName, testStreamUrl = server.url)
+                val complete = waitForTerminalAttempt(store, id)
+                assertEquals("Bounded file did not reach SUCCESSFUL: ${complete.reason}", DownloadStatus.SUCCESSFUL, complete.status)
+                assertEquals(RangeResumeLoopbackServer.TOTAL_BYTES, complete.downloadedBytes)
+                assertEquals(RangeResumeLoopbackServer.TOTAL_BYTES, complete.totalBytes)
+                assertEquals("bytes=0-${RangeResumeLoopbackServer.TOTAL_BYTES - 1}", server.rangeHeader)
+                assertFalse("Private partial should be removed after publishing", partial.exists())
+                val resultUri = Uri.parse(complete.localUri)
+                publishedUri = resultUri
+                val publishedBytes = if (resultUri.scheme == "file") {
+                    File(resultUri.path.orEmpty()).readBytes()
+                } else {
+                    context.contentResolver.openInputStream(resultUri)?.use { it.readBytes() }
+                        ?: error("Published content URI could not be opened.")
+                }
+                val expectedBytes = ByteArray(RangeResumeLoopbackServer.TOTAL_BYTES.toInt()) { it.toByte() }
+                assertTrue("Published file contents differ from the bounded source", expectedBytes.contentEquals(publishedBytes))
+                assertTrue("Publication server did not observe the client close", server.awaitClientClosed())
+                waitForServiceStopped(context)
+                DownloadFileStore(context).deletePublished(resultUri)
+                val stillAvailable = runCatching {
+                    if (resultUri.scheme == "file") File(resultUri.path.orEmpty()).exists()
+                    else context.contentResolver.openInputStream(resultUri)?.use { true } ?: false
+                }.getOrDefault(false)
+                assertFalse("Published file remained available after cleanup", stillAvailable)
+                publishedUri = null
+                Log.i(TAG, "servicePublicationStatus=${complete.status}, bytes=${complete.downloadedBytes}, uriScheme=${resultUri.scheme}")
+            } finally {
+                context.stopService(Intent(context, DownloadService::class.java))
+                server.close()
+                partial.delete()
+                publishedUri?.let { runCatching { DownloadFileStore(context).deletePublished(it) } }
+                if (id > 0) store.remove(id)
+                store.close()
+                context.deleteDatabase(dbName)
+                (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(NOTIFICATION_ID)
+            }
+        }
+    }
+
+    @Test
+    fun foregroundJobCancelInterruptsTheActiveTransfer() {
+        runBlocking {
+            assumeTrue(
+                "Service cancel acceptance is opt-in; pass -e runDownloadServiceCancelAcceptance true",
+                InstrumentationRegistry.getArguments().getString("runDownloadServiceCancelAcceptance") == "true",
+            )
+            val context = ApplicationProvider.getApplicationContext<Context>()
+            val video = VideoItem("aqz-KE-bpKQ", "Big Buck Bunny", duration = "9:56", url = "https://www.youtube.com/watch?v=aqz-KE-bpKQ")
+            val dbName = "lowtube-cancel-acceptance-${System.currentTimeMillis()}.db"
+            val partial = File(context.cacheDir, "$dbName.part")
+            val server = SlowLoopbackServer()
+            server.start()
+            val store = DownloadJobStore(context, dbName)
+            val videoJson = JSONObject().put("id", video.id).put("title", video.title).put("url", video.url).toString()
+            val id = store.insert(videoJson, "cancel-loopback-test", false, "cancel-bounded-${video.id}.mp4", "video/mp4", "LowTube acceptance test", partial.absolutePath)
+            try {
+                startService(context, dbName, testStreamUrl = server.url)
+                waitForBytesWritten(store, id, partial)
+                val cancelAction = assertForegroundServiceAndNotification(context)
+                if (cancelAction != null) cancelAction.send() else cancelService(context, dbName, id)
+                val cancelled = withTimeoutPoll {
+                    val job = store.get(id) ?: error("Cancelled service job disappeared.")
+                    if (job.status == DownloadStatus.CANCELLED || job.status == DownloadStatus.FAILED) job else null
+                }
+                assertEquals("Active transfer was not cancelled: ${cancelled.reason}", DownloadStatus.CANCELLED, cancelled.status)
+                assertTrue(partial.length() in 1 until SlowLoopbackServer.TOTAL_BYTES)
+                assertEquals(partial.length(), cancelled.downloadedBytes)
+                assertTrue("Client connection remained open after OkHttp cancel", server.awaitClientClosed())
+                waitForServiceStopped(context)
+                Log.i(TAG, "serviceCancelStatus=${cancelled.status}, bytes=${cancelled.downloadedBytes}")
+            } finally {
+                context.stopService(Intent(context, DownloadService::class.java))
+                server.close()
+                partial.delete()
+                store.remove(id)
+                store.close()
+                context.deleteDatabase(dbName)
+                (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(NOTIFICATION_ID)
+            }
+        }
+    }
+
+    private suspend fun waitForTerminalAttempt(store: DownloadJobStore, id: Long) = withTimeoutPoll {
+        val job = store.get(id) ?: error("Bounded service job disappeared.")
+        if (job.status == DownloadStatus.PAUSED || job.status == DownloadStatus.FAILED || job.status == DownloadStatus.CANCELLED || job.status == DownloadStatus.SUCCESSFUL) job else null
+    }
+
+    @Suppress("DEPRECATION")
+    private suspend fun waitForServiceStopped(context: Context) {
+        withTimeoutPoll {
+            val running = (context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager)
+                .getRunningServices(100).any { it.service.className == DownloadService::class.java.name }
+            if (running) null else true
+        }
+    }
+
+    private suspend fun waitForBytesWritten(store: DownloadJobStore, id: Long, partial: File) = withTimeoutPoll {
+        val job = store.get(id) ?: error("Active service job disappeared.")
+        if (job.status == DownloadStatus.FAILED || job.status == DownloadStatus.CANCELLED) error("Transfer ended before it could be cancelled: ${job.reason}")
+        if (job.status == DownloadStatus.RUNNING && partial.length() > 0) job else null
+    }
+
+    @Suppress("DEPRECATION")
+    private fun assertForegroundServiceAndNotification(context: Context): PendingIntent? {
+        val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        val service = activityManager.getRunningServices(100)
+            .firstOrNull { it.service.className == DownloadService::class.java.name }
+        assertTrue("Active download service was not foreground", service?.foreground == true)
+
+        if (Build.VERSION.SDK_INT >= 33 &&
+            context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            Log.i(TAG, "notificationPayloadCheck=skipped; POST_NOTIFICATIONS is not granted")
+            return null
+        }
+        val notification = (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
+            .activeNotifications
+            .firstOrNull { it.id == NOTIFICATION_ID }
+            ?.notification
+        assertTrue("Foreground download notification was not posted", notification != null)
+        val cancelAction = notification?.actions.orEmpty().firstOrNull { it.title?.toString() == "Cancel" }
+        assertTrue("Foreground download notification is missing the Cancel action", cancelAction?.actionIntent != null)
+        return cancelAction?.actionIntent
+    }
+
+    private fun startService(context: Context, dbName: String, testStreamUrl: String? = null) {
+        val intent = Intent(context, DownloadService::class.java)
+            .setAction(DownloadService.ACTION_START)
+            .putExtra(DownloadService.EXTRA_TEST_DATABASE, dbName)
+        testStreamUrl?.let { intent.putExtra(DownloadService.EXTRA_TEST_STREAM_URL, it) }
+        if (Build.VERSION.SDK_INT >= 26) ContextCompat.startForegroundService(context, intent) else context.startService(intent)
+    }
+
+    private fun cancelService(context: Context, dbName: String, id: Long) {
+        val intent = Intent(context, DownloadService::class.java)
+            .setAction(DownloadService.ACTION_CANCEL)
+            .putExtra(DownloadService.EXTRA_TEST_DATABASE, dbName)
+            .putExtra(DownloadService.EXTRA_ID, id)
+        if (Build.VERSION.SDK_INT >= 26) ContextCompat.startForegroundService(context, intent) else context.startService(intent)
+    }
+
+    private suspend fun <T : Any> withTimeoutPoll(block: () -> T?): T {
+        val deadline = System.currentTimeMillis() + SERVICE_TIMEOUT_MS
+        while (System.currentTimeMillis() < deadline) {
+            block()?.let { return it }
+            delay(POLL_MS)
+        }
+        error("Timed out waiting for bounded download service state.")
+    }
+
+    private class SlowLoopbackServer : AutoCloseable {
+        private val server = ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))
+        private val clientClosed = CountDownLatch(1)
+        private var thread: Thread? = null
+        val url: String get() = "http://127.0.0.1:${server.localPort}/bounded-test.mp4"
+
+        fun start() {
+            thread = Thread({
+                try {
+                    server.accept().use { socket ->
+                        socket.soTimeout = 10_000
+                        val input = BufferedReader(InputStreamReader(socket.getInputStream()))
+                        while (true) {
+                            val line = input.readLine() ?: break
+                            if (line.isEmpty()) break
+                        }
+                        val output = socket.getOutputStream()
+                        output.write("HTTP/1.1 200 OK\r\nContent-Type: video/mp4\r\nContent-Length: $TOTAL_BYTES\r\nConnection: close\r\n\r\n".toByteArray())
+                        output.write(ByteArray(32 * 1024))
+                        output.flush()
+                        while (input.read() >= 0) { }
+                    }
+                } catch (_: Exception) {
+                } finally {
+                    clientClosed.countDown()
+                }
+            }, "LowTube-CancelAcceptanceServer").apply { isDaemon = true; start() }
+        }
+
+        fun awaitClientClosed(): Boolean = clientClosed.await(5, TimeUnit.SECONDS)
+
+        override fun close() {
+            runCatching { server.close() }
+            thread?.interrupt()
+        }
+
+        companion object { const val TOTAL_BYTES = 1_048_576L }
+    }
+
+    private class RangeResumeLoopbackServer : AutoCloseable {
+        private val server = ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))
+        private val clientClosed = CountDownLatch(1)
+        @Volatile var rangeHeader: String? = null
+            private set
+        private var thread: Thread? = null
+        val url: String get() = "http://127.0.0.1:${server.localPort}/recovery-test.mp4"
+
+        fun start() {
+            thread = Thread({
+                try {
+                    server.accept().use { socket ->
+                        socket.soTimeout = 10_000
+                        val input = BufferedReader(InputStreamReader(socket.getInputStream()))
+                        while (true) {
+                            val line = input.readLine() ?: break
+                            if (line.isEmpty()) break
+                            if (line.startsWith("Range:", ignoreCase = true)) rangeHeader = line.substringAfter(':').trim()
+                        }
+                        val range = Regex("(?i)^bytes=(\\d+)-(\\d+)$").matchEntire(rangeHeader.orEmpty())
+                            ?: throw IllegalStateException("Resume request did not include a bounded Range header.")
+                        val start = range.groupValues[1].toLong()
+                        val end = range.groupValues[2].toLong()
+                        require(start <= end && end < TOTAL_BYTES) { "Resume request range was outside the test resource." }
+                        val body = ByteArray((end - start + 1).toInt()) { (start + it).toByte() }
+                        val output = socket.getOutputStream()
+                        output.write("HTTP/1.1 206 Partial Content\r\nContent-Type: video/mp4\r\nContent-Range: bytes $start-$end/$TOTAL_BYTES\r\nContent-Length: ${body.size}\r\nConnection: close\r\n\r\n".toByteArray())
+                        output.write(body)
+                        output.flush()
+                        while (input.read() >= 0) { }
+                    }
+                } catch (_: Exception) {
+                } finally {
+                    clientClosed.countDown()
+                }
+            }, "LowTube-ResumeAcceptanceServer").apply { isDaemon = true; start() }
+        }
+
+        fun awaitClientClosed(): Boolean = clientClosed.await(5, TimeUnit.SECONDS)
+
+        override fun close() {
+            runCatching { server.close() }
+            thread?.interrupt()
+        }
+
+        companion object {
+            const val TOTAL_BYTES = 128L
+        }
+    }
+
+    private companion object {
+        const val CHUNK_BYTES = 65_536L
+        const val PREFIX_BYTES = 8
+        const val RESUME_CHUNK_BYTES = 16L
+        const val SERVICE_TIMEOUT_MS = 60_000L
+        const val POLL_MS = 100L
+        const val NOTIFICATION_ID = 4207
+        const val TAG = "LowTubeDownloadService"
+    }
+}
