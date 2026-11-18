@@ -245,3 +245,5 @@
 19.11.2026, після встановлення збірки з production n-marker async filter на фізичний Redmi Note 8 / Android13 API33: `MainActivity` залишена у foreground. Settled 10 s Home sample: CPU 0%, PSS 117,4 MiB, RSS 217,7 MiB, RAM 3 713 MiB / доступно 1 597 MiB. Короткий idle UI snapshot, не benchmark; playback не запускався.
 
 19.11.2026, після встановлення production MWEB fallback на Redmi Note 8 / Android13 API33: `MainActivity` у foreground. Cold-start 10 s sample мав короткі CPU піки 129%, 119%, 145%, 92%, далі ≤7%; PSS 135,3 MiB, RSS 234,4 MiB, RAM 3 713 MiB / доступно 1 562 MiB. Після settling наступний 10 s sample: CPU 0% у всіх 10 знімках, PSS 117,6 MiB, RSS 217,9 MiB, RAM 3 713 MiB / доступно 1 563 MiB. CPU `top` поданий у відсотках одного ядра; це короткі startup/idle snapshots, не benchmark. Playback не запускався.
+
+19.11.2026, Android6/API23 AVD, bounded MWEB production-resolver acceptance без Media3: CPU процесу 5 003 ms за 5 163 ms wall; PSS 20 862→60 059 KiB. Тест отримав прямий трансформований URL і прочитав лише 65 536 байтів HTTP 206 Range; це point acceptance, не benchmark. Загальну RAM AVD у цьому запуску не знімали.

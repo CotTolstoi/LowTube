@@ -392,7 +392,11 @@ class YoutubePlayerClientComparisonDiagnosticTest {
                     }
                     format to url
                 }
-        }.take(MAX_N_CHALLENGE_CANDIDATES)
+        }.take(
+            InstrumentationRegistry.getArguments().getString("playerVariantNBatchSize")
+                ?.toIntOrNull()?.coerceIn(1, MAX_DIAGNOSTIC_N_BATCH_SIZE)
+                ?: MAX_N_CHALLENGE_CANDIDATES,
+        )
         if (executableFormats.isEmpty()) return NChallengeResult("n_missing", 0, 0, "not_run")
 
         val playerScript = YoutubePlayerScriptCache().load(scriptUrl)
@@ -942,6 +946,7 @@ class YoutubePlayerClientComparisonDiagnosticTest {
         private const val MAX_CONFIG_BYTES = 4 * 1024 * 1024
         private const val MAX_PLAYER_RESPONSE_BYTES = 8 * 1024 * 1024
         private const val MAX_N_CHALLENGE_CANDIDATES = 3
+        private const val MAX_DIAGNOSTIC_N_BATCH_SIZE = 24
         private const val MAX_MARKER_URL_CANDIDATES = 3
         private const val MAX_MARKER_URL_RECOVERIES = 8
         private const val MAX_URL_RECOVERY_ATTEMPTS = 8
