@@ -842,6 +842,15 @@ class InnerTubeSearchRepository(context: Context? = null) {
                                 continuation = nestedString(renderer, "continuationEndpoint", "continuationCommand", "token")
                                     .ifBlank { nestedString(renderer, "button", "buttonRenderer", "command", "continuationCommand", "token") }
                             }
+                            "continuationItemViewModel" -> {
+                                continuation = nestedString(
+                                    renderer,
+                                    "continuationCommand",
+                                    "innertubeCommand",
+                                    "continuationCommand",
+                                    "token",
+                                ).ifBlank { nestedString(renderer, "continuationCommand", "token") }
+                            }
                             "nextContinuationData" -> continuation = renderer?.optString("continuation")?.takeIf(String::isNotBlank)
                             "videoRenderer", "gridVideoRenderer", "playlistVideoRenderer", "playlistPanelVideoRenderer", "reelItemRenderer" -> add(legacyVideo(renderer, key))
                             "playlistRenderer", "gridPlaylistRenderer" -> add(playlist(renderer))
