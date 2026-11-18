@@ -83,7 +83,7 @@
 
 ## Налаштування та звук
 
-- [ ] `ResumePlayback` імпорт/експорт PC JSON зберігає однойменний Windows ключ; legacy JSON без цього ключа залишає поточне значення. Не переносити credentials чи інші заборонені PC поля.
+- [x] `ResumePlayback` імпорт/експорт PC JSON зберігає однойменний Windows ключ; legacy JSON без цього ключа залишає поточне значення. `SettingsTransferRepositoryTest` підтвердив import `false`, export/round-trip та незмінність fallback для legacy JSON без ключа; усі 6 instrumentation тестів пройшли на Android 6/API 23. Credentials та browser profile лишаються поза allowlist.
 
 - [ ] Мова, тема, розмір сторінки, типові фільтри/висота/FPS/codec.
 - [ ] `ResumePlayback` доданий у Settings; фізично перевірено перемикання та збереження `false`, потім повернення до `true`. PC JSON імпорт/експорт переносить `ResumePlayback`, buffer preferences, `AutoRecover` та `AutoNext`; AutoNext має перемикач у Queue і Settings, а новий імпорт/експорт та UI label пройшли на API23. `PreloadNext` тепер має локальний перемикач і PC JSON `PreloadNext`; Media3 player отримує конфігурацію 5 s preloading. UI/transfer перевірені на API23, а player acceptance перевірив 12 s clip → наступний Media3 елемент. Повний UI/queue/resolver acceptance ще відкритий; решта parity лишається.
