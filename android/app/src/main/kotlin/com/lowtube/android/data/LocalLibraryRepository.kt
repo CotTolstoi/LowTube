@@ -466,6 +466,15 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
 
     /** Adds a playlist snapshot atomically, preserving its order and the queue size limit. */
     fun enqueueAll(videos: List<VideoItem>) {
+        enqueueVideos(videos, atFront = false)
+    }
+
+    /** Inserts a playlist tail before existing entries without discarding the current queue. */
+    fun enqueueAllAtFront(videos: List<VideoItem>) {
+        enqueueVideos(videos, atFront = true)
+    }
+
+    private fun enqueueVideos(videos: List<VideoItem>, atFront: Boolean) {
         if (videos.isEmpty()) return
         require(videos.all { it.id.isNotBlank() && it.url.isNotBlank() && it.kind != "playlist" }) {
             "Only playable videos can be added to the queue."
@@ -475,8 +484,13 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
         try {
             val count = db.rawQuery("SELECT COUNT(*) FROM queue_entries", null).use { if (it.moveToFirst()) it.getInt(0) else 0 }
             require(count + videos.size <= MAX_QUEUE_ITEMS) { "The watch queue is full." }
-            var position = db.rawQuery("SELECT COALESCE(MAX(position), -1)+1 FROM queue_entries", null).use {
-                if (it.moveToFirst()) it.getInt(0) else 0
+            var position = if (atFront) {
+                db.execSQL("UPDATE queue_entries SET position=position+?", arrayOf(videos.size))
+                0
+            } else {
+                db.rawQuery("SELECT COALESCE(MAX(position), -1)+1 FROM queue_entries", null).use {
+                    if (it.moveToFirst()) it.getInt(0) else 0
+                }
             }
             videos.forEach { video ->
                 val values = videoValues(video).apply { put("position", position++) }

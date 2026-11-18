@@ -491,6 +491,20 @@ fun MainNavigation(
                     refreshRevision = libraryRevision,
                     onBack = navigateBack,
                     onPlay = { video -> selectedQueueRowId = null; selectedLocalAudio = null; selectedVideo = video; backStack.add(Player) },
+                    onPlayPlaylist = { videos ->
+                        val first = videos.firstOrNull()
+                        if (first != null) {
+                            runCatching { library.enqueueAllAtFront(videos.drop(1)) }
+                                .onSuccess {
+                                    queueRevision++
+                                    selectedQueueRowId = null
+                                    selectedLocalAudio = null
+                                    selectedVideo = first
+                                    backStack.add(Player)
+                                }
+                                .onFailure { Toast.makeText(context, it.message ?: context.getString(R.string.action_failed), Toast.LENGTH_LONG).show() }
+                        }
+                    },
                     onPickAudio = { localAudioPicker.launch(arrayOf("audio/*")) },
                     onPlayLocalAudio = { track ->
                         selectedQueueRowId = null

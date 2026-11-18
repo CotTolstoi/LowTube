@@ -142,6 +142,7 @@
     <string name="open_download">Открыть</string>
     <string name="added_to_queue">Добавлено в очередь</string>
     <string name="add_playlist_to_queue">Всё в очередь</string>
+    <string name="play_all">Воспроизвести всё</string>
     <string name="playlist_added_to_queue">Видео плейлиста добавлены в очередь</string>
     <string name="queue_empty">Очередь воспроизведения пуста.</string>
     <string name="load_playlist_page">Загрузить страницу плейлиста</string>

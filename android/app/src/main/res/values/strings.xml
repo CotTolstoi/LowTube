@@ -142,6 +142,7 @@
     <string name="open_download">Open</string>
     <string name="added_to_queue">Added to queue</string>
     <string name="add_playlist_to_queue">Add all to queue</string>
+    <string name="play_all">Play all</string>
     <string name="playlist_added_to_queue">Playlist videos added to queue</string>
     <string name="queue_empty">The watch queue is empty.</string>
     <string name="load_playlist_page">Load playlist page</string>

@@ -9,6 +9,27 @@ import org.junit.Test
 /** Exercises persisted playlist-marker expansion without creating a Media3 player. */
 class LocalPlaylistQueueAcceptanceTest {
     @Test
+    fun enqueueAllAtFrontKeepsNewPlaylistAheadOfExistingQueue() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val databaseName = "playlist-front-queue-${System.currentTimeMillis()}.db"
+        val repository = LocalLibraryRepository(context, databaseName)
+        try {
+            repository.enqueue(video("video000001", "Existing one"))
+            repository.enqueue(video("video000002", "Existing two"))
+
+            repository.enqueueAllAtFront(listOf(video("video000003", "Playlist one"), video("video000004", "Playlist two")))
+
+            assertEquals(
+                listOf("video000003", "video000004", "video000001", "video000002"),
+                repository.queue().map { it.video.id },
+            )
+        } finally {
+            repository.close()
+            context.deleteDatabase(databaseName)
+        }
+    }
+
+    @Test
     fun playlistPagesExpandInPlaceAndRetainContinuationUntilFinalPage() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val databaseName = "playlist-queue-${System.currentTimeMillis()}.db"

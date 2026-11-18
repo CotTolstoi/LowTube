@@ -60,6 +60,7 @@ fun LibraryScreen(
     refreshRevision: Int,
     onBack: () -> Unit,
     onPlay: (VideoItem) -> Unit,
+    onPlayPlaylist: (List<VideoItem>) -> Unit,
     onPickAudio: () -> Unit,
     onPlayLocalAudio: (LocalAudioTrack) -> Unit,
     onRemoveLocalAudio: (LocalAudioTrack) -> Unit,
@@ -161,10 +162,13 @@ fun LibraryScreen(
 
             selected?.let { playlist ->
                 item {
-                    Row(Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text(playlist.name, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                    Column(Modifier.fillMaxWidth().padding(top = 12.dp)) {
+                        Text(playlist.name, style = MaterialTheme.typography.titleLarge)
                         if (videos.isNotEmpty()) {
-                            TextButton(onClick = { onAddToQueue(videos) }) { Text(stringResource(R.string.add_playlist_to_queue)) }
+                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                TextButton(onClick = { onPlayPlaylist(videos) }) { Text(stringResource(R.string.play_all)) }
+                                TextButton(onClick = { onAddToQueue(videos) }) { Text(stringResource(R.string.add_playlist_to_queue)) }
+                            }
                         }
                     }
                 }
