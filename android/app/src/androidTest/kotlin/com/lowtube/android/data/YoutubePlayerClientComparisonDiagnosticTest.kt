@@ -1,6 +1,7 @@
 package com.lowtube.android.data
 
 import android.content.Context
+import android.net.Uri
 import android.os.Debug
 import android.os.Process
 import android.os.SystemClock
@@ -12,6 +13,8 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -24,6 +27,77 @@ import java.net.URL
 /** Opt-in metadata-only comparison of anonymous Android and WEB player clients; it never creates a media player. */
 @RunWith(AndroidJUnit4::class)
 class YoutubePlayerClientComparisonDiagnosticTest {
+    @Test
+    fun resolvesLiveMwebAsLastFallbackAfterAndroidAndWebReturnNoStreams() = runBlocking {
+        val arguments = InstrumentationRegistry.getArguments()
+        assumeTrue(
+            "Pass -e runMwebFallbackOrderAcceptance true to run this bounded live network check",
+            arguments.getString("runMwebFallbackOrderAcceptance") == "true",
+        )
+        val configuration = readPublicConfiguration()
+        val mwebResponse = requestPublicPlayer(
+            DEFAULT_VIDEO_ID,
+            configuration,
+            PlayerVariant(
+                name = "MWEB",
+                version = MWEB_CLIENT_VERSION,
+                headerId = "2",
+                userAgent = MWEB_USER_AGENT,
+            ),
+        )
+        val repository = InnerTubeSearchRepository(ApplicationProvider.getApplicationContext<Context>())
+        val attemptedClients = mutableListOf<String>()
+        repository.playerRequestOverrideForAcceptance = { body, version, clientId, userAgent ->
+            val client = JSONObject(body).getJSONObject("context").getJSONObject("client")
+            val name = client.optString("clientName")
+            attemptedClients.add(name)
+            assertEquals(
+                clientId,
+                when (name) {
+                    "ANDROID" -> "3"
+                    "WEB" -> "1"
+                    "MWEB" -> "2"
+                    else -> "unknown"
+                },
+            )
+            if (clientId == "2") {
+                assertEquals(MWEB_CLIENT_VERSION, version)
+                assertEquals(MWEB_USER_AGENT, userAgent)
+                assertEquals(MWEB_USER_AGENT, client.optString("userAgent"))
+                mwebResponse
+            } else {
+                JSONObject().put("playabilityStatus", JSONObject().put("status", "LOGIN_REQUIRED"))
+            }
+        }
+        val video = VideoItem(
+            id = DEFAULT_VIDEO_ID,
+            title = "Public MWEB fallback fixture",
+            duration = "9:56",
+            url = "https://www.youtube.com/watch?v=$DEFAULT_VIDEO_ID",
+        )
+        val cpuStarted = Process.getElapsedCpuTime()
+        val wallStarted = SystemClock.elapsedRealtime()
+        val pssStarted = Debug.getPss()
+
+        val stream = repository.resolvePlayback(video)
+
+        assertEquals(listOf("ANDROID", "WEB", "MWEB"), attemptedClients)
+        assertTrue("The resolver did not return an MWEB User-Agent", stream.userAgent.contains("iPad"))
+        assertTrue("The returned stream lacks its transformed n query", Uri.parse(stream.uri).getQueryParameter("n").orEmpty().isNotBlank())
+        val range = boundedRange(stream.uri, stream.userAgent)
+            ?: error("The production MWEB stream did not return a bounded CDN range.")
+        assertEquals(HttpURLConnection.HTTP_PARTIAL, range.status)
+        assertEquals(MAX_RANGE_BYTES, range.bytes)
+
+        System.out.println(
+            "mwebFallbackOrderAcceptance; clients=${attemptedClients.joinToString(",")}; " +
+                "itag=${stream.itag}; height=${stream.videoHeight}; nPresent=true; " +
+                "userAgent=iPad; httpStatus=${range.status}; bytes=${range.bytes}; " +
+                "cpuMs=${Process.getElapsedCpuTime() - cpuStarted}; " +
+                "wallMs=${SystemClock.elapsedRealtime() - wallStarted}; pssKiB=$pssStarted->${Debug.getPss()}",
+        )
+    }
+
     @Test
     fun reportsAggregateFormatsFromAndroidAndWebClients() = runBlocking {
         val arguments = InstrumentationRegistry.getArguments()
@@ -119,10 +193,9 @@ class YoutubePlayerClientComparisonDiagnosticTest {
             ),
             PlayerVariant(
                 name = "MWEB",
-                version = "2.20260708.05.00",
+                version = MWEB_CLIENT_VERSION,
                 headerId = "2",
-                userAgent = "Mozilla/5.0 (iPad; CPU OS 16_7_10 like Mac OS X) AppleWebKit/605.1.15 " +
-                    "(KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1,gzip(gfe)",
+                userAgent = MWEB_USER_AGENT,
             ),
             PlayerVariant(
                 name = "ANDROID_CURRENT",
@@ -941,6 +1014,8 @@ class YoutubePlayerClientComparisonDiagnosticTest {
 
     companion object {
         private const val DEFAULT_VIDEO_ID = "aqz-KE-bpKQ"
+        private const val MWEB_CLIENT_VERSION = "2.20260708.05.00"
+        private const val MWEB_USER_AGENT = "Mozilla/5.0 (iPad; CPU OS 16_7_10 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1,gzip(gfe)"
         private const val MAX_VIDEO_IDS = 3
         private const val REQUEST_TIMEOUT_MS = 10_000
         private const val MAX_CONFIG_BYTES = 4 * 1024 * 1024

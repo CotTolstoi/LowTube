@@ -51,6 +51,7 @@ class InnerTubeSearchRepository(context: Context? = null) {
     private var cooldownUntil = 0L
     private var configuredPlayerScriptUrl = ""
     internal var playerClientStreamSummaryObserver: ((PlayerClientStreamSummary) -> Unit)? = null
+    internal var playerRequestOverrideForAcceptance: ((String, String, String, String) -> JSONObject)? = null
 
     suspend fun search(input: String, continuation: String? = null, language: String = "en"): SearchPage =
         withContext(Dispatchers.IO) {
@@ -158,22 +159,7 @@ class InnerTubeSearchRepository(context: Context? = null) {
         }
     }
 
-    /** Runs the normal resolver pipeline with MWEB first for bounded client acceptance diagnostics. */
-    internal suspend fun resolvePlaybackUsingMwebForDiagnostics(
-        video: VideoItem,
-        preferences: PlaybackStreamPreferences = PlaybackStreamPreferences(),
-    ): ResolvedVideoStream = withContext(Dispatchers.IO) {
-        operationMutex.withLock {
-            val resolved = resolvePlayerData(video, preferWebClient = false, prioritizeMwebClient = true)
-            resolveStreams(resolved.video, resolved.streaming, preferences, resolved.userAgent)
-        }
-    }
-
-    private suspend fun resolvePlayerData(
-        video: VideoItem,
-        preferWebClient: Boolean,
-        prioritizeMwebClient: Boolean = false,
-    ): ResolvedPlayerData {
+    private suspend fun resolvePlayerData(video: VideoItem, preferWebClient: Boolean): ResolvedPlayerData {
         require(VIDEO_ID.matches(video.id)) { "This item is not a playable video." }
         if (video.liveStatus == "is_upcoming") throw IOException("This live stream has not started yet.")
         val html = request("/watch?v=${urlEncode(video.id)}&hl=en", null, false, PLAYER_TIMEOUT_MS)
@@ -194,7 +180,6 @@ class InnerTubeSearchRepository(context: Context? = null) {
             player,
             preferWebClient,
             requestSignatureTimestamp,
-            prioritizeMwebClient,
         )
             .takeIf { hasDirectOrDash(it.streaming) }
             ?: pageStreaming?.takeIf(::hasDirectOrDash)?.let { ResolvedPlayerResponse(it, USER_AGENT) }
@@ -656,15 +641,12 @@ class InnerTubeSearchRepository(context: Context? = null) {
         pageResponse: JSONObject,
         preferWebClient: Boolean,
         requestSignatureTimestamp: Int,
-        prioritizeMwebClient: Boolean,
     ): ResolvedPlayerResponse {
         if (apiKey.isBlank()) throw IOException("YouTube player configuration is incomplete. Retry the video.")
         val androidClient = PlayerRequestClient("ANDROID", "20.13.41", "3", USER_AGENT)
         val webClient = PlayerRequestClient("WEB", clientVersion, "1", USER_AGENT)
         val mwebClient = PlayerRequestClient("MWEB", MWEB_CLIENT_VERSION, "2", MWEB_USER_AGENT)
-        val clients = if (prioritizeMwebClient) {
-            listOf(mwebClient, androidClient, webClient)
-        } else if (preferWebClient) {
+        val clients = if (preferWebClient) {
             listOf(webClient, androidClient, mwebClient)
         } else {
             listOf(androidClient, webClient, mwebClient)
@@ -695,7 +677,12 @@ class InnerTubeSearchRepository(context: Context? = null) {
                 JSONObject().put("contentPlaybackContext", JSONObject().put("signatureTimestamp", requestSignatureTimestamp)),
             )
             try {
-                val response = playerRequest(payload.toString(), version, clientId, userAgent)
+                val response = playerRequestOverrideForAcceptance?.invoke(
+                    payload.toString(),
+                    version,
+                    clientId,
+                    userAgent,
+                ) ?: playerRequest(payload.toString(), version, clientId, userAgent)
                 val status = response.optJSONObject("playabilityStatus")
                 lastStatus = status?.optString("status").orEmpty()
                 val streaming = response.optJSONObject("streamingData")

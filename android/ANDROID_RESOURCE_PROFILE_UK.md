@@ -249,3 +249,5 @@
 19.11.2026, Android6/API23 AVD, bounded MWEB production-resolver acceptance без Media3: CPU процесу 5 003 ms за 5 163 ms wall; PSS 20 862→60 059 KiB. Тест отримав прямий трансформований URL і прочитав лише 65 536 байтів HTTP 206 Range; це point acceptance, не benchmark. Загальну RAM AVD у цьому запуску не знімали.
 
 19.11.2026, після встановлення MWEB client-context User-Agent fix на Redmi Note 8 / Android13 API33: `MainActivity` foreground. Cold-start 10 s: CPU samples 140%, 117%, 106%, потім 7% і нижче; PSS 135,8 MiB, RSS 234,9 MiB, RAM 3 713 / доступно 1 592 MiB. Settled наступний 10 s: CPU 0% у всіх знімках, PSS 118,5 MiB, RSS 218,7 MiB, RAM 3 713 / доступно 1 593 MiB. Startup/idle point samples, не benchmark; playback не запускався.
+
+19.11.2026, API23 AVD, natural-order MWEB fallback acceptance без Media3: CPU процесу 4 175 ms за 4 254 ms wall; PSS 26 928→52 155 KiB. Network fixture прочитав лише 65 536 байтів Range; process snapshot, не benchmark.
