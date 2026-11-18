@@ -231,3 +231,5 @@
 18.11.2026 21:12 UTC, пристрій serial `8LZ5ZPO7J7QOEMMZ` (ADB model `TrebleDroid vanilla`, Android13/API33): LowTube `MainActivity` підтверджена у foreground до й після заміру. 10 s Home idle sample — CPU 0% одного ядра, PSS 122,3 MiB, RSS 208,1 MiB, peak RSS 232,3 MiB; RAM 3 713 MiB / доступно 1 592 MiB. Це точковий зріз; модель пристрою взято з Android properties, результат не є benchmark.
 
 18.11.2026 21:36 UTC, пристрій serial `8LZ5ZPO7J7QOEMMZ` (ADB model `TrebleDroid vanilla`, Android13/API33), після встановлення APK з категоріями підписок і запуску MainActivity: 10 s Home sample — CPU 2,4% одного ядра, PSS 114,5 MiB, RSS 200,1 MiB, peak RSS 228 MiB; RAM 3 713 MiB / доступно 1 558 MiB. Це короткий post-install snapshot зі стартовим фоновим навантаженням; не порівняльний benchmark.
+
+18.11.2026 21:50 UTC, фізичний пристрій serial `8LZ5ZPO7J7QOEMMZ` (ADB model `TrebleDroid vanilla`, Android13/API33), після встановлення APK з фактичною decoder-діагностикою: `MainActivity` foreground; один CPU snapshot 0,0%, PSS 136,4 MiB, RSS 232,5 MiB, RAM 3 713 MiB / доступно 1 565 MiB. Це короткий post-install Home snapshot, не benchmark і не вимір активного playback.
