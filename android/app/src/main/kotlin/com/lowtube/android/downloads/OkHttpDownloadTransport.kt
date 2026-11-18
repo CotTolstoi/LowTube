@@ -41,7 +41,6 @@ internal class OkHttpDownloadTransport(private val client: OkHttpClient) {
         val requestBuilder = Request.Builder().url(stream.uri).header("User-Agent", stream.userAgent)
             .header("Referer", "https://www.youtube.com/watch?v=${video.id}").header("Origin", "https://www.youtube.com").header("Accept", "*/*")
         if (downloaded > 0 || rangeEnd != null) requestBuilder.header("Range", "bytes=$downloaded-${rangeEnd ?: ""}")
-        val transferStartNs = System.nanoTime()
         var sessionBytes = 0L
         val call = client.newCall(requestBuilder.build())
         onCallCreated(call)
@@ -63,6 +62,8 @@ internal class OkHttpDownloadTransport(private val client: OkHttpClient) {
                 val contentLength = body.contentLength().coerceAtLeast(0)
                 val rangeTotal = Regex("bytes \\d+-\\d+/(\\d+)").find(response.header("Content-Range").orEmpty())?.groupValues?.get(1)?.toLongOrNull()
                 val total = rangeTotal ?: if (response.code == 206) downloaded + contentLength else contentLength
+                // Exclude DNS/connect/server wait from the transfer rate window.
+                val transferStartNs = System.nanoTime()
                 val output = FileOutputStream(partialFile, downloaded > 0).buffered()
                 body.byteStream().use { input -> output.use { out ->
                     val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
@@ -76,12 +77,18 @@ internal class OkHttpDownloadTransport(private val client: OkHttpClient) {
                         out.write(buffer, 0, count)
                         downloaded += count
                         sessionBytes += count
-                        val now = System.nanoTime()
+                        var now = System.nanoTime()
                         if (rateLimitKiB > 0) {
-                            val byteRate = rateLimitKiB.coerceAtLeast(0) * 1024L
+                            val byteRate = rateLimitKiB * 1024L
                             val allowedNs = (sessionBytes.toDouble() * 1_000_000_000.0 / byteRate.toDouble()).toLong()
-                            val elapsedNs = now - transferStartNs
-                            if (allowedNs > elapsedNs) delay(((allowedNs - elapsedNs) / 1_000_000L).coerceAtMost(1000))
+                            var remainingNs = allowedNs - (now - transferStartNs)
+                            while (remainingNs > 0) {
+                                if (shouldCancel()) throw CancellationException("Cancelled by user.")
+                                val waitMs = ((remainingNs + 999_999L) / 1_000_000L).coerceIn(1L, 250L)
+                                delay(waitMs)
+                                now = System.nanoTime()
+                                remainingNs = allowedNs - (now - transferStartNs)
+                            }
                         }
                         if (now - lastProgress >= 750_000_000L) { out.flush(); onProgress(TransferProgress(downloaded, total)); lastProgress = now }
                     }

@@ -186,6 +186,60 @@ class DownloadServiceAcceptanceTest {
     }
 
     @Test
+    fun configuredDownloadRateLimitIsAppliedToBoundedServiceTransfer() {
+        runBlocking {
+            assumeTrue(
+                "Rate-limit acceptance is opt-in; pass -e runDownloadRateLimitAcceptance true",
+                InstrumentationRegistry.getArguments().getString("runDownloadRateLimitAcceptance") == "true",
+            )
+            val context = ApplicationProvider.getApplicationContext<Context>()
+            val dbName = "lowtube-rate-limit-acceptance-${System.currentTimeMillis()}.db"
+            val partial = File(context.cacheDir, "$dbName.part")
+            val server = RangeResumeLoopbackServer(resourceBytes = RATE_LIMIT_CHUNK_BYTES * 4)
+            val store = DownloadJobStore(context, dbName)
+            val preferences = context.getSharedPreferences("lowtube_settings", Context.MODE_PRIVATE)
+            val previousLimit = preferences.getInt("download_limit_kib", 0)
+            val video = VideoItem("fixture", "Rate limit fixture", duration = "—", url = "https://www.youtube.com/watch?v=fixture")
+            val videoJson = JSONObject().put("id", video.id).put("title", video.title).put("url", video.url).toString()
+            var id = 0L
+            try {
+                preferences.edit().putInt("download_limit_kib", 1).commit()
+                id = store.insert(
+                    videoJson,
+                    "rate-limit-loopback-test",
+                    false,
+                    "rate-limit-bounded.mp4",
+                    "video/mp4",
+                    "LowTube rate-limit acceptance",
+                    partial.absolutePath,
+                    maxBytesPerAttempt = RATE_LIMIT_CHUNK_BYTES,
+                )
+                server.start()
+                val startedNs = System.nanoTime()
+                startService(context, dbName, testStreamUrl = server.url)
+                val completed = waitForTerminalAttempt(store, id)
+                val elapsedMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedNs)
+                assertEquals("Rate-limited bounded transfer did not pause: ${completed.reason}", DownloadStatus.PAUSED, completed.status)
+                assertEquals(RATE_LIMIT_CHUNK_BYTES, completed.downloadedBytes)
+                assertEquals(RATE_LIMIT_CHUNK_BYTES, partial.length())
+                assertTrue("1 KiB/s cap completed too quickly ($elapsedMs ms)", elapsedMs >= RATE_LIMIT_MIN_EXPECTED_MS)
+                assertTrue("Range-limited server did not observe client close", server.awaitClientClosed())
+                waitForServiceStopped(context)
+                Log.i(TAG, "rateLimitAcceptance; limitKiB=1; bytes=${completed.downloadedBytes}; elapsedMs=$elapsedMs")
+            } finally {
+                context.stopService(Intent(context, DownloadService::class.java))
+                server.close()
+                partial.delete()
+                if (id > 0) store.remove(id)
+                store.close()
+                context.deleteDatabase(dbName)
+                preferences.edit().putInt("download_limit_kib", previousLimit).commit()
+                (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(NOTIFICATION_ID)
+            }
+        }
+    }
+
+    @Test
     fun servicePublishesCompleteBoundedFileAndRemovesPartial() {
         runBlocking {
             assumeTrue(
@@ -408,7 +462,7 @@ class DownloadServiceAcceptanceTest {
         companion object { const val TOTAL_BYTES = 1_048_576L }
     }
 
-    private class RangeResumeLoopbackServer : AutoCloseable {
+    private class RangeResumeLoopbackServer(private val resourceBytes: Long = TOTAL_BYTES) : AutoCloseable {
         private val server = ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))
         private val clientClosed = CountDownLatch(1)
         @Volatile var rangeHeader: String? = null
@@ -431,10 +485,10 @@ class DownloadServiceAcceptanceTest {
                             ?: throw IllegalStateException("Resume request did not include a bounded Range header.")
                         val start = range.groupValues[1].toLong()
                         val end = range.groupValues[2].toLong()
-                        require(start <= end && end < TOTAL_BYTES) { "Resume request range was outside the test resource." }
+                        require(start <= end && end < resourceBytes) { "Resume request range was outside the test resource." }
                         val body = ByteArray((end - start + 1).toInt()) { (start + it).toByte() }
                         val output = socket.getOutputStream()
-                        output.write("HTTP/1.1 206 Partial Content\r\nContent-Type: video/mp4\r\nContent-Range: bytes $start-$end/$TOTAL_BYTES\r\nContent-Length: ${body.size}\r\nConnection: close\r\n\r\n".toByteArray())
+                        output.write("HTTP/1.1 206 Partial Content\r\nContent-Type: video/mp4\r\nContent-Range: bytes $start-$end/$resourceBytes\r\nContent-Length: ${body.size}\r\nConnection: close\r\n\r\n".toByteArray())
                         output.write(body)
                         output.flush()
                         while (input.read() >= 0) { }
@@ -462,6 +516,8 @@ class DownloadServiceAcceptanceTest {
         const val CHUNK_BYTES = 65_536L
         const val PREFIX_BYTES = 8
         const val RESUME_CHUNK_BYTES = 16L
+        const val RATE_LIMIT_CHUNK_BYTES = 4_096L
+        const val RATE_LIMIT_MIN_EXPECTED_MS = 3_500L
         const val SERVICE_TIMEOUT_MS = 60_000L
         const val POLL_MS = 100L
         const val NOTIFICATION_ID = 4207
