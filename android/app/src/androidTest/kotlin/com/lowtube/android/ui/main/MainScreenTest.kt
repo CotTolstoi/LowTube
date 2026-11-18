@@ -33,6 +33,31 @@ class MainScreenTest {
     }
 
     @Test
+    fun primaryTabsAndMoreMenuRemainReachableOnApi23() {
+        val activity = composeTestRule.activity
+        val tabLabels = listOf(
+            R.string.search_tab,
+            R.string.recommendations_tab,
+            R.string.subscriptions_tab,
+            R.string.profile,
+        )
+
+        tabLabels.forEach { labelId ->
+            val tab = hasText(activity.getString(labelId)) and
+                SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab)
+            composeTestRule.onNode(tab).performClick()
+            composeTestRule.waitForIdle()
+            composeTestRule.onNode(tab).assertIsSelected()
+        }
+
+        composeTestRule.onNodeWithText(activity.getString(R.string.more_menu), substring = true).performClick()
+        composeTestRule.onNodeWithText(activity.getString(R.string.library)).assertExists()
+        composeTestRule.onNodeWithText(activity.getString(R.string.watch_queue)).assertExists()
+        composeTestRule.onNodeWithText(activity.getString(R.string.downloads)).assertExists()
+        composeTestRule.onNodeWithText(activity.getString(R.string.settings)).assertExists()
+    }
+
+    @Test
     fun settingsBackRestoresSearchTabSelection() {
         val search = composeTestRule.activity.getString(R.string.search_tab)
         val settings = composeTestRule.activity.getString(R.string.settings)
