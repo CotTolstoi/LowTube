@@ -81,7 +81,7 @@ class YoutubePlayerLiveScriptDiagnosticTest {
         )
         val functions = executable.functions
         val urlProgram = executable.urlThrottlingProgram
-        if (functions.signature == null) {
+        if (functions.signature == null && arguments.getString("nLocatorOnly") != "true") {
             val candidateStartedAt = System.nanoTime()
             val candidates = YoutubePlayerTransformLocator.locateExecutable(
                 script.source,
