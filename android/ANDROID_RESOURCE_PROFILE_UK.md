@@ -229,3 +229,5 @@
 18.11.2026 18:00 UTC, Redmi Note 8 / Android13 після playlist VIEW handler acceptance на API23/API33 і повернення LowTube Home: CPU 0,8%, PSS 139,0 MiB, RSS 220,2 MiB, peak RSS 221,2 MiB; RAM 3 713 MiB / доступно 1 424 MiB за 10 s. Короткий UI snapshot, не playback і не benchmark.
 
 18.11.2026 21:12 UTC, пристрій serial `8LZ5ZPO7J7QOEMMZ` (ADB model `TrebleDroid vanilla`, Android13/API33): LowTube `MainActivity` підтверджена у foreground до й після заміру. 10 s Home idle sample — CPU 0% одного ядра, PSS 122,3 MiB, RSS 208,1 MiB, peak RSS 232,3 MiB; RAM 3 713 MiB / доступно 1 592 MiB. Це точковий зріз; модель пристрою взято з Android properties, результат не є benchmark.
+
+18.11.2026 21:36 UTC, пристрій serial `8LZ5ZPO7J7QOEMMZ` (ADB model `TrebleDroid vanilla`, Android13/API33), після встановлення APK з категоріями підписок і запуску MainActivity: 10 s Home sample — CPU 2,4% одного ядра, PSS 114,5 MiB, RSS 200,1 MiB, peak RSS 228 MiB; RAM 3 713 MiB / доступно 1 558 MiB. Це короткий post-install snapshot зі стартовим фоновим навантаженням; не порівняльний benchmark.
