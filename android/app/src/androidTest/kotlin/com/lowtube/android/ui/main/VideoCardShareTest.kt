@@ -2,6 +2,7 @@ package com.lowtube.android.ui.main
 
 import android.content.Intent
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -73,6 +74,42 @@ class VideoCardShareTest {
 
         assertTrue("Queue action should remain available", queueRequested)
         assertFalse("Queue action must not start playback", playbackRequested)
+    }
+
+    @Test
+    fun playlistQueueActionDoesNotNavigateWhenCardLivesInLazyColumn() {
+        var queueRequested = false
+        var playlistOpened = false
+        composeTestRule.setContent {
+            LowTubeTheme {
+                LazyColumn {
+                    item {
+                        VideoCard(
+                            item = fixture().copy(
+                                id = "PL0123456789abcdefghijABCDEFGHIJKLM",
+                                title = "Playlist fixture",
+                                kind = "playlist",
+                                url = "https://www.youtube.com/playlist?list=PL0123456789abcdefghijABCDEFGHIJKLM",
+                            ),
+                            isFollowing = false,
+                            onQueue = { queueRequested = true },
+                            onDownload = {},
+                            onSave = {},
+                            onToggleFollow = { true },
+                            onChannelClick = {},
+                            onShare = {},
+                            onClick = { playlistOpened = true },
+                        )
+                    }
+                }
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription(composeTestRule.activity.getString(R.string.more_actions)).performClick()
+        composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.add_to_queue)).performClick()
+
+        assertTrue("Queue action should remain available on a playlist card", queueRequested)
+        assertFalse("Queue action must not open the playlist", playlistOpened)
     }
 
     @Test
