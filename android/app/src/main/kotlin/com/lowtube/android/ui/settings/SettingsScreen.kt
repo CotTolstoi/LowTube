@@ -1,0 +1,454 @@
+package com.lowtube.android.ui.settings
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
+import java.io.IOException
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import com.lowtube.android.AppLocale
+import com.lowtube.android.R
+import com.lowtube.android.data.PlaybackStreamPreferences
+import com.lowtube.android.data.PlaybackBufferPreferences
+import com.lowtube.android.data.DownloadStreamPreferences
+import com.lowtube.android.data.ResourceUsageSample
+import com.lowtube.android.data.ResourceUsageSampler
+import com.lowtube.android.data.SettingsTransferRepository
+import com.lowtube.android.downloads.DownloadDestination
+import kotlinx.coroutines.CancellationException
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SettingsScreen(
+    onDarkThemeChanged: (Boolean) -> Unit,
+    onLanguageChanged: (String) -> Unit,
+    onBack: () -> Unit = {},
+    discoveryTopic: String,
+    discoveryLanguage: String,
+    onDiscoveryPreferencesChanged: (String, String) -> Unit,
+    playbackPreferences: PlaybackStreamPreferences,
+    onPlaybackPreferencesChanged: (PlaybackStreamPreferences) -> Unit,
+    playbackBufferPreferences: PlaybackBufferPreferences = PlaybackBufferPreferences(),
+    onPlaybackBufferPreferencesChanged: (PlaybackBufferPreferences) -> Unit = {},
+    downloadPreferences: DownloadStreamPreferences = DownloadStreamPreferences(),
+    onDownloadPreferencesChanged: (DownloadStreamPreferences) -> Unit = {},
+    resumePlayback: Boolean = true,
+    onResumePlaybackChanged: (Boolean) -> Unit = {},
+    autoRecover: Boolean = true,
+    onAutoRecoverChanged: (Boolean) -> Unit = {},
+    autoNext: Boolean = true,
+    onAutoNextChanged: (Boolean) -> Unit = {},
+    preloadNext: Boolean = true,
+    onPreloadNextChanged: (Boolean) -> Unit = {},
+) {
+    val context = LocalContext.current
+    var language by remember { mutableStateOf(AppLocale.language(context)) }
+    var darkTheme by remember {
+        mutableStateOf(context.getSharedPreferences("lowtube_settings", android.content.Context.MODE_PRIVATE).getBoolean("dark_theme", true))
+    }
+    var qualityMenuExpanded by remember { mutableStateOf(false) }
+    var downloadQualityMenuExpanded by remember { mutableStateOf(false) }
+    var discoveryLanguageMenuExpanded by remember { mutableStateOf(false) }
+    var transferMessage by remember { mutableStateOf<String?>(null) }
+    var resourceSample by remember { mutableStateOf<ResourceUsageSample?>(null) }
+    var resourceSampling by remember { mutableStateOf(false) }
+    var resourceSampleFailed by remember { mutableStateOf(false) }
+    var downloadTreeUri by remember(context) { mutableStateOf(DownloadDestination.selectedTreeUri(context)) }
+    var downloadFolderError by remember { mutableStateOf(false) }
+    val transferScope = rememberCoroutineScope()
+    val downloadFolderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri != null) {
+            val grantFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            val saved = runCatching {
+                context.contentResolver.takePersistableUriPermission(uri, grantFlags)
+                DownloadDestination.saveTreeUri(context, uri)
+            }.isSuccess
+            if (saved) {
+                downloadTreeUri = uri
+                downloadFolderError = false
+            } else downloadFolderError = true
+        }
+    }
+    val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        if (uri != null) transferScope.launch {
+            val snapshot = SettingsTransferRepository.Snapshot(language, darkTheme, discoveryTopic, discoveryLanguage, playbackPreferences.maxHeight, playbackPreferences.h264Only, playbackPreferences.fps30Only, playbackPreferences.audioOnly, downloadPreferences.maxHeight, downloadPreferences.h264Only, downloadPreferences.fps30Only, downloadPreferences.limitKiB, resumePlayback, playbackBufferPreferences.maximumSeconds, playbackBufferPreferences.memoryLimitMiB, playbackBufferPreferences.backBufferMiB, playbackBufferPreferences.startupSeconds, autoRecover, autoNext, preloadNext)
+            val result = runCatching {
+                val json = SettingsTransferRepository.encode(snapshot)
+                withContext(Dispatchers.IO) {
+                    context.contentResolver.openOutputStream(uri)?.use { it.write(json.toByteArray(Charsets.UTF_8)) }
+                        ?: throw IOException("Could not open the selected settings file.")
+                }
+            }
+            transferMessage = if (result.isSuccess) context.getString(R.string.settings_exported) else context.getString(R.string.settings_transfer_error)
+        }
+    }
+    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) transferScope.launch {
+            val fallback = SettingsTransferRepository.Snapshot(language, darkTheme, discoveryTopic, discoveryLanguage, playbackPreferences.maxHeight, playbackPreferences.h264Only, playbackPreferences.fps30Only, playbackPreferences.audioOnly, downloadPreferences.maxHeight, downloadPreferences.h264Only, downloadPreferences.fps30Only, downloadPreferences.limitKiB, resumePlayback, playbackBufferPreferences.maximumSeconds, playbackBufferPreferences.memoryLimitMiB, playbackBufferPreferences.backBufferMiB, playbackBufferPreferences.startupSeconds, autoRecover, autoNext, preloadNext)
+            val result = runCatching {
+                val json = withContext(Dispatchers.IO) {
+                    context.contentResolver.openInputStream(uri)?.use(::readSettingsTransfer)
+                        ?: throw IOException("Could not open the selected settings file.")
+                }
+                SettingsTransferRepository.decode(json, fallback)
+            }
+            result.onSuccess { imported ->
+                darkTheme = imported.darkTheme
+                onDarkThemeChanged(imported.darkTheme)
+                onDiscoveryPreferencesChanged(imported.discoveryTopic, imported.discoveryLanguage)
+                onPlaybackPreferencesChanged(PlaybackStreamPreferences(imported.maxHeight, imported.h264Only, imported.fps30Only, imported.audioOnly))
+                onPlaybackBufferPreferencesChanged(PlaybackBufferPreferences(imported.bufferSeconds, imported.bufferMiB, imported.backBufferMiB, imported.bufferStartSeconds))
+                onDownloadPreferencesChanged(DownloadStreamPreferences(imported.downloadMaxHeight, imported.downloadH264Only, imported.downloadFps30Only, imported.downloadLimitKiB))
+                onResumePlaybackChanged(imported.resumePlayback)
+                onAutoRecoverChanged(imported.autoRecover)
+                onAutoNextChanged(imported.autoNext)
+                onPreloadNextChanged(imported.preloadNext)
+                language = imported.language
+                onLanguageChanged(imported.language)
+                transferMessage = context.getString(R.string.settings_imported)
+            }.onFailure { transferMessage = context.getString(R.string.settings_transfer_error) }
+        }
+    }
+    Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.settings)) }, navigationIcon = { TextButton(onClick = onBack) { Text(stringResource(R.string.back)) } }) }) { padding ->
+        Column(
+            modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(stringResource(R.string.appearance), style = MaterialTheme.typography.titleMedium)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(stringResource(R.string.dark_theme))
+                Switch(checked = darkTheme, onCheckedChange = {
+                    darkTheme = it
+                    onDarkThemeChanged(it)
+                })
+            }
+            Text(stringResource(R.string.language), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 12.dp))
+            listOf("en" to R.string.language_english, "uk" to R.string.language_ukrainian, "ru" to R.string.language_russian).forEach { (code, label) ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    RadioButton(selected = language == code, onClick = {
+                        language = code
+                        onLanguageChanged(code)
+                    })
+                    Text(stringResource(label), modifier = Modifier.padding(start = 8.dp))
+                }
+            }
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            Text(stringResource(R.string.discovery), style = MaterialTheme.typography.titleMedium)
+            OutlinedTextField(
+                value = discoveryTopic,
+                onValueChange = { onDiscoveryPreferencesChanged(it.take(200), discoveryLanguage) },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text(stringResource(R.string.discovery_topic)) },
+                supportingText = { Text(stringResource(R.string.discovery_topic_hint)) },
+                singleLine = true,
+            )
+            Text(stringResource(R.string.discovery_language), style = MaterialTheme.typography.bodyMedium)
+            androidx.compose.foundation.layout.Box {
+                TextButton(onClick = { discoveryLanguageMenuExpanded = true }) {
+                    Text(DISCOVERY_LANGUAGES.firstOrNull { it.first == discoveryLanguage }?.second ?: "Any language")
+                }
+                DropdownMenu(expanded = discoveryLanguageMenuExpanded, onDismissRequest = { discoveryLanguageMenuExpanded = false }) {
+                    DISCOVERY_LANGUAGES.forEach { (code, label) ->
+                        DropdownMenuItem(
+                            text = { Text(label) },
+                            onClick = {
+                                discoveryLanguageMenuExpanded = false
+                                onDiscoveryPreferencesChanged(discoveryTopic, code)
+                            },
+                        )
+                    }
+                }
+            }
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            Text(stringResource(R.string.playback), style = MaterialTheme.typography.titleMedium)
+            PreferenceSwitch(stringResource(R.string.resume_from_last_position), resumePlayback, onResumePlaybackChanged)
+            PreferenceSwitch(stringResource(R.string.auto_recover_playback), autoRecover, onAutoRecoverChanged)
+            PreferenceSwitch(stringResource(R.string.auto_play_next), autoNext, onAutoNextChanged)
+            PreferenceSwitch(stringResource(R.string.preload_next_video), preloadNext, onPreloadNextChanged)
+            Text(stringResource(R.string.maximum_quality), style = MaterialTheme.typography.bodyMedium)
+            androidx.compose.foundation.layout.Box {
+                TextButton(onClick = { qualityMenuExpanded = true }) {
+                    Text(stringResource(R.string.quality_value, playbackPreferences.maxHeight))
+                }
+                DropdownMenu(expanded = qualityMenuExpanded, onDismissRequest = { qualityMenuExpanded = false }) {
+                    PlaybackStreamPreferences.SUPPORTED_HEIGHTS.sorted().forEach { height ->
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.quality_value, height)) },
+                            onClick = {
+                                qualityMenuExpanded = false
+                                onPlaybackPreferencesChanged(playbackPreferences.copy(maxHeight = height))
+                            },
+                        )
+                    }
+                }
+            }
+            PreferenceSwitch(stringResource(R.string.h264_only), playbackPreferences.h264Only) {
+                onPlaybackPreferencesChanged(playbackPreferences.copy(h264Only = it))
+            }
+            PreferenceSwitch(stringResource(R.string.fps_30_only), playbackPreferences.fps30Only) {
+                onPlaybackPreferencesChanged(playbackPreferences.copy(fps30Only = it))
+            }
+            PreferenceSwitch(stringResource(R.string.audio_only), playbackPreferences.audioOnly) {
+                onPlaybackPreferencesChanged(playbackPreferences.copy(audioOnly = it))
+            }
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            Text(stringResource(R.string.playback_buffer_title), style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.playback_buffer_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            NumericPreferenceField(
+                value = playbackBufferPreferences.maximumSeconds,
+                label = stringResource(R.string.playback_buffer_seconds),
+                range = 5..3600,
+                onValueChanged = { value ->
+                    val startup = minOf(playbackBufferPreferences.startupSeconds, value)
+                    onPlaybackBufferPreferencesChanged(playbackBufferPreferences.copy(maximumSeconds = value, startupSeconds = startup))
+                },
+            )
+            NumericPreferenceField(
+                value = playbackBufferPreferences.memoryLimitMiB,
+                label = stringResource(R.string.playback_buffer_memory_mib),
+                range = 16..1024,
+                onValueChanged = { onPlaybackBufferPreferencesChanged(playbackBufferPreferences.copy(memoryLimitMiB = it)) },
+            )
+            NumericPreferenceField(
+                value = playbackBufferPreferences.backBufferMiB,
+                label = stringResource(R.string.playback_back_buffer_mib),
+                range = 0..512,
+                onValueChanged = { onPlaybackBufferPreferencesChanged(playbackBufferPreferences.copy(backBufferMiB = it)) },
+            )
+            NumericPreferenceField(
+                value = playbackBufferPreferences.startupSeconds,
+                label = stringResource(R.string.playback_start_buffer_seconds),
+                range = 1..minOf(30, playbackBufferPreferences.maximumSeconds),
+                onValueChanged = { onPlaybackBufferPreferencesChanged(playbackBufferPreferences.copy(startupSeconds = it)) },
+            )
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            Text(stringResource(R.string.download_settings), style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.maximum_download_quality), style = MaterialTheme.typography.bodyMedium)
+            androidx.compose.foundation.layout.Box {
+                TextButton(onClick = { downloadQualityMenuExpanded = true }) {
+                    Text(stringResource(R.string.quality_value, downloadPreferences.maxHeight))
+                }
+                DropdownMenu(expanded = downloadQualityMenuExpanded, onDismissRequest = { downloadQualityMenuExpanded = false }) {
+                    PlaybackStreamPreferences.SUPPORTED_HEIGHTS.sorted().forEach { height ->
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.quality_value, height)) },
+                            onClick = {
+                                downloadQualityMenuExpanded = false
+                                onDownloadPreferencesChanged(downloadPreferences.copy(maxHeight = height))
+                            },
+                        )
+                    }
+                }
+            }
+            PreferenceSwitch(stringResource(R.string.download_h264_only), downloadPreferences.h264Only) {
+                onDownloadPreferencesChanged(downloadPreferences.copy(h264Only = it))
+            }
+            PreferenceSwitch(stringResource(R.string.download_fps_30_only), downloadPreferences.fps30Only) {
+                onDownloadPreferencesChanged(downloadPreferences.copy(fps30Only = it))
+            }
+            var downloadLimitText by remember(downloadPreferences.limitKiB) { mutableStateOf(if (downloadPreferences.limitKiB == 0) "" else downloadPreferences.limitKiB.toString()) }
+            OutlinedTextField(
+                value = downloadLimitText,
+                onValueChange = { input ->
+                    if (input.all(Char::isDigit) && input.length <= 7) {
+                        downloadLimitText = input
+                        val parsed = input.toIntOrNull()
+                        if (input.isEmpty() || parsed in 0..1_048_576) onDownloadPreferencesChanged(downloadPreferences.copy(limitKiB = parsed ?: 0))
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text(stringResource(R.string.download_speed_limit)) },
+                supportingText = { Text(stringResource(R.string.download_speed_limit_hint)) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true,
+            )
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            Text(stringResource(R.string.download_location_title), style = MaterialTheme.typography.titleMedium)
+            val selectedFolderName = downloadTreeUri?.let { DownloadDestination.displayName(context, it) }
+            Text(
+                if (downloadTreeUri == null) stringResource(R.string.download_location_default)
+                else stringResource(R.string.download_location_selected, selectedFolderName ?: stringResource(R.string.download_location_custom)),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                TextButton(onClick = { downloadFolderPicker.launch(null) }) {
+                    Text(stringResource(R.string.choose_download_folder))
+                }
+                if (downloadTreeUri != null) {
+                    TextButton(onClick = {
+                        runCatching {
+                            context.contentResolver.releasePersistableUriPermission(
+                                downloadTreeUri!!,
+                                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                            )
+                        }
+                        DownloadDestination.clearTreeUri(context)
+                        downloadTreeUri = null
+                        downloadFolderError = false
+                    }) {
+                        Text(stringResource(R.string.use_default_download_folder))
+                    }
+                }
+            }
+            if (downloadFolderError) Text(stringResource(R.string.download_location_error), color = MaterialTheme.colorScheme.error)
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            Text(stringResource(R.string.settings_transfer), style = MaterialTheme.typography.titleMedium)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                TextButton(onClick = { importLauncher.launch(arrayOf("application/json", "text/plain", "*/*")) }) {
+                    Text(stringResource(R.string.import_settings))
+                }
+                TextButton(onClick = { exportLauncher.launch("lowtube-settings.json") }) {
+                    Text(stringResource(R.string.export_settings))
+                }
+            }
+            transferMessage?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            Text(stringResource(R.string.resource_usage_title), style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.resource_usage_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            TextButton(
+                enabled = !resourceSampling,
+                onClick = {
+                    resourceSampling = true
+                    resourceSampleFailed = false
+                    transferScope.launch {
+                        try {
+                            resourceSample = ResourceUsageSampler.capture(context.applicationContext)
+                        } catch (cancelled: CancellationException) {
+                            throw cancelled
+                        } catch (_: Exception) {
+                            resourceSampleFailed = true
+                        } finally {
+                            resourceSampling = false
+                        }
+                    }
+                },
+            ) {
+                Text(stringResource(if (resourceSampling) R.string.resource_usage_sampling else R.string.resource_usage_measure))
+            }
+            if (resourceSampleFailed) Text(stringResource(R.string.resource_usage_error), color = MaterialTheme.colorScheme.error)
+            resourceSample?.let { sample ->
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(stringResource(R.string.resource_usage_last_sample, sample.durationMs / 1000.0), style = MaterialTheme.typography.labelMedium)
+                    Text(stringResource(R.string.resource_usage_cpu, sample.cpuPercentOneCore))
+                    Text(stringResource(R.string.resource_usage_pss, sample.pssStartKiB / 1024.0, sample.pssEndKiB / 1024.0))
+                    val rssStart = sample.rssStartKiB
+                    val rssEnd = sample.rssEndKiB
+                    if (rssStart != null && rssEnd != null) {
+                        Text(stringResource(R.string.resource_usage_rss, rssStart / 1024.0, rssEnd / 1024.0))
+                    } else {
+                        Text(stringResource(R.string.resource_usage_rss_unavailable))
+                    }
+                    val peakRss = sample.peakRssKiB
+                    if (peakRss != null) Text(stringResource(R.string.resource_usage_peak_rss, peakRss / 1024.0))
+                    Text(stringResource(R.string.resource_usage_system_ram, sample.availableRamStartMiB, sample.availableRamEndMiB, sample.totalRamMiB))
+                }
+            }
+        }
+    }
+}
+
+private val DISCOVERY_LANGUAGES = listOf(
+    "any" to "Any language",
+    "en" to "English",
+    "uk" to "Українська",
+    "ru" to "Русский",
+    "pl" to "Polski",
+    "de" to "Deutsch",
+    "fr" to "Français",
+    "es" to "Español",
+    "it" to "Italiano",
+    "pt" to "Português",
+    "ja" to "日本語",
+    "ko" to "한국어",
+)
+
+@Composable
+private fun NumericPreferenceField(
+    value: Int,
+    label: String,
+    range: IntRange,
+    onValueChanged: (Int) -> Unit,
+) {
+    var text by remember(value) { mutableStateOf(value.toString()) }
+    OutlinedTextField(
+        value = text,
+        onValueChange = { input ->
+            if (input.length <= 4 && input.all(Char::isDigit)) {
+                text = input
+                input.toIntOrNull()?.takeIf { it in range }?.let(onValueChanged)
+            }
+        },
+        modifier = Modifier.fillMaxWidth(),
+        label = { Text(label) },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        singleLine = true,
+    )
+}
+
+@Composable
+private fun PreferenceSwitch(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(label)
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
+    }
+}
+
+private fun readSettingsTransfer(input: java.io.InputStream): String {
+    val output = ByteArrayOutputStream()
+    val buffer = ByteArray(4096)
+    var total = 0
+    while (true) {
+        val count = input.read(buffer)
+        if (count < 0) break
+        total += count
+        if (total > 64 * 1024) throw IOException("Settings file is larger than 64 KiB.")
+        output.write(buffer, 0, count)
+    }
+    return output.toString(Charsets.UTF_8.name())
+}
