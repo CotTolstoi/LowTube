@@ -98,6 +98,17 @@ class YoutubePlayerTransformLocatorTest {
     }
 
     @Test
+    fun productionMarkerCandidatesExcludeAsyncFunctionsButDiagnosticsKeepThem() {
+        val source = "var nDecode=async function(a){helper.set(\"alr\",\"yes\");return a};"
+
+        val executable = YoutubePlayerTransformLocator.locateExecutable(source, includeMarkerCandidates = true)
+
+        assertTrue(executable.markerCandidateNames.isEmpty())
+        assertEquals(listOf("nDecode"), executable.markerCandidates.map { it.name })
+        assertTrue(executable.markerCandidates.single().isAsync)
+    }
+
+    @Test
     fun locatesPlayerMarkerInLargeSingleLineBundle() {
         val repeatedFunctions = "var helper=function(a){return a};".repeat(40_000)
         val source = repeatedFunctions +

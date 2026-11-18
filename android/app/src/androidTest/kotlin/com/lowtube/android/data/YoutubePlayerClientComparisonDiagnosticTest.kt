@@ -564,7 +564,7 @@ class YoutubePlayerClientComparisonDiagnosticTest {
                     "nChanged=${probe.nChanged}",
             )
         }
-        val fallbackNames = markerCandidates.map { it.name }.ifEmpty { requestedMarker?.let(::listOf).orEmpty() }
+        val fallbackNames = markerCandidates.filterNot { it.isAsync }.map { it.name }
         val fallbackStatus = if (fullPlayerBundleProbe && fallbackNames.isNotEmpty() && executableFormats.isNotEmpty()) {
             runProductionUrlObjectFallback(runtime, playerScript.source, fallbackNames, executableFormats.first().second)
         } else "not_run"
@@ -694,32 +694,43 @@ class YoutubePlayerClientComparisonDiagnosticTest {
         source: String,
         candidates: List<String>,
         inputUrl: String,
-    ): String = runCatching {
+    ): String = try {
         val result = kotlinx.coroutines.runBlocking {
             runtime.executeFullPlayerUrlObjectNTransforms(source, candidates, listOf(inputUrl)).firstOrNull()
         }
-        if (result == null) return@runCatching "no_result"
-        val output = result.url
-        if (output.isNullOrBlank()) {
-            return@runCatching when {
-                !result.candidateFound -> "candidate_unresolved"
-                result.methodCount == 0 -> "no_methods"
-                !result.nChanged -> "n_unchanged"
-                else -> "empty_serialized_url"
+        if (result == null) "no_result" else {
+            val output = result.url
+            if (output.isNullOrBlank()) {
+                when {
+                    !result.candidateFound -> "candidate_unresolved"
+                    result.methodCount == 0 -> "no_methods"
+                    !result.nChanged -> "n_unchanged"
+                    else -> "empty_serialized_url"
+                }
+            } else if (YoutubePlayerUrlTransformer.acceptUrlNTransform(inputUrl, output) != null) {
+                "accepted"
+            } else {
+                val input = runCatching { URI(inputUrl) }.getOrNull()
+                val returned = runCatching { URI(output) }.getOrNull()
+                val sameHostPath = input != null && returned != null &&
+                    input.scheme.equals("https", true) && returned.scheme.equals(input.scheme, true) &&
+                    returned.host.equals(input.host, true) && returned.port == input.port &&
+                    returned.rawPath == input.rawPath && input.rawUserInfo == null && returned.rawUserInfo == null
+                if (!sameHostPath) "host_path_rejected" else {
+                    val inputN = android.net.Uri.parse(inputUrl).getQueryParameter("n")
+                    val outputN = android.net.Uri.parse(output).getQueryParameter("n")
+                    if (inputN == outputN) "n_unchanged" else "other_rejected"
+                }
             }
         }
-        if (YoutubePlayerUrlTransformer.acceptUrlNTransform(inputUrl, output) != null) return@runCatching "accepted"
-        val input = runCatching { URI(inputUrl) }.getOrNull()
-        val returned = runCatching { URI(output) }.getOrNull()
-        val sameHostPath = input != null && returned != null &&
-            input.scheme.equals("https", true) && returned.scheme.equals(input.scheme, true) &&
-            returned.host.equals(input.host, true) && returned.port == input.port &&
-            returned.rawPath == input.rawPath && input.rawUserInfo == null && returned.rawUserInfo == null
-        if (!sameHostPath) return@runCatching "host_path_rejected"
-        val inputN = android.net.Uri.parse(inputUrl).getQueryParameter("n")
-        val outputN = android.net.Uri.parse(output).getQueryParameter("n")
-        if (inputN == outputN) "n_unchanged" else "other_rejected"
-    }.getOrDefault("execution_error")
+    } catch (failure: Exception) {
+        val detail = generateSequence(failure as Throwable?) { it.cause }
+            .take(4)
+            .joinToString(" | ") { it.message ?: it.javaClass.simpleName }
+            .replace(Regex("[^A-Za-z0-9 _:-]"), " ")
+            .take(180)
+        "execution_error:$detail"
+    }
 
     private fun classifyNOutput(originalUrl: String, output: String): String {
         if (output.isBlank()) return "empty"

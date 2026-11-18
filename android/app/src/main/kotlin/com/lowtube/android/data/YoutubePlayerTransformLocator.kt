@@ -150,7 +150,9 @@ internal object YoutubePlayerTransformLocator {
                     }
                 }
             } else emptyList(),
-            markerCandidateNames = if (includeMarkerCandidates) findMarkerCandidateNames(source, index) else emptyList(),
+            markerCandidateNames = if (includeMarkerCandidates) {
+                findMarkerCandidateNames(source, index, includeAsyncCandidates = false)
+            } else emptyList(),
             requiredDependencies = requiredDependencies.toSet(),
         )
     }
@@ -277,7 +279,11 @@ internal object YoutubePlayerTransformLocator {
         }
     }
 
-    private fun findMarkerCandidateNames(source: String, index: ScriptIndex): List<String> {
+    private fun findMarkerCandidateNames(
+        source: String,
+        index: ScriptIndex,
+        includeAsyncCandidates: Boolean = true,
+    ): List<String> {
         val candidates = LinkedHashSet<String>()
         for (marker in throttlingMarker.findAll(source)) {
             val tokenIndex = tokenIndexAt(index.tokens, marker.range.first)
@@ -296,6 +302,9 @@ internal object YoutubePlayerTransformLocator {
             }.sortedBy { it.third }
             val shortest = enclosing.firstOrNull() ?: continue
             val canonical = enclosing.firstOrNull { it.second == shortest.second && !it.first.contains('.') } ?: shortest
+            val declaration = index.declarations[canonical.first] ?: continue
+            val expressionStart = declaration.range.expressionStartToken
+            if (!includeAsyncCandidates && isWord(source, index.tokens.getOrNull(expressionStart), "async")) continue
             candidates.add(canonical.first)
             if (candidates.size >= MAX_MARKER_CANDIDATES) break
         }
