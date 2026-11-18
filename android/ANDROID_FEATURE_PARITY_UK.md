@@ -113,7 +113,7 @@
 - [ ] Мінімальний API23 налаштовано; APK збирається/встановлюється та базові search/settings/playback сценарії перевірено на API23 AVD і API33 пристрої. Окремий Downloads screen також відкрився на API23. Повний acceptance і всі функції ще не пройдено на цих рівнях.
 - [ ] Актуальна фізична arm64-перевірка, плюс оцінка armeabi-v7a лише якщо це підтримуватиме обраний runtime/dependencies.
 - [ ] Offline/build перевірки окремі від мережевих/акаунтних, фізичного аудіо, codec/GPU й відновлення після background/process death.
-- [ ] EN/UK/RU ключі й кожний рядок UI без пропусків.
+- [x] EN/UK/RU string resource keys: `android/tools/Verify-LocaleResourceParity.ps1` перевіряє однакові 252 записи в кожному каталозі; API23 instrumentation перевіряє самоназви `English`, `Русский`, `Українська` в усіх трьох локалях. Повна лінгвістична редактура всіх UI рядків і acceptance кожного екрану лишаються окремою роботою.
 - [ ] Windows `Build-All.ps1` і його сценарії лишаються працездатними без Android toolchain.
 
 ## Resolver обмеження станом на 15.11.2026

@@ -88,6 +88,8 @@
 
 ## Поточний зріз реалізації
 
+19.11.2026, EN/UK/RU catalog audit: усі 252 Android string resource keys є в кожному locale catalog; `android/tools/Verify-LocaleResourceParity.ps1` завершився з 0 missing/extra для UK та RU. API23 instrumentation test підтверджує, що language picker послідовно показує самоназви `English`, `Русский`, `Українська` у кожній UI-локалі; це зберігає розпізнаваність цільової мови. Попередня спроба перекласти ці назви скасована після перевірки. Це структурна перевірка ресурсів, не повна мовна редактура кожного екрану.
+
 18.11.2026 21:57 UTC, Android13 playback decoder acceptance: остання debug збірка на фізичному пристрої відтворила обмежений кліп і зафіксувала Media3 decoder `c2.mtk.avc.decoder`, формат `avc1.4D401E`, Android hardware flag=true. Успіх: 1 тест за 16,469 s, поточний media time 1 100 ms; CPU 13 518 ms, PSS 125 682→159 402 KiB, RSS 185 620→225 768 KiB. Це єдиний bounded acceptance після зміни decoder diagnostics, не benchmark. Після тесту LowTube повернуто на MainActivity; Home snapshot CPU 0%, PSS 138,3 MiB, RSS 234,3 MiB, доступна RAM 1 524 MiB.
 
 18.11.2026 21:54 UTC, Android6 supported-links fallback: Profile intent на API23 відкрив системну сторінку `com.android.settings/.applications.InstalledAppDetails` для `com.lowtube.android`; з Compose test відомо, що кнопка використовує саме цей intent. Системних перемикачів не торкалися; AVD повернули на `MainActivity`. На фізичному Android13 спеціальний App open by default екран уже відкривали раніше. Вибір LowTube як системного handler і автоматичне приймання YouTube-посилань не перевірені.
