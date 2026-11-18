@@ -6,7 +6,7 @@ This branch publishes the latest available Android development build.
 - Version: `0.1.0-android-dev` (version code 1)
 - Minimum Android version: Android 6.0 (API 23)
 - Build type: debug; signed with the Android debug certificate
-- SHA-256: `FBCBD09F3A1BD53246CF8B27212595B8CD784F9855E3E83C03B5FB4A3C1813CA`
+- SHA-256: `D517A1BC8423129F7A32577F214236049233D2C7DADE03622B9675CB7966C15C`
 
 This is for development and direct testing. It is not a release-signed APK for
 Google Play distribution.
