@@ -1,6 +1,7 @@
 package com.lowtube.android.ui.library
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
@@ -9,7 +10,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
@@ -20,6 +23,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -37,8 +41,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
 import com.lowtube.android.R
 import com.lowtube.android.data.LocalLibraryRepository
 import com.lowtube.android.data.InnerTubeSearchRepository
@@ -50,6 +56,7 @@ import com.lowtube.android.model.LocalAudioTrack
 import com.lowtube.android.model.VideoItem
 import com.lowtube.android.model.WatchHistoryEntry
 import com.lowtube.android.model.YouTubePlaylist
+import com.lowtube.android.ui.main.VideoThumbnailPolicy
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -599,13 +606,34 @@ private fun LibraryVideoRow(video: VideoItem, onPlay: () -> Unit, onMoveUp: () -
 
 @Composable
 private fun WatchHistoryRow(entry: WatchHistoryEntry, onPlay: () -> Unit, onRemove: () -> Unit) {
+    val thumbnailUrl = VideoThumbnailPolicy.resolve(entry.video)
+    val progress = when {
+        entry.complete -> 1f
+        entry.durationMs > 0 -> (entry.positionMs.toFloat() / entry.durationMs).coerceIn(0f, 1f)
+        else -> 0f
+    }
     val progressText = when {
         entry.complete -> stringResource(R.string.watched)
         entry.durationMs > 0 -> "${(entry.positionMs * 100 / entry.durationMs).coerceIn(0, 99)}% · ${entry.video.duration}"
         else -> "${entry.positionMs / 1000}s"
     }
     Card(Modifier.fillMaxWidth().clickable(onClick = onPlay)) {
-        Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+        Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.width(128.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                if (thumbnailUrl.isNotBlank()) {
+                    AsyncImage(
+                        model = thumbnailUrl,
+                        contentDescription = entry.video.title,
+                        modifier = Modifier.fillMaxWidth().height(72.dp),
+                        contentScale = ContentScale.Crop,
+                    )
+                } else {
+                    Box(Modifier.fillMaxWidth().height(72.dp).background(MaterialTheme.colorScheme.surfaceVariant))
+                }
+                if (entry.durationMs > 0 || entry.complete) {
+                    LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth(), trackColor = MaterialTheme.colorScheme.surfaceVariant)
+                }
+            }
             Column(Modifier.weight(1f)) {
                 Text(entry.video.title, style = MaterialTheme.typography.titleSmall)
                 if (entry.video.channel.isNotBlank()) Text(entry.video.channel, style = MaterialTheme.typography.bodySmall)
