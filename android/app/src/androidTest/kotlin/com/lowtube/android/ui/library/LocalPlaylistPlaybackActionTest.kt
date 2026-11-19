@@ -5,6 +5,7 @@ import android.content.res.Resources
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
@@ -13,6 +14,7 @@ import com.lowtube.android.R
 import com.lowtube.android.data.LocalLibraryRepository
 import com.lowtube.android.model.VideoItem
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import java.util.concurrent.atomic.AtomicReference
@@ -56,6 +58,62 @@ class LocalPlaylistPlaybackActionTest {
             composeTestRule.waitForIdle()
 
             assertEquals(listOf("video000001", "video000002"), requestedVideos.get().map { it.id })
+        } finally {
+            repository.close()
+            context.deleteDatabase(databaseName)
+        }
+    }
+
+    @Test
+    fun createsRenamesAndDeletesLocalPlaylistThroughLibraryUi() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val resources: Resources = context.resources
+        val databaseName = "playlist-management-${System.currentTimeMillis()}.db"
+        val repository = LocalLibraryRepository(context, databaseName)
+        try {
+            composeTestRule.setContent {
+                MaterialTheme {
+                    LibraryScreen(
+                        repository = repository,
+                        accountEmail = "",
+                        refreshRevision = 0,
+                        onBack = {},
+                        onPlay = {},
+                        onPlayPlaylist = {},
+                        onPickAudio = {},
+                        onPlayLocalAudio = {},
+                        onRemoveLocalAudio = {},
+                        onAddToQueue = {},
+                        onBrowseChannel = {},
+                        onAddChannel = {},
+                    )
+                }
+            }
+
+            val originalName = "Local acceptance ${System.nanoTime()}"
+            val renamedName = "$originalName renamed"
+            composeTestRule.onNodeWithText(resources.getString(R.string.new_playlist)).performClick()
+            composeTestRule.onNodeWithText(resources.getString(R.string.playlist_name)).performTextInput(originalName)
+            composeTestRule.onNodeWithText(resources.getString(R.string.save)).performClick()
+            composeTestRule.waitForIdle()
+            val playlist = repository.playlists().single()
+            assertEquals(originalName, playlist.name)
+
+            composeTestRule.onAllNodesWithText(originalName).get(0).performClick()
+            composeTestRule.onNodeWithText(resources.getString(R.string.rename)).performClick()
+            val nameField = composeTestRule.onNodeWithText(resources.getString(R.string.playlist_name))
+            nameField.performTextClearance()
+            nameField.performTextInput(renamedName)
+            composeTestRule.onNodeWithText(resources.getString(R.string.save)).performClick()
+            composeTestRule.waitForIdle()
+            assertEquals(renamedName, repository.playlists().single().name)
+
+            composeTestRule.onAllNodesWithText(renamedName).get(0).performClick()
+            composeTestRule.onNodeWithText(resources.getString(R.string.delete)).performClick()
+            composeTestRule.onAllNodesWithText(resources.getString(R.string.delete)).get(1).performClick()
+            composeTestRule.waitForIdle()
+            assertTrue(repository.playlists().isEmpty())
+            composeTestRule.onNodeWithText(resources.getString(R.string.library_empty)).assertExists()
         } finally {
             repository.close()
             context.deleteDatabase(databaseName)
