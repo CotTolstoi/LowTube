@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
@@ -42,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -109,6 +111,9 @@ fun PlaybackScreen(
     onAdvanceQueue: () -> Unit,
     onPreviousVideo: () -> Unit,
     onBack: () -> Unit,
+    canNavigateShortsBack: Boolean = false,
+    canNavigateShortsForward: Boolean = false,
+    onNavigateShorts: (Int) -> Unit = {},
     inPictureInPictureMode: Boolean = false,
     onPictureInPictureEligibilityChanged: (Boolean) -> Unit = {},
 ) {
@@ -676,6 +681,8 @@ fun PlaybackScreen(
     }) { padding ->
         if (immersiveShorts) {
             Box(Modifier.fillMaxSize().background(Color.Black)) {
+                var verticalDrag by remember(video.id, playbackRequestId) { mutableStateOf(0f) }
+                val swipeThresholdPx = with(androidx.compose.ui.platform.LocalDensity.current) { 72.dp.toPx() }
                 controller?.let { activeController ->
                     AndroidView(
                         modifier = Modifier.fillMaxSize(),
@@ -683,6 +690,43 @@ fun PlaybackScreen(
                         update = { it.player = activeController },
                     )
                 }
+                Box(
+                    Modifier.fillMaxSize().pointerInput(
+                        video.id, playbackRequestId, canNavigateShortsBack, canNavigateShortsForward,
+                    ) {
+                        detectVerticalDragGestures(
+                            onDragEnd = {
+                                when {
+                                    verticalDrag <= -swipeThresholdPx && canNavigateShortsForward -> {
+                                        controller?.let { active ->
+                                            if (active.currentPosition > 0) {
+                                                library.recordWatchProgress(
+                                                    watchedVideo, active.currentPosition, active.duration.coerceAtLeast(0),
+                                                )
+                                            }
+                                        }
+                                        onNavigateShorts(1)
+                                    }
+                                    verticalDrag >= swipeThresholdPx && canNavigateShortsBack -> {
+                                        controller?.let { active ->
+                                            if (active.currentPosition > 0) {
+                                                library.recordWatchProgress(
+                                                    watchedVideo, active.currentPosition, active.duration.coerceAtLeast(0),
+                                                )
+                                            }
+                                        }
+                                        onNavigateShorts(-1)
+                                    }
+                                }
+                                verticalDrag = 0f
+                            },
+                            onVerticalDrag = { change, dragAmount ->
+                                verticalDrag += dragAmount
+                                change.consume()
+                            },
+                        )
+                    },
+                )
                 TextButton(
                     onClick = onBack,
                     modifier = Modifier.align(Alignment.TopStart).padding(top = 12.dp, start = 8.dp),

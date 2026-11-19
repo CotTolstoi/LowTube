@@ -149,6 +149,8 @@ fun MainNavigation(
     }
     var youtubeSyncMessage by remember { mutableStateOf("") }
     var selectedVideo by rememberSaveable(stateSaver = videoItemSaver) { mutableStateOf<VideoItem?>(null) }
+    var shortsSession by remember { mutableStateOf(emptyList<VideoItem>()) }
+    var shortsSessionIndex by remember { mutableIntStateOf(-1) }
     var selectedLocalAudio by rememberSaveable(stateSaver = localAudioTrackSaver) { mutableStateOf<LocalAudioTrack?>(null) }
     var selectedQueueRowId by rememberSaveable { mutableStateOf<Long?>(null) }
     var playbackRequestId by rememberSaveable { mutableLongStateOf(0L) }
@@ -416,7 +418,24 @@ fun MainNavigation(
                     onOpenQueue = { backStack.add(Queue) },
                     onOpenDownloads = { backStack.add(Downloads) },
                     onOpenDecoderBenchmark = { backStack.add(DecoderBenchmark) },
-                    onPlay = { video -> selectedQueueRowId = null; selectedLocalAudio = null; selectedVideo = video; playbackRequestId++; backStack.add(Player) },
+                    onPlay = { video ->
+                        shortsSession = emptyList()
+                        shortsSessionIndex = -1
+                        selectedQueueRowId = null
+                        selectedLocalAudio = null
+                        selectedVideo = video
+                        playbackRequestId++
+                        backStack.add(Player)
+                    },
+                    onPlayShorts = { video, results ->
+                        shortsSession = results.filter { it.kind == "shorts" }
+                        shortsSessionIndex = shortsSession.indexOfFirst { it.id == video.id }
+                        selectedQueueRowId = null
+                        selectedLocalAudio = null
+                        selectedVideo = video
+                        playbackRequestId++
+                        backStack.add(Player)
+                    },
                     onResolveDownloadOptions = { video, audioOnly, callback ->
                         scope.launch {
                             callback(runCatching { downloads.options(video, downloadPreferences, audioOnly) })
@@ -549,7 +568,15 @@ fun MainNavigation(
                     refreshRevision = libraryRevision,
                     feedRefreshPreset = feedRefreshPreset,
                     onBack = navigateBack,
-                    onPlay = { video -> selectedQueueRowId = null; selectedLocalAudio = null; selectedVideo = video; playbackRequestId++; backStack.add(Player) },
+                    onPlay = { video ->
+                        shortsSession = emptyList()
+                        shortsSessionIndex = -1
+                        selectedQueueRowId = null
+                        selectedLocalAudio = null
+                        selectedVideo = video
+                        playbackRequestId++
+                        backStack.add(Player)
+                    },
                     onPlayPlaylist = { videos ->
                         val first = videos.firstOrNull()
                         if (first != null) {
@@ -558,6 +585,8 @@ fun MainNavigation(
                                     queueRevision++
                                     selectedQueueRowId = null
                                     selectedLocalAudio = null
+                                    shortsSession = emptyList()
+                                    shortsSessionIndex = -1
                                     selectedVideo = first
                                     playbackRequestId++
                                     backStack.add(Player)
@@ -567,6 +596,8 @@ fun MainNavigation(
                     },
                     onPickAudio = { localAudioPicker.launch(arrayOf("audio/*")) },
                     onPlayLocalAudio = { track ->
+                        shortsSession = emptyList()
+                        shortsSessionIndex = -1
                         selectedQueueRowId = null
                         selectedLocalAudio = track
                         selectedVideo = VideoItem(
@@ -610,7 +641,15 @@ fun MainNavigation(
                     repository = library,
                     refreshRevision = queueRevision,
                     onBack = navigateBack,
-                    onPlay = { entry -> selectedQueueRowId = entry.rowId; selectedLocalAudio = null; selectedVideo = entry.video; playbackRequestId++; backStack.add(Player) },
+                    onPlay = { entry ->
+                        shortsSession = emptyList()
+                        shortsSessionIndex = -1
+                        selectedQueueRowId = entry.rowId
+                        selectedLocalAudio = null
+                        selectedVideo = entry.video
+                        playbackRequestId++
+                        backStack.add(Player)
+                    },
                     onExpandPlaylist = { entry ->
                         if (expandingQueueRowId == null) {
                             expandingQueueRowId = entry.rowId
@@ -687,6 +726,8 @@ fun MainNavigation(
                     onResolveNextQueueEntry = peekNextQueueEntry,
                     onIsQueueHead = { rowId -> library.queue().firstOrNull()?.rowId == rowId },
                     onPreloadedQueueEntryStarted = { entry ->
+                        shortsSession = emptyList()
+                        shortsSessionIndex = -1
                         library.removeQueueEntry(entry.rowId)
                         selectedQueueRowId = null
                         selectedLocalAudio = null
@@ -702,6 +743,8 @@ fun MainNavigation(
                     },
                     onAdvanceQueue = advanceQueuedPlayback,
                     onPreviousVideo = {
+                        shortsSession = emptyList()
+                        shortsSessionIndex = -1
                         val previous = library.previousWatchedVideo(video.id)
                         if (previous == null) Toast.makeText(context, R.string.no_previous_video, Toast.LENGTH_SHORT).show()
                         else { selectedQueueRowId = null; selectedLocalAudio = null; selectedVideo = previous; playbackRequestId++ }
@@ -713,6 +756,19 @@ fun MainNavigation(
                             .apply()
                     },
                     onBack = navigateBack,
+                    canNavigateShortsBack = video.kind == "shorts" && shortsSessionIndex > 0,
+                    canNavigateShortsForward = video.kind == "shorts" && shortsSessionIndex in 0 until shortsSession.lastIndex,
+                    onNavigateShorts = { direction ->
+                        val targetIndex = shortsSessionIndex + direction
+                        val target = shortsSession.getOrNull(targetIndex)
+                        if (target != null && target.kind == "shorts") {
+                            selectedQueueRowId = null
+                            selectedLocalAudio = null
+                            selectedVideo = target
+                            shortsSessionIndex = targetIndex
+                            playbackRequestId++
+                        }
+                    },
                     inPictureInPictureMode = inPictureInPictureMode,
                     onPictureInPictureEligibilityChanged = onPictureInPictureEligibilityChanged,
                 )

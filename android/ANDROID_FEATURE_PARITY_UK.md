@@ -223,3 +223,5 @@ Playback acceptance test opt-in і за замовчуванням пропус�
 19.11.2026 10:02 UTC, фінальний API33 Shorts UI acceptance на підключеному Android: потік відтворювався до 13,7 s і поставлений на паузу; вертикальне відео, підписка, локалізоване збереження та Share відображені, action rail не перекриває центральні контролери. Пристрій звітує `TrebleDroid vanilla`; API23 перевірку UI та натискання дій ще не виконано.
 
 19.11.2026 10:04 UTC: latest APK installed and MainActivity resumed on Android6/API23 AVD. No playback; this confirms package install/start only, not Shorts screen compatibility.
+
+19.11.2026 10:12 UTC: Shorts screen on connected Android13 now supports vertical swipe between Shorts already present in the current result set. Acceptance moved from the first Short to the second; playback stopped at about 15.2 s. The latest APK also installed and resumed on Android6/API23 AVD without playback. API23 Shorts screen and action-tap acceptance remain open; device model reports `TrebleDroid vanilla`.
