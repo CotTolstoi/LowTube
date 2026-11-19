@@ -6,9 +6,10 @@ This branch publishes the latest available Android development build.
 - Version: `0.1.0-android-dev` (version code 1)
 - Minimum Android version: Android 6.0 (API 23)
 - Build type: debug; signed with the Android debug certificate (v1/v2 verified)
+- Build tools: AGP 9.2.0, Gradle 9.4.1; Kotlin metadata rewrite warning resolved
 - Updated: 2026-11-19
-- Source revision: `ae50101a9b07f810fbf236735284f5d6b95be5ac`
-- SHA-256: `80E747CD28ACCA941FEDB8CF13270043F0E8FEFAAC5B9785DC26C339696341DB`
+- Source revision: `e54bd25c2c9968d5699d5a3496cd3a6546db4f49`
+- SHA-256: `A12323F2357F45038FBF934167145314B5A8449304B0FBEAE0C44C2E6224E54C`
 - Resolver: bounded direct-format resolution supports verified Android/WEB/iOS/MWEB fallback and the verified MWEB signature-helper path; audio-only downloads retain the Android VR fallback. The VR fallback is not used for video playback or video downloads.
 - Account: Profile uses the system Google account picker, Google AuthorizationClient and a bounded OpenID UserInfo request. Runtime OAuth acceptance still requires the owner-registered Android OAuth client and enabled YouTube Data API.
 - Diagnostics: Settings copies a sanitized report with app/system/device details, actual decoder status, playback buffer, last manual CPU/PSS/RSS/RAM sample, aggregate download-job statuses and the last Media3 error code. For HTTP errors it includes only a numeric status. Exception messages, request URLs, media metadata, account data, search history, cookies and tokens are excluded. Custom jobs use SQL aggregation; legacy DownloadManager scanning is capped at 500 IDs and marks partial results.
