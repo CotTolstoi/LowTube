@@ -261,3 +261,5 @@
 19.11.2026 00:26 UTC, Redmi Note 8 / Android13 API33 після встановлення актуальної збірки з resolver diagnostic instrumentation: `MainActivity` foreground. Settled Home 10 s sample — CPU 0%, PSS 137,4 MiB, RSS 222,3 MiB, peak RSS 224,9 MiB, RAM 3 713 MiB / доступно 1 395 MiB. Відео не запускалося; це короткий UI snapshot, не benchmark.
 
 19.11.2026, API23 AVD, natural-order MWEB fallback acceptance без Media3: CPU процесу 4 175 ms за 4 254 ms wall; PSS 26 928→52 155 KiB. Network fixture прочитав лише 65 536 байтів Range; process snapshot, не benchmark.
+
+19.11.2026 00:35 UTC, Redmi Note 8 / Android13 API33, LowTube `MainActivity` foreground після metadata-only API23 resolver diagnostics: два `top` snapshots показали 0% CPU в обох вимірах; PSS 124 170 KiB (121,3 MiB), RSS 225 927 KiB (220,6 MiB), RAM 3 713 MiB / доступно 1 370 MiB. Пристрій лишився на головному екрані, відео не запускалося. Коротка idle point sample, не benchmark.

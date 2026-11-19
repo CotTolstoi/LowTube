@@ -242,6 +242,7 @@ class YoutubePlayerClientComparisonDiagnosticTest {
         val cpuStarted = android.os.Process.getElapsedCpuTime()
         val wallStarted = android.os.SystemClock.elapsedRealtime()
         val pssStarted = android.os.Debug.getPss()
+        var signatureProbeCompleted = false
         videoIds.forEach { videoId ->
             variants.forEach { variant ->
                 val response = runCatching { requestPublicPlayer(videoId, configuration, variant) }
@@ -260,6 +261,17 @@ class YoutubePlayerClientComparisonDiagnosticTest {
                         "serverAbr=${streaming?.optString("serverAbrStreamingUrl").orEmpty().isNotBlank()}; " +
                         "httpStatus=${response.exceptionOrNull()?.let(::safeHttpStatus) ?: "200"}",
                 )
+                if (variant.name == "MWEB" && !signatureProbeCompleted &&
+                    arguments.getString("runPlayerVariantSignatureChallenge") == "true" &&
+                    streaming != null && (counts?.get("obfuscatedS") ?: 0) > 0
+                ) {
+                    inspectMwebSignatureCandidates(
+                        streaming,
+                        configuration.playerScriptUrl,
+                        variant.userAgent,
+                    )
+                    signatureProbeCompleted = true
+                }
                 val inspectNChallenge = arguments.getString("runPlayerVariantNChallenge") == "true" ||
                     arguments.getString("runPlayerVariantNRange") == "true"
                 val probeNRange = arguments.getString("runPlayerVariantNRange") == "true"
@@ -338,6 +350,32 @@ class YoutubePlayerClientComparisonDiagnosticTest {
     private fun captureConfigValue(html: String, key: String): String? {
         val pattern = Regex("""[\"']${Regex.escape(key)}[\"']\s*:\s*[\"']([^\"']{1,256})[\"']""")
         return pattern.find(html)?.groupValues?.getOrNull(1)
+    }
+
+    private fun readPlayerScriptBounded(url: String, maxBytes: Int, userAgent: String): String {
+        val connection = URL(url).openConnection() as HttpURLConnection
+        connection.connectTimeout = REQUEST_TIMEOUT_MS
+        connection.readTimeout = REQUEST_TIMEOUT_MS
+        connection.setRequestProperty("User-Agent", userAgent)
+        connection.setRequestProperty("Accept", "*/*")
+        return try {
+            if (connection.responseCode !in 200..299) throw IOException("The public player script request failed.")
+            val output = ByteArrayOutputStream()
+            val buffer = ByteArray(8192)
+            var total = 0
+            connection.inputStream.use { input ->
+                while (true) {
+                    val count = input.read(buffer)
+                    if (count < 0) break
+                    total += count
+                    if (total > maxBytes) throw IOException("The public player script is too large.")
+                    output.write(buffer, 0, count)
+                }
+            }
+            String(output.toByteArray(), Charsets.UTF_8)
+        } finally {
+            connection.disconnect()
+        }
     }
 
     private fun requestPublicPlayer(
@@ -442,6 +480,89 @@ class YoutubePlayerClientComparisonDiagnosticTest {
             "obfuscatedS" to obfuscatedSignatureCount,
             "plainSig" to plainSignatureCount,
             "directN" to directNCount,
+        )
+    }
+
+    /** Executes only bounded player candidates using real MWEB `s` inputs; it never plays media. */
+    private fun inspectMwebSignatureCandidates(
+        streaming: JSONObject,
+        rawPlayerScriptUrl: String,
+        userAgent: String,
+    ) {
+        val challenges = listOf("formats", "adaptiveFormats").flatMap { key ->
+            val formats = streaming.optJSONArray(key) ?: return@flatMap emptyList()
+            (0 until formats.length()).mapNotNull { index ->
+                val format = formats.optJSONObject(index) ?: return@mapNotNull null
+                val cipher = format.optString("signatureCipher").ifBlank { format.optString("cipher") }
+                if (cipher.isBlank()) return@mapNotNull null
+                val fields = android.net.Uri.parse("https://cipher.invalid/?$cipher")
+                val signature = fields.getQueryParameter("s")?.takeIf(String::isNotBlank) ?: return@mapNotNull null
+                SignatureChallengeInput(
+                    signature = signature,
+                    itag = format.optInt("itag", -1),
+                    signatureLength = signature.length,
+                )
+            }
+        }.distinctBy { it.signature }.take(MAX_SIGNATURE_CHALLENGE_INPUTS)
+        if (challenges.isEmpty()) {
+            System.out.println("playerVariantSignatureProbe; outcome=no_obfuscated_s")
+            return
+        }
+        val scriptUrl = YoutubePlayerScriptCache.normalizeUrl(rawPlayerScriptUrl)
+            ?: throw IOException("The public player script URL is unavailable for signature diagnostics.")
+        val script = YoutubePlayerScriptCache { url ->
+            readPlayerScriptBounded(url, YoutubePlayerScriptCache.MAX_SCRIPT_BYTES, userAgent)
+        }
+            .load(scriptUrl)
+        val locator = YoutubePlayerTransformLocator.locateExecutable(script.source, includeMarkerCandidates = true)
+        val stringCandidates = YoutubePlayerTransformLocator.findStringOperationCandidates(
+            script.source,
+            MAX_SIGNATURE_STRING_CANDIDATES,
+        )
+        val candidateNames = (listOfNotNull(locator.functions.signature) +
+            locator.markerCandidates.filterNot { it.isAsync }.map { it.name } + stringCandidates)
+            .distinct()
+            .take(MAX_SIGNATURE_CANDIDATE_FUNCTIONS)
+        val calls = candidateNames.flatMap { name -> challenges.map { name to it.signature } }
+        val startedAt = android.os.SystemClock.elapsedRealtime()
+        val outputs = if (calls.isEmpty()) emptyList() else runCatching {
+            runBlocking {
+                YoutubePlayerJavaScriptRuntime().executeFullPlayerFunctions(
+                    script.source,
+                    calls.map { (name, input) -> YoutubePlayerJavaScriptRuntime.FunctionCall(name, input) },
+                )
+            }
+        }.getOrElse { failure ->
+            System.out.println(
+                "playerVariantSignatureProbe; outcome=execution_failed; " +
+                    "failure=${failure.javaClass.simpleName}; candidates=${candidateNames.size}; " +
+                    "inputs=${challenges.size}; scriptChars=${script.source.length}",
+            )
+            return
+        }
+        candidateNames.forEachIndexed { candidateIndex, name ->
+            val candidateOutputs = outputs.drop(candidateIndex * challenges.size).take(challenges.size)
+            val inputValues = challenges.map { it.signature }
+            val usable = candidateOutputs.zip(inputValues).filter { (output, _) -> !output.isNullOrBlank() }
+            val changed = usable.count { (output, input) -> output != input }
+            val permutations = usable.count { (output, input) ->
+                output!!.length == input.length && output.groupingBy { it }.eachCount() == input.groupingBy { it }.eachCount()
+            }
+            System.out.println(
+                "playerVariantSignatureCandidate; name=$name; " +
+                    "outputs=${usable.size}; changed=$changed; lengthPreserving=" +
+                    "${usable.count { (output, input) -> output!!.length == input.length }}; " +
+                    "permutations=$permutations; outputLengths=" +
+                    usable.joinToString(",") { (output, _) -> output!!.length.toString() },
+            )
+        }
+        System.out.println(
+            "playerVariantSignatureProbe; outcome=completed; callSite=${locator.functions.signature ?: "not_found"}; " +
+                "candidateFunctions=${candidateNames.size}; stringFunctions=${stringCandidates.size}; " +
+                "markerFunctions=${locator.markerCandidates.count { !it.isAsync }}; " +
+                "inputs=${challenges.joinToString(",") { "itag${it.itag}:${it.signatureLength}" }}; " +
+                "userAgent=${if (userAgent.contains("iPad")) "iPad" else "other"}; " +
+                "scriptChars=${script.source.length}; wallMs=${android.os.SystemClock.elapsedRealtime() - startedAt}",
         )
     }
 
@@ -990,6 +1111,7 @@ class YoutubePlayerClientComparisonDiagnosticTest {
     )
 
     private data class PublicConfiguration(val apiKey: String, val signatureTimestamp: Int, val playerScriptUrl: String)
+    private data class SignatureChallengeInput(val signature: String, val itag: Int, val signatureLength: Int)
     private data class NChallengeResult(
         val outcome: String,
         val candidateCount: Int,
@@ -1020,6 +1142,9 @@ class YoutubePlayerClientComparisonDiagnosticTest {
         private const val REQUEST_TIMEOUT_MS = 10_000
         private const val MAX_CONFIG_BYTES = 4 * 1024 * 1024
         private const val MAX_PLAYER_RESPONSE_BYTES = 8 * 1024 * 1024
+        private const val MAX_SIGNATURE_CHALLENGE_INPUTS = 2
+        private const val MAX_SIGNATURE_STRING_CANDIDATES = 30
+        private const val MAX_SIGNATURE_CANDIDATE_FUNCTIONS = 36
         private const val MAX_N_CHALLENGE_CANDIDATES = 3
         private const val MAX_DIAGNOSTIC_N_BATCH_SIZE = 24
         private const val MAX_MARKER_URL_CANDIDATES = 3
