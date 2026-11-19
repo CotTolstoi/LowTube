@@ -89,6 +89,7 @@ class RecentSearchSuggestionsTest {
                     onOpenQueue = {},
                     onOpenDownloads = {},
                     onPlay = {},
+                    onPlayShorts = { _, _ -> },
                     onAddToQueue = {},
                     onResolveDownloadOptions = { _, _, complete -> complete(Result.success(emptyList<DownloadFormatOption>())) },
                     onDownload = { _, _ -> },
