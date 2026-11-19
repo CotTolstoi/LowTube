@@ -271,3 +271,5 @@
 19.11.2026 00:59 UTC, Redmi Note 8 / Android13 API33, bounded Media3 playback acceptance: decoder `c2.mtk.avc.decoder`, Media3 hardware status 1; 13 335 ms CPU / 15 867 ms wall; PSS 131 070→162 788 KiB, RSS 193 400→232 532 KiB. Відтворено обрізані 12 s першого елемента та близько 1 s наступного. Інструментальний test тимчасово вивів на передній план Camera; LowTube `MainActivity` одразу запущена знову.
 
 19.11.2026 01:00 UTC, Redmi Note 8 / Android13 API33 після повернення LowTube `MainActivity` на передній план: три `top` знімки на 5 s інтервалі дали 0% CPU; PSS 124 072 KiB (121,2 MiB), RSS 225 951 KiB (220,7 MiB), RAM 3 713 MiB / доступно 1 399 MiB. Idle point samples, не benchmark.
+
+19.11.2026, Android6/API23 x86_64 AVD, повторна MWEB signature metadata/QuickJS diagnostic для двох public video IDs: 5 080 ms process CPU за 6 408 ms wall; AndroidJUnitRunner PSS 37 889→67 257 KiB. Player bundle 1 586 768 chars; тест розглянув до 2 cipher inputs; Media3, playback і CDN Range не використовувалися. Короткий opt-in diagnostic snapshot, не benchmark і не фонове споживання застосунку.
