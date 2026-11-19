@@ -8,10 +8,10 @@ This branch publishes the latest available Android development build.
 - Build type: debug; signed with the Android debug certificate (v1/v2 verified)
 - Build tools: AGP 9.2.0, Gradle 9.4.1; Kotlin metadata rewrite warning resolved
 - Updated: 2026-11-19
-- Source revision: `b6b278f`
-- SHA-256: `CC1DE03FBF111AEC6C99C83695DC096693DBFEF94F218FF5080FC990B5742FFB`
+- Source revision: `c4324da`
+- SHA-256: `644FDC1DB71B27364709C75916FBA4A429FBBA3A0BF2E92F08EB2680AB463C6D`
 - Resolver: bounded direct-format resolution supports verified Android/WEB/iOS/MWEB fallback and the verified MWEB signature-helper path; audio-only downloads retain the Android VR fallback. The VR fallback is not used for video playback or video downloads.
-- Account sign-in diagnostics: account-picker dismissal and Google OAuth authorization dismissal now have distinct localized messages; the latter points to the package/SHA-1 OAuth client configuration. Runtime OAuth acceptance still requires the owner-registered Android OAuth client, enabled YouTube Data API, and user consent.
+- Account sign-in diagnostics: account-picker dismissal and Google OAuth authorization dismissal have distinct localized messages; canceled authorization intents are parsed for Google API errors before being classified as user cancellations, and the localized guidance points to package/SHA-1 OAuth client configuration. Runtime OAuth acceptance still requires the owner-registered Android OAuth client, enabled YouTube Data API, and user consent.
 - Account: Profile uses the system Google account picker, Google AuthorizationClient and a bounded OpenID UserInfo request. YouTube subscription changes use subscriptions.insert/delete and request the `youtube` account-management scope only when the signed-in user taps Subscribe/Unsubscribe; access tokens are not persisted. Runtime OAuth acceptance still requires the owner-registered Android OAuth client, enabled YouTube Data API, and user consent.
 - Account profile: the OpenID picture URL is accepted only from HTTPS `lh3.googleusercontent.com` or `lh4.googleusercontent.com`, bounded to 2,048 characters, rendered with an initial fallback and removed from local preferences on sign-out. The build was installed/launched, but real account/photo rendering still awaits the owner OAuth client and consent.
 - Account playlists: `[Private video]`, `[Deleted video]`, and malformed/missing snippet entries are retained as visible unavailable rows so remaining playlist items do not shift. Unavailable rows have no Play action and are filtered from Play all/Add to queue. The runtime account flow is still unverified without the owner OAuth client and consent.
