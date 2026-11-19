@@ -2,15 +2,15 @@
 
 This branch publishes the latest available Android development build.
 
-## Current artifact (2026-11-19, source revision 8d645e6)
+## Current artifact (2026-11-19, source revision d862613)
 
 - File: `LowTube-Android-debug-0.1.0.apk`; version `0.1.0-android-dev` (version code 1); minimum Android 6.0 (API 23).
 - Build type: installable debug APK, signed with the Android debug certificate; not a production-signed release.
-- Source revision: `8d645e6` (`feat/android-first-run-setup`).
+- Source revision: `d862613` (`feat/android-first-run-setup`).
 - APK size: 25756687 bytes.
-- SHA-256: `83687CBD00D99567AF7F847556AC73755A987A937DC8FCB392ABF3570607ECF7`.
-- Offline `:app:assembleDebug :app:assembleDebugAndroidTest --no-configuration-cache` succeeded. `YoutubeHomeRecommendationsAcceptanceTest` passed 1/1 on Android6/API23 with displayable Home metadata and no playback. The source requests YouTube `FEwhat_to_watch` first, falling back to the saved topic search when no cards parse; live multi-page continuation remains open.
-- Installed and launched on the connected Android13/API33 system; `MainActivity` remained top-resumed. The system identifies as `TrebleDroid vanilla`, so Redmi Note 8 hardware is unverified. No video playback or download was started. Immediately after launch (5 s): CPU 126.4% of one core, PSS 139.3 MiB, RSS 226.3 MiB, available RAM 1,686 MiB. After 15 s settling (5 s sample): CPU 0%, PSS 119.3 MiB, RSS 207.5 MiB, available RAM 1,685 MiB. These are point samples, not a benchmark.
+- SHA-256: `33985A416FAC0812CD9D8C1A4E62D5A30D4496D414EAE70E3ABA8976B5556695`.
+- Offline `:app:assembleDebug :app:assembleDebugAndroidTest --no-configuration-cache` succeeded. `GuestTopicRecommendationsAcceptanceTest` passed 1/1 on Android6/API23 and Android13/API33 AVDs, each loading a second metadata page with new video IDs and source-qualified continuation. The guest feed goes directly to topic search because live API23 testing showed no displayable unauthenticated `FEwhat_to_watch` cards; no playback was run.
+- Installed and launched on the connected Android13/API33 system; `MainActivity` remained top-resumed. The system identifies as `TrebleDroid vanilla`, so Redmi Note 8 hardware is unverified. No video playback or download was started. Immediately after launch (5 s): CPU 100.2% of one core, PSS 137.1 MiB, RSS 224.9 MiB, available RAM 1,582 MiB. After 15 s settling (5 s sample): CPU 0%, PSS 120.2 MiB, RSS 209.3 MiB, available RAM 1,587 MiB. These are point samples, not a benchmark.
 
 ## Previous artifact details (source revision 52c984e; historical)
 
