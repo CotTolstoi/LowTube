@@ -26,6 +26,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -46,6 +47,8 @@ class DownloadService : Service() {
     private var store: DownloadJobStore? = null
     private var testStreamUrl: String? = null
     private var testAudioStreamUrl: String? = null
+    private var testPreparingDelayMillis = 0L
+    private var testHoldPreparingNotification = false
     private var allowLoopbackDebugTest = false
     private lateinit var repository: InnerTubeSearchRepository
     private lateinit var files: DownloadFileStore
@@ -80,10 +83,15 @@ class DownloadService : Service() {
                 val uri = Uri.parse(value)
                 uri.scheme == "http" && uri.host in setOf("127.0.0.1", "localhost", "[::1]")
             }
+            testPreparingDelayMillis = if (testDb != null) {
+                intent.getLongExtra(EXTRA_TEST_PREPARING_DELAY_MS, 0L).coerceIn(0L, MAX_TEST_PREPARING_DELAY_MS)
+            } else 0L
+            testHoldPreparingNotification = testDb != null &&
+                intent.getBooleanExtra(EXTRA_TEST_HOLD_PREPARING_NOTIFICATION, false)
             allowLoopbackDebugTest = testStreamUrl != null
             store = DownloadJobStore(this, testDb ?: "lowtube_download_queue.db").also { it.requeueInterrupted() }
         }
-        val notification = buildNotification(getString(R.string.download_preparing), 0, 0, false)
+        val notification = buildNotification(getString(R.string.download_preparing), 0, 0, true)
         if (Build.VERSION.SDK_INT >= 29) ServiceCompat.startForeground(this, NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
         else startForeground(NOTIFICATION_ID, notification)
         when (intent?.action) {
@@ -110,6 +118,10 @@ class DownloadService : Service() {
         }
         worker = scope.launch {
             try {
+                val preparingDelay = testPreparingDelayMillis
+                testPreparingDelayMillis = 0L
+                if (preparingDelay > 0L) delay(preparingDelay)
+                if (testHoldPreparingNotification) awaitCancellation()
                 transferMutex.withLock {
                     while (true) {
                         val job = queue.pending() ?: break
@@ -395,8 +407,11 @@ class DownloadService : Service() {
         const val EXTRA_TEST_DATABASE = "test_database_name"
         const val EXTRA_TEST_STREAM_URL = "test_stream_url"
         const val EXTRA_TEST_AUDIO_STREAM_URL = "test_audio_stream_url"
+        const val EXTRA_TEST_PREPARING_DELAY_MS = "test_preparing_delay_ms"
+        const val EXTRA_TEST_HOLD_PREPARING_NOTIFICATION = "test_hold_preparing_notification"
         private const val NOTIFICATION_ID = 4207
         internal const val TERMINAL_NOTIFICATION_ID = 4208
+        private const val MAX_TEST_PREPARING_DELAY_MS = 5_000L
     }
 }
 

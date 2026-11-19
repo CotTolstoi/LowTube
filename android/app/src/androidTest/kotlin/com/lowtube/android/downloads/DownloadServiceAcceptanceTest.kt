@@ -27,6 +27,7 @@ import com.lowtube.android.model.ResolvedVideoStream
 import com.lowtube.android.model.VideoItem
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -381,6 +382,93 @@ class DownloadServiceAcceptanceTest {
 
                 if (Build.VERSION.SDK_INT >= 26) {
                     assertEquals("Channel name failed for $language", localized.getString(R.string.downloads), manager.getNotificationChannel(DownloadNotificationFactory.CHANNEL_ID)?.name)
+                }
+            }
+        } finally {
+            AppLocale.setLanguage(context, originalLanguage)
+            val restored = AppLocale.wrap(context)
+            DownloadNotificationFactory.createChannel(restored)
+        }
+    }
+
+    @Test
+    fun preparingNotificationIsPostedByForegroundServiceInSelectedLanguage() = runBlocking {
+        assumeTrue(
+            "Preparing notification runtime acceptance is opt-in; pass -e runDownloadPreparingNotificationAcceptance true",
+            InstrumentationRegistry.getArguments().getString("runDownloadPreparingNotificationAcceptance") == "true",
+        )
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        if (Build.VERSION.SDK_INT >= 33) {
+            assumeTrue(
+                "POST_NOTIFICATIONS must already be granted for runtime notification acceptance",
+                context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED,
+            )
+        }
+        val originalLanguage = AppLocale.language(context)
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        assertEquals("Preparing notification acceptance must use the app context", "com.lowtube.android", context.packageName)
+        if (Build.VERSION.SDK_INT >= 24) {
+            assertTrue("App notifications must be enabled for preparing-state runtime acceptance", notificationManager.areNotificationsEnabled())
+        }
+        try {
+            for (language in listOf("en", "uk", "ru")) {
+                AppLocale.setLanguage(context, language)
+                val localized = AppLocale.wrap(context)
+                val dbName = "lowtube-preparing-notification-$language-${System.currentTimeMillis()}.db"
+                val store = DownloadJobStore(context, dbName)
+                val video = VideoItem("fixture", "Preparing notification fixture", duration = "—", url = "https://www.youtube.com/watch?v=fixture")
+                val videoJson = JSONObject().put("id", video.id).put("title", video.title).put("url", video.url).toString()
+                val id = store.insert(
+                    videoJson,
+                    "preparing-notification-test",
+                    false,
+                    "preparing-fixture.mp4",
+                    "video/mp4",
+                    "LowTube acceptance test",
+                    File(context.cacheDir, "$dbName.part").absolutePath,
+                )
+                try {
+                    assertEquals("Preparing fixture was not pending for $language", id, store.pending()?.id)
+                    startService(context, dbName, preparingDelayMillis = 5_000L, holdPreparingNotification = true)
+                    val notification: Notification = withTimeout(20_000L) {
+                        var posted: Notification? = null
+                        while (posted == null) {
+                            posted = notificationManager.activeNotifications
+                                .firstOrNull { it.id == NOTIFICATION_ID }
+                                ?.notification
+                            if (posted == null) delay(50L)
+                        }
+                        posted
+                    }
+                    assertEquals("Preparing title failed for $language", localized.getString(R.string.downloads), notification.extras.getCharSequence(Notification.EXTRA_TITLE))
+                    assertEquals("Preparing text failed for $language", localized.getString(R.string.download_preparing), notification.extras.getCharSequence(Notification.EXTRA_TEXT))
+                    assertTrue("Preparing foreground notification must be ongoing for $language", notification.flags and Notification.FLAG_ONGOING_EVENT != 0)
+                    assertTrue("Preparing foreground notification must show indeterminate progress for $language", notification.extras.getBoolean(Notification.EXTRA_PROGRESS_INDETERMINATE))
+                    assertTrue("Preparing notification must not show job actions before a job starts ($language)", notification.actions.orEmpty().isEmpty())
+                    Log.i(TAG, "preparingNotificationAcceptance=passed; locale=$language; ongoing=true")
+                    if (Build.VERSION.SDK_INT >= 26) {
+                        assertEquals(
+                            "Foreground channel name failed for $language",
+                            localized.getString(R.string.downloads),
+                            notificationManager.getNotificationChannel(DownloadNotificationFactory.CHANNEL_ID)?.name,
+                        )
+                    }
+
+                    val service = (context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager)
+                        .getRunningServices(100)
+                        .firstOrNull { it.service.className == DownloadService::class.java.name }
+                    assertTrue("Download service must be foreground while preparing ($language)", service?.foreground == true)
+
+                    context.stopService(Intent(context, DownloadService::class.java))
+                    waitForServiceStopped(context)
+                    assertEquals("Preparing-only test must not transfer the queued item for $language", DownloadStatus.PENDING, store.get(id)?.status)
+                } finally {
+                    context.stopService(Intent(context, DownloadService::class.java))
+                    store.remove(id)
+                    store.close()
+                    context.deleteDatabase(dbName)
+                    notificationManager.cancel(NOTIFICATION_ID)
+                    notificationManager.cancel(DownloadService.TERMINAL_NOTIFICATION_ID)
                 }
             }
         } finally {
@@ -924,12 +1012,21 @@ class DownloadServiceAcceptanceTest {
         )
     }
 
-    private fun startService(context: Context, dbName: String, testStreamUrl: String? = null, testAudioStreamUrl: String? = null) {
+    private fun startService(
+        context: Context,
+        dbName: String,
+        testStreamUrl: String? = null,
+        testAudioStreamUrl: String? = null,
+        preparingDelayMillis: Long = 0L,
+        holdPreparingNotification: Boolean = false,
+    ) {
         val intent = Intent(context, DownloadService::class.java)
             .setAction(DownloadService.ACTION_START)
             .putExtra(DownloadService.EXTRA_TEST_DATABASE, dbName)
         testStreamUrl?.let { intent.putExtra(DownloadService.EXTRA_TEST_STREAM_URL, it) }
         testAudioStreamUrl?.let { intent.putExtra(DownloadService.EXTRA_TEST_AUDIO_STREAM_URL, it) }
+        if (preparingDelayMillis > 0L) intent.putExtra(DownloadService.EXTRA_TEST_PREPARING_DELAY_MS, preparingDelayMillis)
+        if (holdPreparingNotification) intent.putExtra(DownloadService.EXTRA_TEST_HOLD_PREPARING_NOTIFICATION, true)
         if (Build.VERSION.SDK_INT >= 26) ContextCompat.startForegroundService(context, intent) else context.startService(intent)
     }
 
