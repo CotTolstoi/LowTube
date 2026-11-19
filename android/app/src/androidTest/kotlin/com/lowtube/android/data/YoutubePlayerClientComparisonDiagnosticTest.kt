@@ -35,12 +35,14 @@ class YoutubePlayerClientComparisonDiagnosticTest {
             arguments.getString("runMwebFallbackOrderAcceptance") == "true",
         )
         val configuration = readPublicConfiguration()
+        val mwebVersion = readMwebWatchPlayerConfig(DEFAULT_VIDEO_ID, MWEB_USER_AGENT)?.clientVersion
+            ?.takeIf(String::isNotBlank) ?: configuration.clientVersion
         val mwebResponse = requestPublicPlayer(
             DEFAULT_VIDEO_ID,
             configuration,
             PlayerVariant(
                 name = "MWEB",
-                version = MWEB_CLIENT_VERSION,
+                version = mwebVersion,
                 headerId = "2",
                 userAgent = MWEB_USER_AGENT,
             ),
@@ -61,7 +63,7 @@ class YoutubePlayerClientComparisonDiagnosticTest {
                 },
             )
             if (clientId == "2") {
-                assertEquals(MWEB_CLIENT_VERSION, version)
+                assertEquals(mwebVersion, version)
                 assertEquals(MWEB_USER_AGENT, userAgent)
                 assertEquals(MWEB_USER_AGENT, client.optString("userAgent"))
                 mwebResponse
@@ -179,6 +181,9 @@ class YoutubePlayerClientComparisonDiagnosticTest {
                     ?: DEFAULT_VIDEO_ID)
             }
         val configuration = readPublicConfiguration()
+        val mwebVersion = runCatching {
+            readMwebWatchPlayerConfig(videoIds.first(), MWEB_USER_AGENT)?.clientVersion.orEmpty()
+        }.getOrNull()?.ifBlank { configuration.clientVersion } ?: configuration.clientVersion
         val variants = listOf(
             PlayerVariant(
                 name = "IOS",
@@ -193,7 +198,7 @@ class YoutubePlayerClientComparisonDiagnosticTest {
             ),
             PlayerVariant(
                 name = "MWEB",
-                version = MWEB_CLIENT_VERSION,
+                version = mwebVersion,
                 headerId = "2",
                 userAgent = MWEB_USER_AGENT,
             ),
@@ -265,10 +270,77 @@ class YoutubePlayerClientComparisonDiagnosticTest {
                     arguments.getString("runPlayerVariantSignatureChallenge") == "true" &&
                     streaming != null && (counts?.get("obfuscatedS") ?: 0) > 0
                 ) {
+                    val responseScriptUrl = root?.optJSONObject("assets")?.optString("js").orEmpty()
+                        .ifBlank {
+                            root?.optJSONObject("playerConfig")?.optJSONObject("assets")?.optString("js").orEmpty()
+                        }
+                    val playerConfigKeys = root?.optJSONObject("playerConfig")?.keys()?.asSequence()
+                        ?.toList()?.sorted()?.joinToString(",").orEmpty()
+                    System.out.println(
+                        "playerVariantSignatureAssets; responseKeys=${root?.keys()?.asSequence()?.toList()?.sorted()?.joinToString(",").orEmpty()}; " +
+                            "playerConfigKeys=$playerConfigKeys; responseAssetPresent=${responseScriptUrl.isNotBlank()}",
+                    )
+                    val mwebWatchConfig = runCatching {
+                        readMwebWatchPlayerConfig(videoId, variant.userAgent)
+                    }.getOrNull()
+                    var signatureStreaming: JSONObject = streaming
+                    val mwebSignatureTimestamp = mwebWatchConfig?.signatureTimestamp ?: 0
+                    val mwebPageClientVersion = mwebWatchConfig?.clientVersion.orEmpty()
+                    System.out.println(
+                        "playerVariantSignatureTimestampSource; wwwSts=${configuration.signatureTimestamp}; " +
+                            "mwebSts=$mwebSignatureTimestamp; mwebScriptPresent=${!mwebWatchConfig?.scriptUrl.isNullOrBlank()}; " +
+                            "wwwClientVersion=${configuration.clientVersion.ifBlank { "missing" }}; " +
+                            "mwebClientVersion=${mwebPageClientVersion.ifBlank { "missing" }}",
+                    )
+                    if (mwebPageClientVersion.isNotBlank() && mwebPageClientVersion != variant.version) {
+                        val versionResponse = runCatching {
+                            requestPublicPlayer(videoId, configuration, variant.copy(version = mwebPageClientVersion))
+                        }.getOrNull()
+                        val versionStreaming = versionResponse?.optJSONObject("streamingData")
+                        val versionCounts = versionStreaming?.let(::summarizeFormats)
+                        System.out.println(
+                            "playerVariantSignatureClientVersion; outcome=${if (versionStreaming == null) "no_streaming_data" else "compared"}; " +
+                                "configured=${variant.version}; mwebPage=$mwebPageClientVersion; " +
+                                "formats=${versionCounts?.get("formats") ?: 0}; direct=${versionCounts?.get("direct") ?: 0}; " +
+                                "cipher=${versionCounts?.get("cipher") ?: 0}; obfuscatedS=${versionCounts?.get("obfuscatedS") ?: 0}",
+                        )
+                        if ((versionCounts?.get("obfuscatedS") ?: 0) > 0) {
+                            versionStreaming?.let { signatureStreaming = it }
+                        }
+                    }
+                    if (mwebSignatureTimestamp > 0 &&
+                        mwebSignatureTimestamp != configuration.signatureTimestamp
+                    ) {
+                        val alignedResponse = runCatching {
+                            requestPublicPlayer(
+                                videoId,
+                                configuration.copy(signatureTimestamp = mwebSignatureTimestamp),
+                                variant,
+                            )
+                        }.getOrNull()
+                        val alignedStreaming = alignedResponse?.optJSONObject("streamingData")
+                        val alignedCounts = alignedStreaming?.let(::summarizeFormats)
+                        System.out.println(
+                            "playerVariantSignatureTimestamp; outcome=${if (alignedStreaming == null) "no_streaming_data" else "compared"}; " +
+                                "wwwSts=${configuration.signatureTimestamp}; mwebSts=$mwebSignatureTimestamp; " +
+                                "formats=${alignedCounts?.get("formats") ?: 0}; direct=${alignedCounts?.get("direct") ?: 0}; " +
+                                "cipher=${alignedCounts?.get("cipher") ?: 0}; obfuscatedS=${alignedCounts?.get("obfuscatedS") ?: 0}",
+                        )
+                        if ((alignedCounts?.get("obfuscatedS") ?: 0) > 0) {
+                            alignedStreaming?.let { signatureStreaming = it }
+                        }
+                    }
+                    val mwebWatchScriptUrl = mwebWatchConfig?.scriptUrl.orEmpty()
+                    val scriptSource = when {
+                        responseScriptUrl.isNotBlank() -> "player_response_assets"
+                        mwebWatchScriptUrl.isNotBlank() -> "mweb_watch_page"
+                        else -> "www_home_page"
+                    }
                     inspectMwebSignatureCandidates(
-                        streaming,
-                        configuration.playerScriptUrl,
+                        signatureStreaming,
+                        responseScriptUrl.ifBlank { mwebWatchScriptUrl.ifBlank { configuration.playerScriptUrl } },
                         variant.userAgent,
+                        scriptSource,
                     )
                     signatureProbeCompleted = true
                 }
@@ -338,10 +410,11 @@ class YoutubePlayerClientComparisonDiagnosticTest {
             }
             val apiKey = captureConfigValue(html, "INNERTUBE_API_KEY")
                 ?: throw IOException("YouTube player API configuration is unavailable.")
+            val clientVersion = captureConfigValue(html, "INNERTUBE_CLIENT_VERSION").orEmpty()
             val signatureTimestamp = Regex("""[\"']STS[\"']\s*:\s*(\d{1,10})""")
                 .find(html)?.groupValues?.getOrNull(1)?.toIntOrNull() ?: 0
             val playerScriptUrl = captureConfigValue(html, "PLAYER_JS_URL").orEmpty()
-            return PublicConfiguration(apiKey, signatureTimestamp, playerScriptUrl)
+            return PublicConfiguration(apiKey, signatureTimestamp, playerScriptUrl, clientVersion)
         } finally {
             connection.disconnect()
         }
@@ -376,6 +449,22 @@ class YoutubePlayerClientComparisonDiagnosticTest {
         } finally {
             connection.disconnect()
         }
+    }
+
+    private fun readMwebWatchPlayerConfig(videoId: String, userAgent: String): MwebWatchPlayerConfig? {
+        if (!VIDEO_ID.matches(videoId)) return null
+        val html = readPlayerScriptBounded(
+            "https://m.youtube.com/watch?v=$videoId",
+            MAX_CONFIG_BYTES,
+            userAgent,
+        )
+        val scriptUrl = captureConfigValue(html, "PLAYER_JS_URL")
+            ?: captureConfigValue(html, "jsUrl")
+            ?: ""
+        val signatureTimestamp = Regex("""[\"']STS[\"']\s*:\s*(\d{1,10})""")
+            .find(html)?.groupValues?.getOrNull(1)?.toIntOrNull() ?: 0
+        val clientVersion = captureConfigValue(html, "INNERTUBE_CLIENT_VERSION").orEmpty()
+        return MwebWatchPlayerConfig(scriptUrl, signatureTimestamp, clientVersion)
     }
 
     private fun requestPublicPlayer(
@@ -488,6 +577,7 @@ class YoutubePlayerClientComparisonDiagnosticTest {
         streaming: JSONObject,
         rawPlayerScriptUrl: String,
         userAgent: String,
+        scriptSource: String,
     ) {
         val challenges = listOf("formats", "adaptiveFormats").flatMap { key ->
             val formats = streaming.optJSONArray(key) ?: return@flatMap emptyList()
@@ -514,7 +604,21 @@ class YoutubePlayerClientComparisonDiagnosticTest {
             readPlayerScriptBounded(url, YoutubePlayerScriptCache.MAX_SCRIPT_BYTES, userAgent)
         }
             .load(scriptUrl)
-        val locator = YoutubePlayerTransformLocator.locateExecutable(script.source, includeMarkerCandidates = true)
+        System.out.println(
+            "playerVariantSignatureScriptMetadata; source=$scriptSource; " +
+                "scriptSts=${YoutubePlayerScriptCache.extractSignatureTimestamp(script.source) ?: 0}; " +
+                "scriptChars=${script.source.length}",
+        )
+        reportSignaturePatternContexts(script.source)
+        val locator = YoutubePlayerTransformLocator.locateExecutable(
+            script.source,
+            includeMarkerCandidates = true,
+            onDiagnosticStage = { detail ->
+                if (detail.startsWith("locatorSignatureLiteral") || detail.startsWith("locatorCandidates")) {
+                    System.out.println("playerVariantSignatureLocator; $detail")
+                }
+            },
+        )
         val stringCandidates = YoutubePlayerTransformLocator.findStringOperationCandidates(
             script.source,
             MAX_SIGNATURE_STRING_CANDIDATES,
@@ -562,8 +666,33 @@ class YoutubePlayerClientComparisonDiagnosticTest {
                 "markerFunctions=${locator.markerCandidates.count { !it.isAsync }}; " +
                 "inputs=${challenges.joinToString(",") { "itag${it.itag}:${it.signatureLength}" }}; " +
                 "userAgent=${if (userAgent.contains("iPad")) "iPad" else "other"}; " +
+                "scriptSource=$scriptSource; " +
                 "scriptChars=${script.source.length}; wallMs=${android.os.SystemClock.elapsedRealtime() - startedAt}",
         )
+    }
+
+    private fun reportSignaturePatternContexts(source: String) {
+        val patterns = listOf(
+            "get_s" to Regex("""\.get\(\s*[\"']s[\"']\s*\)"""),
+            "get_sig" to Regex("""\.get\(\s*[\"']sig[\"']\s*\)"""),
+            "set_sig" to Regex("""\.set\(\s*[\"']sig[\"']\s*,"""),
+            "set_signature" to Regex("""\.set\(\s*[\"']signature[\"']\s*,"""),
+            "decode_uri" to Regex("""decodeURIComponent\s*\("""),
+            "cipher_key" to Regex("""[\"']signatureCipher[\"']"""),
+        )
+        patterns.forEach { (name, pattern) ->
+            val matches = pattern.findAll(source).take(MAX_SIGNATURE_PATTERN_CONTEXTS).toList()
+            val total = pattern.findAll(source).count()
+            System.out.println("playerVariantSignaturePattern; name=$name; count=$total")
+            matches.take(MAX_SIGNATURE_CONTEXT_SAMPLES).forEachIndexed { index, match ->
+                val start = (match.range.first - SIGNATURE_CONTEXT_RADIUS).coerceAtLeast(0)
+                val end = (match.range.last + SIGNATURE_CONTEXT_RADIUS + 1).coerceAtMost(source.length)
+                val context = source.substring(start, end)
+                    .replace(Regex("""\"(?:\\.|[^\"\\])*\"|'(?:\\.|[^'\\])*'"""), "<literal>")
+                    .replace(Regex("\\s+"), " ")
+                System.out.println("playerVariantSignaturePatternContext; name=$name; index=$index; tokens=$context")
+            }
+        }
     }
 
     private fun inspectMwebNChallenge(
@@ -1110,7 +1239,17 @@ class YoutubePlayerClientComparisonDiagnosticTest {
         val nChanged: Boolean = false,
     )
 
-    private data class PublicConfiguration(val apiKey: String, val signatureTimestamp: Int, val playerScriptUrl: String)
+    private data class PublicConfiguration(
+        val apiKey: String,
+        val signatureTimestamp: Int,
+        val playerScriptUrl: String,
+        val clientVersion: String,
+    )
+    private data class MwebWatchPlayerConfig(
+        val scriptUrl: String,
+        val signatureTimestamp: Int,
+        val clientVersion: String,
+    )
     private data class SignatureChallengeInput(val signature: String, val itag: Int, val signatureLength: Int)
     private data class NChallengeResult(
         val outcome: String,
@@ -1136,7 +1275,6 @@ class YoutubePlayerClientComparisonDiagnosticTest {
 
     companion object {
         private const val DEFAULT_VIDEO_ID = "aqz-KE-bpKQ"
-        private const val MWEB_CLIENT_VERSION = "2.20260708.05.00"
         private const val MWEB_USER_AGENT = "Mozilla/5.0 (iPad; CPU OS 16_7_10 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1,gzip(gfe)"
         private const val MAX_VIDEO_IDS = 3
         private const val REQUEST_TIMEOUT_MS = 10_000
@@ -1145,6 +1283,9 @@ class YoutubePlayerClientComparisonDiagnosticTest {
         private const val MAX_SIGNATURE_CHALLENGE_INPUTS = 2
         private const val MAX_SIGNATURE_STRING_CANDIDATES = 30
         private const val MAX_SIGNATURE_CANDIDATE_FUNCTIONS = 36
+        private const val MAX_SIGNATURE_PATTERN_CONTEXTS = 16
+        private const val MAX_SIGNATURE_CONTEXT_SAMPLES = 8
+        private const val SIGNATURE_CONTEXT_RADIUS = 180
         private const val MAX_N_CHALLENGE_CANDIDATES = 3
         private const val MAX_DIAGNOSTIC_N_BATCH_SIZE = 24
         private const val MAX_MARKER_URL_CANDIDATES = 3

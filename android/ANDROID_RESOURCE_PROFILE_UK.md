@@ -263,3 +263,11 @@
 19.11.2026, API23 AVD, natural-order MWEB fallback acceptance без Media3: CPU процесу 4 175 ms за 4 254 ms wall; PSS 26 928→52 155 KiB. Network fixture прочитав лише 65 536 байтів Range; process snapshot, не benchmark.
 
 19.11.2026 00:35 UTC, Redmi Note 8 / Android13 API33, LowTube `MainActivity` foreground після metadata-only API23 resolver diagnostics: два `top` snapshots показали 0% CPU в обох вимірах; PSS 124 170 KiB (121,3 MiB), RSS 225 927 KiB (220,6 MiB), RAM 3 713 MiB / доступно 1 370 MiB. Пристрій лишився на головному екрані, відео не запускалося. Коротка idle point sample, не benchmark.
+
+19.11.2026 00:58 UTC, Android6/API23 AVD, live MWEB fallback-order acceptance після переходу на MWEB-specific player config: процес 3 184 ms CPU / 3 870 ms wall; PSS 32 056→79 156 KiB. CDN прочитав лише 65 536-byte Range, HTTP 206; Media3 playback не запускався. Це короткий acceptance snapshot.
+
+19.11.2026 00:58 UTC, Android6/API23 AVD, bounded Media3 playback acceptance: 9 416 ms process CPU / 17 595 ms wall; PSS 26 878→50 808 KiB, RSS 58 300→84 044 KiB. Перший файл обрізаний до 12 s і перейшов на наступний елемент; плеєр зупинився приблизно на 13 s. Відео не програвалося повністю; acceptance snapshot, не benchmark.
+
+19.11.2026 00:59 UTC, Redmi Note 8 / Android13 API33, bounded Media3 playback acceptance: decoder `c2.mtk.avc.decoder`, Media3 hardware status 1; 13 335 ms CPU / 15 867 ms wall; PSS 131 070→162 788 KiB, RSS 193 400→232 532 KiB. Відтворено обрізані 12 s першого елемента та близько 1 s наступного. Інструментальний test тимчасово вивів на передній план Camera; LowTube `MainActivity` одразу запущена знову.
+
+19.11.2026 01:00 UTC, Redmi Note 8 / Android13 API33 після повернення LowTube `MainActivity` на передній план: три `top` знімки на 5 s інтервалі дали 0% CPU; PSS 124 072 KiB (121,2 MiB), RSS 225 951 KiB (220,7 MiB), RAM 3 713 MiB / доступно 1 399 MiB. Idle point samples, не benchmark.

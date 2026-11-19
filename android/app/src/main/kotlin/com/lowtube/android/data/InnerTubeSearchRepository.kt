@@ -48,6 +48,8 @@ class InnerTubeSearchRepository(context: Context? = null) {
     private var signatureTimestamp = 0
     private var visitorData = ""
     private var configuredAt = 0L
+    private var cachedMwebClientConfiguration: MwebClientConfiguration? = null
+    private var mwebConfiguredAt = 0L
     private var cooldownUntil = 0L
     private var configuredPlayerScriptUrl = ""
     internal var playerClientStreamSummaryObserver: ((PlayerClientStreamSummary) -> Unit)? = null
@@ -187,7 +189,9 @@ class InnerTubeSearchRepository(context: Context? = null) {
         val streaming = if (containsPlayerJsChallenge(resolvedStreaming.streaming)) {
             val runtime = playerJavaScriptRuntime
                 ?: throw IOException("This video requires a player signature transform, which is unavailable in this resolver context.")
-            val playerScript = runCatching { playerScriptCache.load(playerScriptUrl) }
+            val selectedPlayerScriptUrl = resolvedStreaming.playerScriptUrl
+                ?.takeIf(String::isNotBlank) ?: playerScriptUrl
+            val playerScript = runCatching { playerScriptCache.load(selectedPlayerScriptUrl) }
                 .getOrElse { throw IOException("YouTube's player script could not be loaded for this stream.", it) }
             val functions = playerTransforms(playerScript)
             transformPlayerChallenges(resolvedStreaming.streaming, playerScript, functions, runtime)
@@ -358,7 +362,16 @@ class InnerTubeSearchRepository(context: Context? = null) {
     }
 
     private data class ResolvedPlayerData(val video: VideoItem, val streaming: JSONObject, val userAgent: String)
-    private data class ResolvedPlayerResponse(val streaming: JSONObject, val userAgent: String)
+    private data class ResolvedPlayerResponse(
+        val streaming: JSONObject,
+        val userAgent: String,
+        val playerScriptUrl: String? = null,
+    )
+    private data class MwebClientConfiguration(
+        val clientVersion: String,
+        val playerScriptUrl: String,
+        val signatureTimestamp: Int,
+    )
     private data class PlayerRequestClient(
         val name: String,
         val version: String,
@@ -645,11 +658,10 @@ class InnerTubeSearchRepository(context: Context? = null) {
         if (apiKey.isBlank()) throw IOException("YouTube player configuration is incomplete. Retry the video.")
         val androidClient = PlayerRequestClient("ANDROID", "20.13.41", "3", USER_AGENT)
         val webClient = PlayerRequestClient("WEB", clientVersion, "1", USER_AGENT)
-        val mwebClient = PlayerRequestClient("MWEB", MWEB_CLIENT_VERSION, "2", MWEB_USER_AGENT)
         val clients = if (preferWebClient) {
-            listOf(webClient, androidClient, mwebClient)
+            listOf(webClient, androidClient)
         } else {
-            listOf(androidClient, webClient, mwebClient)
+            listOf(androidClient, webClient)
         }
         var lastStatus = ""
         for ((name, version, clientId, userAgent) in clients) {
@@ -692,9 +704,109 @@ class InnerTubeSearchRepository(context: Context? = null) {
                 // A failed anonymous client is followed by the next client.
             }
         }
+        val mwebConfiguration = currentMwebClientConfiguration(videoId)
+        val mwebClient = PlayerRequestClient(
+            "MWEB",
+            mwebConfiguration.clientVersion,
+            "2",
+            MWEB_USER_AGENT,
+        )
+        val mwebContext = JSONObject()
+            .put("clientName", mwebClient.name)
+            .put("clientVersion", mwebClient.version)
+            .put("hl", "en")
+            .put("gl", "US")
+            .put("userAgent", mwebClient.userAgent)
+        val mwebPayload = JSONObject()
+            .put("videoId", videoId)
+            .put("context", JSONObject().put("client", mwebContext))
+            .put("contentCheckOk", true)
+            .put("racyCheckOk", true)
+        val mwebSignatureTimestamp = mwebConfiguration.signatureTimestamp.takeIf { it > 0 }
+            ?: requestSignatureTimestamp
+        if (mwebSignatureTimestamp > 0) mwebPayload.put(
+            "playbackContext",
+            JSONObject().put("contentPlaybackContext", JSONObject().put("signatureTimestamp", mwebSignatureTimestamp)),
+        )
+        try {
+            val response = playerRequestOverrideForAcceptance?.invoke(
+                mwebPayload.toString(),
+                mwebClient.version,
+                mwebClient.id,
+                mwebClient.userAgent,
+            ) ?: playerRequest(mwebPayload.toString(), mwebClient.version, mwebClient.id, mwebClient.userAgent)
+            val streaming = response.optJSONObject("streamingData")
+            if (streaming != null) {
+                playerClientStreamSummaryObserver?.invoke(playerClientStreamSummary(mwebClient.name, streaming))
+                if (hasDirectOrDash(streaming)) {
+                    return ResolvedPlayerResponse(
+                        streaming,
+                        mwebClient.userAgent,
+                        mwebConfiguration.playerScriptUrl,
+                    )
+                }
+            }
+            lastStatus = response.optJSONObject("playabilityStatus")?.optString("status").orEmpty()
+        } catch (_: IOException) {
+            // Fall through to watch-page data or the bounded unavailable-stream message.
+        }
         val streaming = pageResponse.optJSONObject("streamingData")
         if (streaming != null) return ResolvedPlayerResponse(streaming, USER_AGENT)
         throw IOException(if (lastStatus.isBlank()) "YouTube player API returned no streams. Retry on a different network." else "YouTube player API returned $lastStatus without a playable stream.")
+    }
+
+    private fun currentMwebClientConfiguration(videoId: String): MwebClientConfiguration {
+        cachedMwebClientConfiguration?.takeIf {
+            System.currentTimeMillis() - mwebConfiguredAt < TimeUnit.MINUTES.toMillis(15)
+        }?.let { return it }
+
+        val connection = (URL("https://m.youtube.com/watch?v=${urlEncode(videoId)}&hl=en")
+            .openConnection() as HttpURLConnection).apply {
+            requestMethod = "GET"
+            instanceFollowRedirects = true
+            connectTimeout = PLAYER_TIMEOUT_MS
+            readTimeout = PLAYER_TIMEOUT_MS
+            setRequestProperty("User-Agent", MWEB_USER_AGENT)
+            setRequestProperty("Accept", "text/html,*/*;q=0.8")
+            setRequestProperty("Referer", "https://m.youtube.com/")
+        }
+        try {
+            if (connection.responseCode in 200..299) {
+                val html = connection.inputStream.use { input ->
+                    val output = ByteArrayOutputStream()
+                    val buffer = ByteArray(8192)
+                    var total = 0
+                    while (true) {
+                        val count = input.read(buffer)
+                        if (count < 0) break
+                        total += count
+                        if (total > MAX_MWEB_CONFIG_BYTES) throw IOException("YouTube mobile configuration is too large.")
+                        output.write(buffer, 0, count)
+                    }
+                    output.toString(Charsets.UTF_8.name())
+                }
+                val version = MWEB_CLIENT_VERSION_PATTERN.find(html)?.groupValues?.getOrNull(1).orEmpty()
+                if (version.isNotBlank()) {
+                    val scriptUrl = MWEB_PLAYER_SCRIPT_PATTERN.find(html)?.groupValues?.getOrNull(1)
+                        .orEmpty().ifBlank { configuredPlayerScriptUrl }
+                    val signatureTimestamp = MWEB_SIGNATURE_TIMESTAMP_PATTERN.find(html)
+                        ?.groupValues?.getOrNull(1)?.toIntOrNull() ?: 0
+                    val configuration = MwebClientConfiguration(version, scriptUrl, signatureTimestamp)
+                    cachedMwebClientConfiguration = configuration
+                    mwebConfiguredAt = System.currentTimeMillis()
+                    return configuration
+                }
+            }
+        } catch (_: IOException) {
+            // Preserve video resolution when YouTube's mobile configuration is temporarily unavailable.
+        } finally {
+            connection.disconnect()
+        }
+        return cachedMwebClientConfiguration ?: MwebClientConfiguration(
+            clientVersion = clientVersion,
+            playerScriptUrl = configuredPlayerScriptUrl,
+            signatureTimestamp = signatureTimestamp,
+        )
     }
 
     private fun playerClientStreamSummary(client: String, streaming: JSONObject): PlayerClientStreamSummary {
@@ -1269,8 +1381,11 @@ class InnerTubeSearchRepository(context: Context? = null) {
         private const val MAX_MARKER_URL_CANDIDATES = 3
         private const val MAX_MARKER_URL_BATCH = 24
         private const val USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
-        private const val MWEB_CLIENT_VERSION = "2.20260708.05.00"
         private const val MWEB_USER_AGENT = "Mozilla/5.0 (iPad; CPU OS 16_7_10 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1,gzip(gfe)"
+        private const val MAX_MWEB_CONFIG_BYTES = 4 * 1024 * 1024
+        private val MWEB_CLIENT_VERSION_PATTERN = Regex("""[\"']INNERTUBE_CLIENT_VERSION[\"']\s*:\s*[\"']([0-9.]{1,64})[\"']""")
+        private val MWEB_PLAYER_SCRIPT_PATTERN = Regex("""[\"']PLAYER_JS_URL[\"']\s*:\s*[\"']([^\"']{1,256})[\"']""")
+        private val MWEB_SIGNATURE_TIMESTAMP_PATTERN = Regex("""[\"']STS[\"']\s*:\s*(\d{5,6})""")
         private const val MAX_CIPHER_LENGTH = 64 * 1024
         private val SIGNATURE_PARAMETER = Regex("[A-Za-z0-9_]{1,32}")
         private val VIDEO_ID = Regex("^[A-Za-z0-9_-]{11}$")
