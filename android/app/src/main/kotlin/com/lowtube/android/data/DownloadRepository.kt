@@ -45,8 +45,16 @@ class DownloadRepository private constructor(
     private val preferences = appContext.getSharedPreferences(preferencesName, Context.MODE_PRIVATE)
     private val resolver = InnerTubeSearchRepository(appContext)
 
-    suspend fun options(video: VideoItem, streamPreferences: DownloadStreamPreferences, audioOnly: Boolean): List<DownloadFormatOption> =
-        resolver.resolveDownloadOptions(video, streamPreferences, audioOnly)
+    suspend fun options(video: VideoItem, streamPreferences: DownloadStreamPreferences, audioOnly: Boolean): List<DownloadFormatOption> {
+        val sourceOptions = resolver.resolveDownloadOptions(video, streamPreferences, audioOnly)
+        if (!audioOnly) return sourceOptions
+        val mp3Option = sourceOptions.firstOrNull()?.copy(
+            container = "MP3",
+            bitrateKbps = streamPreferences.audioBitrateKbps,
+            targetMp3BitrateKbps = streamPreferences.audioBitrateKbps,
+        )
+        return sourceOptions + listOfNotNull(mp3Option)
+    }
 
     fun enqueue(video: VideoItem, option: DownloadFormatOption): Long {
         require(option.stream.video.id == video.id) { "Selected format belongs to another video." }
@@ -54,6 +62,7 @@ class DownloadRepository private constructor(
         val host = uri.host?.lowercase().orEmpty()
         require(uri.scheme == "https" && (host == "googlevideo.com" || host.endsWith(".googlevideo.com"))) { "Selected download format has an untrusted stream address." }
         require(option.stream.mimeType in SUPPORTED_MIME_TYPES) { "Selected download format is not supported." }
+        require(option.targetMp3BitrateKbps == 0 || (option.audioOnly && option.targetMp3BitrateKbps in DownloadStreamPreferences.SUPPORTED_AUDIO_BITRATES_KBPS)) { "Unsupported MP3 bitrate." }
         require(if (option.audioOnly) option.stream.isAudioOnly else option.stream.isMuxed || option.requiresMuxing) { "Selected format is not a downloadable video." }
         if (option.requiresMuxing) {
             val audio = option.audioStream ?: throw IllegalArgumentException("The selected MP4 format has no audio track.")
@@ -66,7 +75,8 @@ class DownloadRepository private constructor(
         val partialDir = File(appContext.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: appContext.filesDir, "LowTube/.partial")
         if (!partialDir.isDirectory && !partialDir.mkdirs() && !partialDir.isDirectory) throw IOException("Android could not prepare private download storage.")
         val partial = File(partialDir, "$fileName.part")
-        val id = jobs.insert(encodeVideo(video), option.key, option.audioOnly, fileName, option.stream.mimeType, option.stream.userAgent, partial.absolutePath)
+        val mimeType = if (option.targetMp3BitrateKbps > 0) "audio/mpeg" else option.stream.mimeType
+        val id = jobs.insert(encodeVideo(video), option.key, option.audioOnly, fileName, mimeType, option.stream.userAgent, partial.absolutePath, transcodeMp3 = option.targetMp3BitrateKbps > 0, targetAudioBitrateKbps = option.targetMp3BitrateKbps.takeIf { it > 0 } ?: 192)
         startService()
         return id
     }
@@ -242,7 +252,7 @@ class DownloadRepository private constructor(
     }
 
     private fun buildFileName(video: VideoItem, option: DownloadFormatOption): String {
-        val extension = when (option.stream.mimeType) { "video/webm", "audio/webm" -> "webm"; "audio/mp4" -> "m4a"; "audio/mpeg" -> "mp3"; else -> "mp4" }
+        val extension = if (option.targetMp3BitrateKbps > 0) "mp3" else when (option.stream.mimeType) { "video/webm", "audio/webm" -> "webm"; "audio/mp4" -> "m4a"; "audio/mpeg" -> "mp3"; else -> "mp4" }
         val safe = video.title.replace(Regex("""[\\/:*?"<>|\p{Cntrl}]"""), "_").trim().replace(Regex("\\s+"), " ").trimEnd('.', ' ').take(70).ifBlank { "LowTube video" }
         val uniqueTag = UUID.randomUUID().toString().take(8)
         val audioTag = option.audioStream?.itag?.let { "_a$it" }.orEmpty()

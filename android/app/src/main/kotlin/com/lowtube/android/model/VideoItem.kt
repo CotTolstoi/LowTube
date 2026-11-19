@@ -55,6 +55,8 @@ data class DownloadFormatOption(
     val bitrateKbps: Int = 0,
     val container: String,
     val audioStream: ResolvedVideoStream? = null,
+    /** Nonzero requests local MP3 transcode at this bitrate instead of keeping the source container. */
+    val targetMp3BitrateKbps: Int = 0,
 ) {
     val audioOnly: Boolean get() = stream.isAudioOnly
     val requiresMuxing: Boolean get() = audioStream != null

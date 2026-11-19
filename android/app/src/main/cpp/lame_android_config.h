@@ -1,0 +1,5 @@
+#ifndef LOWTUBE_LAME_ANDROID_CONFIG_H
+#define LOWTUBE_LAME_ANDROID_CONFIG_H
+typedef float ieee754_float32_t;
+#define DEPRECATED_OR_OBSOLETE_CODE_REMOVED 1
+#endif

@@ -736,10 +736,12 @@ internal fun DownloadFormatPickerDialog(
                     modifier = Modifier.heightIn(max = 420.dp),
                     verticalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
-                    items(options, key = { it.key }) { option ->
+                    items(options, key = { "${it.key}|mp3=${it.targetMp3BitrateKbps}" }) { option ->
                         val stream = option.stream
                         val codec = if (option.audioOnly) stream.audioCodec else stream.videoCodec
-                        val caption = if (option.audioOnly) {
+                        val caption = if (option.audioOnly && option.targetMp3BitrateKbps > 0) {
+                            stringResource(R.string.download_audio_mp3_format, option.targetMp3BitrateKbps)
+                        } else if (option.audioOnly) {
                             stringResource(
                                 R.string.download_audio_format,
                                 codec.ifBlank { audioCodecFallback },

@@ -223,6 +223,11 @@ class DownloadService : Service() {
                 show(job, outcome.downloaded, outcome.total, false, getString(R.string.download_paused_resume))
             } else {
                 job = queue.get(job.id) ?: return
+                if (job.transcodeMp3) {
+                    show(job, outcome.downloaded, outcome.total, true, getString(R.string.download_mp3_converting))
+                    AudioMp3Transcoder.transcode(part, part, job.targetAudioBitrateKbps) { cancelId == job.id }
+                    if (cancelId == job.id) throw CancellationException("Cancelled by user.")
+                }
                 val published = withContext(Dispatchers.IO) { files.publish(job) }
                 val committed = synchronized(cancelLock) {
                     if (cancelId == job.id) false

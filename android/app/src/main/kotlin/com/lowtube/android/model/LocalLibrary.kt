@@ -60,6 +60,8 @@ data class DownloadJob(
     val userAgent: String,
     val createdAt: Long,
     val maxBytesPerAttempt: Long = 0L,
+    val transcodeMp3: Boolean = false,
+    val targetAudioBitrateKbps: Int = 192,
 )
 
 data class WatchHistoryEntry(
