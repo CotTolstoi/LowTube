@@ -161,6 +161,46 @@ class YoutubePlayerJavaScriptRuntimeTest {
     }
 
     @Test
+    fun executesMarkerSelectedUrlObjectSignatureTransformInFullBundle() = runBlocking {
+        val source = """
+            function PlayerUrl(value) { this.url = value; }
+            PlayerUrl.prototype.get = function(name) {
+              var match = new RegExp('[?&]' + name + '=([^&]*)').exec(this.url);
+              return match ? decodeURIComponent(match[1]) : null;
+            };
+            PlayerUrl.prototype.set = function(name, value) {
+              var encoded = encodeURIComponent(value);
+              var pattern = new RegExp('([?&]' + name + '=)[^&]*');
+              if (pattern.test(this.url)) this.url = this.url.replace(pattern, '$1' + encoded);
+              else this.url += (this.url.indexOf('?') < 0 ? '?' : '&') + name + '=' + encoded;
+            };
+            PlayerUrl.prototype.finish = function() {
+              var signature = this.get('s');
+              if (signature) this.set('s', signature.split('').reverse().join(''));
+            };
+            function markerCandidate(value, key, signature) {
+              var result = new PlayerUrl(value);
+              result.set(key, signature);
+              return result;
+            }
+        """.trimIndent()
+        val signature = "Abc123_XyZ"
+
+        val result = runtime.executeFullPlayerUrlObjectSignatureTransforms(
+            source,
+            listOf("markerCandidate"),
+            listOf("https://youtube.com/watch?v=lowtube-probe"),
+            listOf(signature),
+        ).single()
+
+        assertEquals("ZyX_321cbA", result.signature)
+        assertEquals("markerCandidate", result.candidateName)
+        assertTrue(result.candidateFound)
+        assertTrue(result.methodCount > 0)
+        assertTrue(result.signatureChanged)
+    }
+
+    @Test
     fun interruptsNonTerminatingTransformWithinRuntimeLimit() = runBlocking {
         val startedAt = System.nanoTime()
         try {

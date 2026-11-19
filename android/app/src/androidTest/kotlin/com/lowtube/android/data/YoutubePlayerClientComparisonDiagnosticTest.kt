@@ -39,6 +39,129 @@ import java.net.URL
 @RunWith(AndroidJUnit4::class)
 class YoutubePlayerClientComparisonDiagnosticTest {
     @Test
+    fun androidVrDirectFormatCanServeBoundedCdnRange() {
+        val arguments = InstrumentationRegistry.getArguments()
+        assumeTrue(
+            "Pass -e runAndroidVrRangeAcceptance true to run this bounded live network check",
+            arguments.getString("runAndroidVrRangeAcceptance") == "true",
+        )
+        val videoId = arguments.getString("playerVariantVideoId")
+            ?.takeIf(VIDEO_ID::matches)
+            ?: DEFAULT_VIDEO_ID
+        val configuration = readPublicConfiguration()
+        val variant = PlayerVariant(
+            name = "ANDROID_VR",
+            version = "1.65.10",
+            headerId = "28",
+            userAgent = "com.google.android.apps.youtube.vr.oculus/1.65.10 (Linux; U; Android 12L; " +
+                "eureka-user Build/SQ3A.220605.009.A1) gzip",
+            fields = JSONObject()
+                .put("deviceMake", "Oculus")
+                .put("deviceModel", "Quest 3")
+                .put("androidSdkVersion", 32)
+                .put("osName", "Android")
+                .put("osVersion", "12L"),
+        )
+        val response = requestPublicPlayer(videoId, configuration, variant)
+        val streaming = response.optJSONObject("streamingData")
+            ?: error("Android VR returned no streaming data: ${response.optJSONObject("playabilityStatus")?.optString("status")}")
+        val formats = streaming.optJSONArray("formats")
+        val adaptive = streaming.optJSONArray("adaptiveFormats")
+        val directFormats = buildList {
+            listOfNotNull(formats, adaptive).forEach { array ->
+                for (index in 0 until array.length()) {
+                    val format = array.optJSONObject(index) ?: continue
+                    val url = format.optString("url")
+                    if (url.startsWith("https://") && Uri.parse(url).host.orEmpty().endsWith("googlevideo.com")) {
+                        val mime = format.optString("mimeType").substringBefore(';')
+                        add(Triple(format, mime, url))
+                    }
+                }
+            }
+        }.distinctBy { it.third }
+        val directUrls = directFormats.take(3).map { it.first.optInt("itag").toString() to it.third }
+        assertTrue("Android VR returned no direct googlevideo URLs", directUrls.isNotEmpty())
+        val rangeResults = directUrls.map { (itag, url) ->
+            itag to boundedRange(url, variant.userAgent)
+        }
+        val accepted = rangeResults.firstOrNull { (_, result) -> result?.let { it.status in 200..299 && it.bytes > 0 } == true }
+            ?: error("Android VR bounded CDN requests failed: ${rangeResults.joinToString { (itag, result) -> "$itag:${result?.status ?: "error"}" }}")
+        val range = accepted.second!!
+        System.out.println(
+            "androidVrRangeAcceptance; formats=${formats?.length() ?: 0}; adaptive=${adaptive?.length() ?: 0}; " +
+                "probed=${rangeResults.joinToString { (itag, result) -> "$itag:${result?.status ?: "error"}" }}; " +
+                "acceptedItag=${accepted.first}; httpStatus=${range.status}; bytes=${range.bytes}; " +
+                "audio=${directFormats.filter { it.second.startsWith("audio/") }.joinToString { "${it.first.optInt("itag")}:${it.second}" }}; " +
+                "cpuMs=${Process.getElapsedCpuTime()}; wallMs=${SystemClock.elapsedRealtime()}; pssKiB=${Debug.getPss()}",
+        )
+    }
+
+    @Test
+    fun audioDownloadUsesAndroidVrOnlyAfterStandardClientsFail() = runBlocking {
+        val arguments = InstrumentationRegistry.getArguments()
+        assumeTrue(
+            "Pass -e runAndroidVrAudioDownloadAcceptance true to run this bounded live network check",
+            arguments.getString("runAndroidVrAudioDownloadAcceptance") == "true",
+        )
+        val videoId = arguments.getString("playerVariantVideoId")
+            ?.takeIf(VIDEO_ID::matches)
+            ?: DEFAULT_VIDEO_ID
+        val configuration = readPublicConfiguration()
+        val vrVariant = PlayerVariant(
+            name = "ANDROID_VR",
+            version = "1.65.10",
+            headerId = "28",
+            userAgent = "com.google.android.apps.youtube.vr.oculus/1.65.10 (Linux; U; Android 12L; " +
+                "eureka-user Build/SQ3A.220605.009.A1) gzip",
+            fields = JSONObject()
+                .put("deviceMake", "Oculus")
+                .put("deviceModel", "Quest 3")
+                .put("androidSdkVersion", 32)
+                .put("osName", "Android")
+                .put("osVersion", "12L"),
+        )
+        val vrResponse = requestPublicPlayer(videoId, configuration, vrVariant)
+        val repository = InnerTubeSearchRepository(ApplicationProvider.getApplicationContext<Context>())
+        val attemptedClients = mutableListOf<String>()
+        repository.playerRequestOverrideForAcceptance = { body, version, clientId, userAgent ->
+            val name = JSONObject(body).getJSONObject("context").getJSONObject("client").optString("clientName")
+            attemptedClients.add(name)
+            if (name == "ANDROID_VR") {
+                assertEquals(vrVariant.version, version)
+                assertEquals(vrVariant.headerId, clientId)
+                assertEquals(vrVariant.userAgent, userAgent)
+                vrResponse
+            } else {
+                assertTrue("Unexpected player client $name", name in listOf("WEB", "ANDROID", "IOS"))
+                JSONObject().put("playabilityStatus", JSONObject().put("status", "LOGIN_REQUIRED"))
+            }
+        }
+        val cpuStarted = Process.getElapsedCpuTime()
+        val wallStarted = SystemClock.elapsedRealtime()
+        val pssStarted = Debug.getPss()
+        val video = VideoItem(
+            id = videoId,
+            title = "Public audio fallback fixture",
+            duration = "9:56",
+            url = "https://www.youtube.com/watch?v=$videoId",
+        )
+        val option = repository.resolveDownloadOptions(video, DownloadStreamPreferences(), audioOnly = true).first()
+        assertEquals(listOf("WEB", "ANDROID", "IOS", "ANDROID_VR"), attemptedClients)
+        assertTrue("VR fallback did not return audio MIME: ${option.stream.mimeType}", option.stream.mimeType.startsWith("audio/"))
+        assertTrue("VR audio download did not retain its client User-Agent", option.stream.userAgent.contains("youtube.vr.oculus"))
+        val range = boundedRange(option.stream.uri, option.stream.userAgent)
+            ?: error("Android VR audio download URL did not return an HTTP response.")
+        assertEquals(HttpURLConnection.HTTP_PARTIAL, range.status)
+        assertEquals(MAX_RANGE_BYTES, range.bytes)
+        System.out.println(
+            "androidVrAudioDownloadAcceptance; clients=${attemptedClients.joinToString(",")}; " +
+                "itag=${option.stream.itag}; mime=${option.stream.mimeType}; httpStatus=${range.status}; " +
+                "bytes=${range.bytes}; cpuMs=${Process.getElapsedCpuTime() - cpuStarted}; " +
+                "wallMs=${SystemClock.elapsedRealtime() - wallStarted}; pssKiB=$pssStarted->${Debug.getPss()}",
+        )
+    }
+
+    @Test
     fun resolvesLiveMwebAsLastFallbackAfterAndroidAndWebReturnNoStreams() = runBlocking {
         val arguments = InstrumentationRegistry.getArguments()
         assumeTrue(
@@ -844,6 +967,42 @@ class YoutubePlayerClientComparisonDiagnosticTest {
                 }
             },
         )
+        val markerNames = locator.markerCandidateNames.take(MAX_MARKER_URL_CANDIDATES)
+        if (markerNames.isNotEmpty()) {
+            val markerResults = runCatching {
+                runBlocking {
+                    YoutubePlayerJavaScriptRuntime().executeFullPlayerUrlObjectSignatureTransforms(
+                        script.source,
+                        markerNames,
+                        List(challenges.size) { "https://youtube.com/watch?v=yt-dlp-wins" },
+                        challenges.map { it.signature },
+                    )
+                }
+            }.getOrElse { failure ->
+                System.out.println(
+                    "playerVariantSignatureObjectProbe; outcome=execution_failed; " +
+                        "failure=${failure.javaClass.simpleName}; markers=${markerNames.size}; inputs=${challenges.size}",
+                )
+                emptyList()
+            }
+            markerResults.forEachIndexed { index, result ->
+                val input = challenges.getOrNull(index)?.signature.orEmpty()
+                val output = result.signature
+                val permutation = output != null && output.length == input.length &&
+                    output.groupingBy { it }.eachCount() == input.groupingBy { it }.eachCount()
+                System.out.println(
+                    "playerVariantSignatureObjectCandidate; name=${result.candidateName.orEmpty()}; " +
+                        "found=${result.candidateFound}; methods=${result.methodCount}; changed=${result.signatureChanged}; " +
+                        "outputLength=${output?.length ?: 0}; permutation=$permutation",
+                )
+            }
+            System.out.println(
+                "playerVariantSignatureObjectProbe; outcome=completed; markers=${markerNames.joinToString(",")}; " +
+                    "inputs=${challenges.joinToString(",") { "itag${it.itag}:${it.signatureLength}" }}",
+            )
+        } else {
+            System.out.println("playerVariantSignatureObjectProbe; outcome=no_marker_candidates")
+        }
         val stringCandidates = YoutubePlayerTransformLocator.findStringOperationCandidates(
             script.source,
             MAX_SIGNATURE_STRING_CANDIDATES,

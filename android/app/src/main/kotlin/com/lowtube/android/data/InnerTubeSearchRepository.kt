@@ -156,7 +156,7 @@ class InnerTubeSearchRepository(context: Context? = null) {
         preferWebClient: Boolean = false,
     ): ResolvedVideoStream = withContext(Dispatchers.IO) {
         operationMutex.withLock {
-            val resolved = resolvePlayerData(video, preferWebClient, ::hasDirectOrDash)
+            val resolved = resolvePlayerData(video, preferWebClient, acceptsStreaming = ::hasDirectOrDash)
             resolveStreams(resolved.video, resolved.streaming, preferences, resolved.userAgent)
         }
     }
@@ -164,6 +164,7 @@ class InnerTubeSearchRepository(context: Context? = null) {
     private suspend fun resolvePlayerData(
         video: VideoItem,
         preferWebClient: Boolean,
+        allowVrAudioFallback: Boolean = false,
         acceptsStreaming: (JSONObject) -> Boolean,
     ): ResolvedPlayerData {
         require(VIDEO_ID.matches(video.id)) { "This item is not a playable video." }
@@ -186,6 +187,7 @@ class InnerTubeSearchRepository(context: Context? = null) {
             player,
             preferWebClient,
             requestSignatureTimestamp,
+            allowVrAudioFallback,
             acceptsStreaming,
         )
             .takeIf { acceptsStreaming(it.streaming) }
@@ -226,7 +228,7 @@ class InnerTubeSearchRepository(context: Context? = null) {
         audioOnly: Boolean = false,
     ): List<DownloadFormatOption> = withContext(Dispatchers.IO) {
         operationMutex.withLock {
-            val resolved = resolvePlayerData(video, preferWebClient = true) {
+            val resolved = resolvePlayerData(video, preferWebClient = true, allowVrAudioFallback = audioOnly) {
                 hasDownloadableFormat(it, preferences, audioOnly)
             }
             downloadOptions(resolved.video, resolved.streaming, preferences, audioOnly, resolved.userAgent)
@@ -396,6 +398,7 @@ class InnerTubeSearchRepository(context: Context? = null) {
         val version: String,
         val id: String,
         val userAgent: String,
+        val clientFields: JSONObject = JSONObject(),
     )
 
     /** Accepts direct URLs and signatureCipher entries whose signature is already plain text. */
@@ -673,19 +676,39 @@ class InnerTubeSearchRepository(context: Context? = null) {
         pageResponse: JSONObject,
         preferWebClient: Boolean,
         requestSignatureTimestamp: Int,
+        allowVrAudioFallback: Boolean,
         acceptsStreaming: (JSONObject) -> Boolean,
     ): ResolvedPlayerResponse {
         if (apiKey.isBlank()) throw IOException("YouTube player configuration is incomplete. Retry the video.")
         val androidClient = PlayerRequestClient("ANDROID", "20.13.41", "3", USER_AGENT)
         val webClient = PlayerRequestClient("WEB", clientVersion, "1", USER_AGENT)
         val iosClient = PlayerRequestClient("IOS", IOS_CLIENT_VERSION, "5", IOS_USER_AGENT)
-        val clients = if (preferWebClient) {
+        val baseClients = if (preferWebClient) {
             listOf(webClient, androidClient, iosClient)
         } else {
             listOf(androidClient, webClient, iosClient)
         }
+        val clients = if (allowVrAudioFallback) {
+            baseClients + PlayerRequestClient(
+                name = "ANDROID_VR",
+                version = ANDROID_VR_CLIENT_VERSION,
+                id = "28",
+                userAgent = ANDROID_VR_USER_AGENT,
+                clientFields = JSONObject()
+                    .put("deviceMake", "Oculus")
+                    .put("deviceModel", "Quest 3")
+                    .put("androidSdkVersion", 32)
+                    .put("osName", "Android")
+                    .put("osVersion", "12L")
+                    .put("userAgent", ANDROID_VR_USER_AGENT),
+            )
+        } else baseClients
         var lastStatus = ""
-        for ((name, version, clientId, userAgent) in clients) {
+        for (playerClient in clients) {
+            val name = playerClient.name
+            val version = playerClient.version
+            val clientId = playerClient.id
+            val userAgent = playerClient.userAgent
             val client = JSONObject()
                 .put("clientName", name)
                 .put("clientVersion", version)
@@ -704,6 +727,11 @@ class InnerTubeSearchRepository(context: Context? = null) {
                     .put("osName", "iPhone")
                     .put("osVersion", "18.3.2.22D82")
                     .put("userAgent", userAgent)
+            }
+            val extraKeys = playerClient.clientFields.keys()
+            while (extraKeys.hasNext()) {
+                val key = extraKeys.next()
+                client.put(key, playerClient.clientFields.opt(key))
             }
             val context = JSONObject().put("client", client)
             val payload = JSONObject()
@@ -1411,6 +1439,9 @@ class InnerTubeSearchRepository(context: Context? = null) {
         private const val MWEB_USER_AGENT = "Mozilla/5.0 (iPad; CPU OS 16_7_10 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1,gzip(gfe)"
         private const val IOS_CLIENT_VERSION = "21.26.4"
         private const val IOS_USER_AGENT = "com.google.ios.youtube/21.26.4 (iPhone16,2; U; CPU iOS 18_3_2 like Mac OS X;)"
+        private const val ANDROID_VR_CLIENT_VERSION = "1.65.10"
+        private const val ANDROID_VR_USER_AGENT = "com.google.android.apps.youtube.vr.oculus/1.65.10 (Linux; U; Android 12L; " +
+            "eureka-user Build/SQ3A.220605.009.A1) gzip"
         private const val MAX_MWEB_CONFIG_BYTES = 4 * 1024 * 1024
         private val MWEB_CLIENT_VERSION_PATTERN = Regex("""[\"']INNERTUBE_CLIENT_VERSION[\"']\s*:\s*[\"']([0-9.]{1,64})[\"']""")
         private val MWEB_PLAYER_SCRIPT_PATTERN = Regex("""[\"']PLAYER_JS_URL[\"']\s*:\s*[\"']([^\"']{1,256})[\"']""")

@@ -25,6 +25,13 @@ internal class YoutubePlayerJavaScriptRuntime {
         val methodCount: Int,
         val nChanged: Boolean,
     )
+    data class UrlObjectSignatureTransformResult(
+        val signature: String?,
+        val candidateName: String?,
+        val candidateFound: Boolean,
+        val methodCount: Int,
+        val signatureChanged: Boolean,
+    )
 
     suspend fun inspectUrlCandidate(
         source: String,
@@ -168,6 +175,63 @@ internal class YoutubePlayerJavaScriptRuntime {
         }
     }
 
+    /** Applies a bounded marker-selected URL-object signature transform in an isolated player bundle. */
+    suspend fun executeFullPlayerUrlObjectSignatureTransforms(
+        source: String,
+        candidateNames: List<String>,
+        urls: List<String>,
+        signatures: List<String>,
+    ): List<UrlObjectSignatureTransformResult> {
+        require(source.isNotBlank() && source.toByteArray(Charsets.UTF_8).size <= MAX_SOURCE_BYTES) {
+            "YouTube player script is empty or larger than 8 MB."
+        }
+        require(candidateNames.isNotEmpty() && candidateNames.size <= MAX_MARKER_URL_CANDIDATES &&
+            candidateNames.all(FUNCTION_NAME::matches)
+        ) { "YouTube player URL-object candidates are invalid." }
+        require(urls.isNotEmpty() && urls.size <= MAX_MARKER_URL_BATCH && urls.size == signatures.size &&
+            urls.all { it.isNotBlank() && it.length <= MAX_INPUT_LENGTH } &&
+            signatures.all { it.isNotBlank() && it.length <= MAX_INPUT_LENGTH }
+        ) { "YouTube player signature challenge batch is invalid." }
+
+        val program = buildFullUrlObjectSignatureProgram(source, candidateNames, urls, signatures)
+        return withContext(Dispatchers.Default) {
+            val quickJs = QuickJs.create(Dispatchers.Default)
+            try {
+                quickJs.memoryLimit = MAX_RUNTIME_MEMORY_BYTES
+                quickJs.maxStackSize = MAX_STACK_SIZE_BYTES
+                quickJs.evaluationTimeoutMillis = EXECUTION_TIMEOUT_MS
+                val encoded = withTimeout(EXECUTION_TIMEOUT_MS + CANCELLATION_GRACE_MS) {
+                    quickJs.evaluate<String>(program, filename = RUNTIME_FILENAME)
+                }
+                if (encoded.length > MAX_BATCH_OUTPUT_LENGTH) throw IOException("YouTube signature output is too large.")
+                val results = JSONArray(encoded)
+                if (results.length() != urls.size) throw IOException("YouTube player returned an invalid signature batch.")
+                List(results.length()) { index ->
+                    val result = results.optJSONObject(index)
+                        ?: return@List UrlObjectSignatureTransformResult(null, null, false, 0, false)
+                    UrlObjectSignatureTransformResult(
+                        signature = result.optString("signature").takeIf { it.isNotBlank() && it.length <= MAX_INPUT_LENGTH },
+                        candidateName = result.optString("candidateName").takeIf(String::isNotBlank),
+                        candidateFound = result.optBoolean("candidateFound"),
+                        methodCount = result.optInt("methodCount").coerceIn(0, 128),
+                        signatureChanged = result.optBoolean("signatureChanged"),
+                    )
+                }
+            } catch (e: TimeoutCancellationException) {
+                throw IOException("YouTube player signature transform timed out.", e)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: QuickJsInterruptedException) {
+                throw IOException("YouTube player signature transform timed out.", e)
+            } catch (e: QuickJsException) {
+                val location = e.lineNumber?.let { " at line $it" }.orEmpty()
+                throw IOException("YouTube player signature transform could not be evaluated$location.", e)
+            } finally {
+                quickJs.close()
+            }
+        }
+    }
+
     /** Executes a bounded group of transforms against one full player bundle evaluation. */
     suspend fun executeFullPlayerFunctions(
         source: String,
@@ -285,6 +349,36 @@ internal class YoutubePlayerJavaScriptRuntime {
             append("}catch(__lowtube_candidate_error){}}__lowtube_results.push({url:__lowtube_accepted,candidateFound:__lowtube_found,methodCount:__lowtube_count,nChanged:__lowtube_changed});}")
             append("JSON.stringify(__lowtube_results);")
         }
+
+    private fun buildFullUrlObjectSignatureProgram(
+        source: String,
+        candidateNames: List<String>,
+        urls: List<String>,
+        signatures: List<String>,
+    ): String = buildString(source.length + urls.size * 384 + 2_560) {
+        append(PLAYER_ENVIRONMENT_SHIMS)
+        append(YoutubePlayerScriptScopeNormalizer.prepare(source))
+        append("\n;var __lowtube_urls=")
+        append(JSONArray(urls).toString())
+        append(";var __lowtube_signatures=")
+        append(JSONArray(signatures).toString())
+        append(";var __lowtube_results=[];")
+        append("for(var __lowtube_u=0;__lowtube_u<__lowtube_urls.length;__lowtube_u++){var __lowtube_output=null;var __lowtube_name=null;var __lowtube_found=false;var __lowtube_count=0;var __lowtube_changed=false;")
+        append("for(var __lowtube_f=0;__lowtube_f<").append(candidateNames.size).append("&&!__lowtube_output;__lowtube_f++){try{var __lowtube_base=null;")
+        candidateNames.forEachIndexed { index, name ->
+            append("if(__lowtube_f===").append(index).append("){__lowtube_base=")
+            append(name).append("(__lowtube_urls[__lowtube_u],\"s\",encodeURIComponent(__lowtube_signatures[__lowtube_u]));__lowtube_name=\"")
+            append(name).append("\";}")
+        }
+        append("if(!__lowtube_base||typeof __lowtube_base.get!==\"function\")continue;")
+        append("__lowtube_found=true;var __lowtube_proto=Object.getPrototypeOf(__lowtube_base);var __lowtube_methods=__lowtube_proto?Object.getOwnPropertyNames(__lowtube_proto):[];")
+        append("for(var __lowtube_m=0;__lowtube_m<__lowtube_methods.length&&!__lowtube_output;__lowtube_m++){var __lowtube_key=__lowtube_methods[__lowtube_m];")
+        append("if([\"constructor\",\"set\",\"get\",\"clone\"].indexOf(__lowtube_key)>=0||typeof __lowtube_base[__lowtube_key]!==\"function\")continue;__lowtube_count++;try{__lowtube_base[__lowtube_key]();")
+        append("var __lowtube_value=__lowtube_base.get(\"s\");if(__lowtube_value!=null){try{__lowtube_value=decodeURIComponent(String(__lowtube_value));}catch(__lowtube_decode_error){__lowtube_value=String(__lowtube_value);}}")
+        append("if(typeof __lowtube_value===\"string\"&&__lowtube_value.length<=16384&&__lowtube_value!==__lowtube_signatures[__lowtube_u]){__lowtube_output=__lowtube_value;__lowtube_changed=true;}break;}catch(__lowtube_method_error){}}")
+        append("}catch(__lowtube_candidate_error){}}__lowtube_results.push({signature:__lowtube_output,candidateName:__lowtube_name,candidateFound:__lowtube_found,methodCount:__lowtube_count,signatureChanged:__lowtube_changed});}")
+        append("JSON.stringify(__lowtube_results);")
+    }
 
     companion object {
         private val UNRESOLVED_IDENTIFIER = Regex(
