@@ -388,6 +388,15 @@ internal fun ProfileTab(
                 }
                 if (accountMessage.isNotBlank()) {
                     Text(accountMessage, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    TextButton(onClick = {
+                        val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                        clipboard.setPrimaryClip(
+                            android.content.ClipData.newPlainText(context.getString(R.string.google_account), accountMessage),
+                        )
+                        Toast.makeText(context, R.string.account_message_copied, Toast.LENGTH_SHORT).show()
+                    }) {
+                        Text(stringResource(R.string.copy_account_message))
+                    }
                 }
                 Button(enabled = !signInBusy, onClick = onSignIn) {
                     if (signInBusy) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)

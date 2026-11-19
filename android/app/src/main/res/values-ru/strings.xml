@@ -22,6 +22,8 @@
     <string name="account_oauth_not_configured">Вход через Google не настроен для этой сборки. Android OAuth-клиент LowTube должен быть зарегистрирован с именем пакета и сертификатом подписи этого приложения.</string>
     <string name="account_sign_in_failed">Не удалось войти через Google. Проверьте настройки OAuth и повторите попытку.</string>
     <string name="account_sign_in_cancelled">Вход через Google отменён.</string>
+    <string name="copy_account_message">Копировать сообщение</string>
+    <string name="account_message_copied">Сообщение об аккаунте скопировано</string>
     <string name="account_picker_cancelled">Выбор аккаунта Google закрыт до выбора аккаунта.</string>
     <string name="account_picker_cancelled_diagnostic">Выбор аккаунта Google завершён до начала авторизации (код %1$d). Провайдер: %2$s %3$s; API авторизации: %4$s. Повторите попытку и завершите выбор аккаунта.</string>
     <string name="account_authorization_cancelled">Окно авторизации Google закрыто. Если вы его не закрывали, проверьте Android OAuth client для пакета com.lowtube.android и SHA-1 сертификата подписи этого APK.</string>

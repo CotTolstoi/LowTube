@@ -98,6 +98,8 @@
 - [ ] Після невалідної/зміненої сесії попередні локальні дані не пошкоджуються; збої видно користувачеві.
 - Код-база: `src/SavedSession.cs`, `BrowserDiscovery.cs`, `InnerTube.cs`, `GoogleAccount.cs`, `GoogleAccountForm.cs`, `AccountWindow.cs` у WPF-гілці як додаткова довідка.
 
+19.11.2026 Profile показує кнопку `Copy message` під непорожнім повідомленням акаунта. Вона копіює лише видимий текст помилки/статусу, без акаунтних даних чи токенів. `ProfileMessageCopyTest` пройшов 1/1 на API23 та API33 і відновив попередній clipboard тестового AVD; живу помилку входу на телефоні повторно не викликали.
+
 ## Налаштування та звук
 
 - [x] `ResumePlayback` імпорт/експорт PC JSON зберігає однойменний Windows ключ; legacy JSON без цього ключа залишає поточне значення. `SettingsTransferRepositoryTest` підтвердив import `false`, export/round-trip та незмінність fallback для legacy JSON без ключа; усі 6 instrumentation тестів пройшли на Android 6/API 23. Credentials та browser profile лишаються поза allowlist.
@@ -125,7 +127,7 @@
 - [ ] Мінімальний API23 налаштовано; APK збирається/встановлюється та базові search/settings/playback сценарії перевірено на API23 AVD і API33 пристрої. Окремий Downloads screen також відкрився на API23. Повний acceptance і всі функції ще не пройдено на цих рівнях.
 - [ ] Актуальна фізична arm64-перевірка, плюс оцінка armeabi-v7a лише якщо це підтримуватиме обраний runtime/dependencies.
 - [ ] Offline/build перевірки окремі від мережевих/акаунтних, фізичного аудіо, codec/GPU й відновлення після background/process death.
-- [x] EN/UK/RU string resource keys: `android/tools/Verify-LocaleResourceParity.ps1` перевіряє однакові 252 записи в кожному каталозі; API23 instrumentation перевіряє самоназви `English`, `Русский`, `Українська` в усіх трьох локалях. Повна лінгвістична редактура всіх UI рядків і acceptance кожного екрану лишаються окремою роботою.
+- [x] EN/UK/RU string resource keys: `android/tools/Verify-LocaleResourceParity.ps1` перевіряє однакові 333 записи в кожному каталозі; API23 instrumentation перевіряє самоназви `English`, `Русский`, `Українська` в усіх трьох локалях. Повна лінгвістична редактура всіх UI рядків і acceptance кожного екрану лишаються окремою роботою.
 - [ ] Windows `Build-All.ps1` і його сценарії лишаються працездатними без Android toolchain.
 
 ## Resolver обмеження станом на 15.11.2026
