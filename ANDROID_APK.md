@@ -2,7 +2,18 @@
 
 This branch publishes the latest available Android development build.
 
-## Current artifact (2026-11-19)
+## Current artifact (2026-11-19, source revision 724bfc7)
+
+- File: `LowTube-Android-debug-0.1.0.apk`; version `0.1.0-android-dev` (version code 1); minimum Android 6.0 (API 23).
+- Build type: installable debug APK, signed with the Android debug certificate; not a production-signed release.
+- Source revision: `724bfc7` (`feat/android-first-run-setup`).
+- APK size: 25756687 bytes.
+- SHA-256: `98A3BCD5DCE4B8456E14D2AD61D4A6F08838234A5FC78165B28B0C0927CF10C5`.
+- Offline `:app:assembleDebug :app:assembleDebugAndroidTest --no-configuration-cache` succeeded. Five Android6/API23 instrumentation checks passed (request contract, history continuation, response parsing and Profile UI). EN/UK/RU locale resource parity passed at 352 keys each.
+- The Profile contains an experimental, read-only YouTube account-history path using private InnerTube `FEhistory`; the OAuth bearer token and returned entries are held only in memory. This endpoint is unsupported and can change. Live account-history/OAuth acceptance remains open because the owner OAuth client is not configured; this APK run did not open authorization or request account history.
+- Installed and launched on the connected Android13/API33 system; `MainActivity` remained top-resumed. The system identifies as `TrebleDroid vanilla`, so Redmi Note 8 hardware is unverified. No video playback or download was started. Five-second idle sample: CPU 0% of one core, PSS 124.7 MiB, RSS 226.7 MiB, available RAM 1,595 MiB; one point sample, not a benchmark.
+
+## Previous artifact details (source revision 52c984e; historical)
 
 - Built from Android development branch `feat/android-first-run-setup` at source commit `52c984e`; the APK includes the SAF download-folder option in first-run setup and centralized persistable-grant cleanup. Unit and instrumentation test sources are not packaged in the APK.
 - `:app:assembleDebug :app:assembleDebugAndroidTest --offline --no-configuration-cache` succeeded. `FirstRunSetupScreenTest` passed 3/3 on API23. Manual API23 SAF acceptance selected the Download folder, showed its name in setup, then used Use default; no video or download was started for this publication.
