@@ -35,6 +35,13 @@
     <string name="sync_youtube_subscriptions">Синхронізувати підписки</string>
     <string name="youtube_account_required">Увійдіть через Google, щоб читати підписки YouTube. Спершу LowTube попросить доступ лише для читання.</string>
     <string name="youtube_account_subscription">З акаунта YouTube</string>
+    <string name="youtube_history_title">Історія переглядів YouTube</string>
+    <string name="youtube_history_experimental">Експериментальний доступ лише для читання через приватний endpoint YouTube. Результати залишаються в пам’яті; Google може змінити цей endpoint.</string>
+    <string name="youtube_history_sign_in_required">Увійдіть через Google і надайте доступ YouTube лише для читання, щоб завантажити історію.</string>
+    <string name="youtube_history_refresh">Завантажити / оновити історію</string>
+    <string name="youtube_history_loaded">З історії YouTube завантажено відео: %1$d.</string>
+    <string name="youtube_history_empty">YouTube не повернув відео з історії переглядів.</string>
+    <string name="youtube_history_failed">Не вдалося завантажити історію YouTube. Перевірте дозвіл акаунта й повторіть спробу.</string>
     <string name="youtube_sync_success">Синхронізовано каналів з акаунта YouTube: %1$d.</string>
     <string name="youtube_sync_failed">Не вдалося синхронізувати підписки YouTube. Спробуйте ще раз.</string>
     <string name="youtube_unsubscribe_not_available">Цей канал підписаний через ваш YouTube-акаунт. Відписка через LowTube ще недоступна.</string>

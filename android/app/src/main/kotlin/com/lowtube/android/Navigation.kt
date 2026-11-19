@@ -50,6 +50,7 @@ import com.lowtube.android.model.LocalAudioTrack
 import com.lowtube.android.model.LocalVideoSource
 import com.lowtube.android.model.YouTubeSubscription
 import com.lowtube.android.model.YouTubePlaylist
+import com.lowtube.android.model.SearchPage
 import com.lowtube.android.ui.library.LibraryScreen
 import com.lowtube.android.ui.queue.QueueScreen
 import com.lowtube.android.ui.downloads.DownloadsScreen
@@ -58,6 +59,8 @@ import com.lowtube.android.benchmark.DecoderBenchmarkScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+private const val MAX_YOUTUBE_HISTORY_PAGES = 64
 
 @Composable
 fun MainNavigation(
@@ -72,6 +75,7 @@ fun MainNavigation(
     onRequestYouTubeSync: ((Result<List<YouTubeSubscription>>) -> Unit) -> Unit,
     onRequestYouTubePlaylists: ((Result<List<YouTubePlaylist>>) -> Unit) -> Unit,
     onRequestYouTubePlaylistVideos: (String, (Result<List<VideoItem>>) -> Unit) -> Unit,
+    onRequestYouTubeHistoryPage: (String?, (Result<SearchPage>) -> Unit) -> Unit,
     onChangeYouTubeSubscription: (String, Boolean, (Result<Unit>) -> Unit) -> Unit,
     onDarkThemeChanged: (Boolean) -> Unit,
     onLanguageChanged: (String) -> Unit,
@@ -165,10 +169,55 @@ fun MainNavigation(
     var youtubePlaylists by remember { mutableStateOf(emptyList<YouTubePlaylist>()) }
     var youtubePlaylistsMessage by remember { mutableStateOf("") }
     var youtubePlaylistsBusy by remember { mutableStateOf(false) }
+    var youtubeHistoryItems by remember { mutableStateOf(emptyList<VideoItem>()) }
+    var youtubeHistoryContinuation by remember { mutableStateOf<String?>(null) }
+    var youtubeHistoryMessage by remember { mutableStateOf("") }
+    var youtubeHistoryBusy by remember { mutableStateOf(false) }
+    var youtubeHistoryPageCount by remember { mutableIntStateOf(0) }
     LaunchedEffect(googleAccountEmail) {
         youtubePlaylists = emptyList()
         youtubePlaylistsMessage = ""
         youtubePlaylistsBusy = false
+        youtubeHistoryItems = emptyList()
+        youtubeHistoryContinuation = null
+        youtubeHistoryMessage = ""
+        youtubeHistoryBusy = false
+        youtubeHistoryPageCount = 0
+    }
+    val loadYouTubeHistory: (Boolean) -> Unit = { reload ->
+        if (googleAccountEmail.isBlank()) {
+            youtubeHistoryMessage = context.getString(R.string.youtube_history_sign_in_required)
+        } else if (!youtubeHistoryBusy && !youtubeSyncBusy) {
+            val continuation = if (reload) null else youtubeHistoryContinuation
+            if (reload || continuation != null) {
+                val requestedAccount = googleAccountEmail
+                youtubeHistoryBusy = true
+                youtubeHistoryMessage = ""
+                onRequestYouTubeHistoryPage(continuation) { result ->
+                    youtubeHistoryBusy = false
+                    if (!currentGoogleAccountEmail.equals(requestedAccount, ignoreCase = true)) {
+                        youtubeHistoryItems = emptyList()
+                        youtubeHistoryContinuation = null
+                        youtubeHistoryMessage = ""
+                        youtubeHistoryPageCount = 0
+                    } else {
+                        result.onSuccess { page ->
+                            youtubeHistoryItems = if (continuation == null) page.items else
+                                (youtubeHistoryItems + page.items).distinctBy { it.kind + ":" + it.id }
+                            youtubeHistoryContinuation = page.continuation
+                            youtubeHistoryPageCount = if (continuation == null) 1 else youtubeHistoryPageCount + 1
+                            youtubeHistoryMessage = if (youtubeHistoryItems.isEmpty()) {
+                                context.getString(R.string.youtube_history_empty)
+                            } else {
+                                context.getString(R.string.youtube_history_loaded, youtubeHistoryItems.size)
+                            }
+                        }.onFailure {
+                            youtubeHistoryMessage = context.getString(R.string.youtube_history_failed)
+                        }
+                    }
+                }
+            }
+        }
     }
     val restoredPlaybackSession = remember(library, playbackSessionStore) {
         playbackSessionStore.load()?.let { session ->
@@ -438,6 +487,10 @@ fun MainNavigation(
                     onGoogleSignOut = {
                         library.clearYouTubeAccountSubscriptions()
                         libraryRevision++
+                        youtubeHistoryItems = emptyList()
+                        youtubeHistoryContinuation = null
+                        youtubeHistoryMessage = ""
+                        youtubeHistoryPageCount = 0
                         onGoogleSignOut()
                     },
                     youtubeSyncBusy = youtubeSyncBusy,
@@ -459,6 +512,11 @@ fun MainNavigation(
                             }.onFailure { youtubeSyncMessage = it.message ?: context.getString(R.string.youtube_sync_failed) }
                         }
                     },
+                    youtubeHistoryItems = youtubeHistoryItems,
+                    youtubeHistoryBusy = youtubeHistoryBusy || youtubeSyncBusy,
+                    youtubeHistoryMessage = youtubeHistoryMessage,
+                    youtubeHistoryHasMore = youtubeHistoryContinuation != null && youtubeHistoryPageCount < MAX_YOUTUBE_HISTORY_PAGES,
+                    onLoadYouTubeHistory = loadYouTubeHistory,
                     onOpenSettings = { tab -> returnMainTab = tab; backStack.add(Settings) },
                     onOpenLibrary = { tab -> returnMainTab = tab; backStack.add(Library) },
                     selectedTab = mainTab,

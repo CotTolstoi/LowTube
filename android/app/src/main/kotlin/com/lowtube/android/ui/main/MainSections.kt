@@ -17,6 +17,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -348,81 +352,134 @@ internal fun ProfileTab(
     accountAvatarUrl: String = "",
     accountMessage: String,
     signInBusy: Boolean,
+    youtubeHistoryItems: List<VideoItem> = emptyList(),
+    youtubeHistoryBusy: Boolean = false,
+    youtubeHistoryMessage: String = "",
+    youtubeHistoryHasMore: Boolean = false,
+    onLoadYouTubeHistory: (Boolean) -> Unit = {},
+    onPlayHistoryVideo: (VideoItem) -> Unit = {},
     onSignIn: () -> Unit,
     onSignOut: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    Column(
-        modifier.fillMaxSize().padding(24.dp),
+    LazyColumn(
+        modifier.fillMaxSize().padding(horizontal = 16.dp),
+        contentPadding = PaddingValues(vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Card(Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(stringResource(R.string.google_account), style = MaterialTheme.typography.titleMedium)
-                if (accountEmail.isBlank()) {
-                    Text(stringResource(R.string.account_guest), style = MaterialTheme.typography.bodyLarge)
-                    Text(stringResource(R.string.account_sign_in_help), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                } else {
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            Modifier.size(64.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(accountName.trim().firstOrNull()?.uppercaseChar()?.toString() ?: accountEmail.firstOrNull()?.uppercaseChar()?.toString().orEmpty())
-                            if (accountAvatarUrl.isNotBlank()) {
-                                AsyncImage(
-                                    model = accountAvatarUrl,
-                                    contentDescription = accountName.ifBlank { accountEmail },
-                                    modifier = Modifier.fillMaxSize().clip(CircleShape),
-                                    contentScale = ContentScale.Crop,
-                                )
+        item {
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.google_account), style = MaterialTheme.typography.titleMedium)
+                    if (accountEmail.isBlank()) {
+                        Text(stringResource(R.string.account_guest), style = MaterialTheme.typography.bodyLarge)
+                        Text(stringResource(R.string.account_sign_in_help), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    } else {
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                Modifier.size(64.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(accountName.trim().firstOrNull()?.uppercaseChar()?.toString() ?: accountEmail.firstOrNull()?.uppercaseChar()?.toString().orEmpty())
+                                if (accountAvatarUrl.isNotBlank()) {
+                                    AsyncImage(
+                                        model = accountAvatarUrl,
+                                        contentDescription = accountName.ifBlank { accountEmail },
+                                        modifier = Modifier.fillMaxSize().clip(CircleShape),
+                                        contentScale = ContentScale.Crop,
+                                    )
+                                }
+                            }
+                            Column {
+                                Text(accountName.ifBlank { accountEmail }, style = MaterialTheme.typography.bodyLarge)
+                                if (accountName.isNotBlank()) Text(accountEmail, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
-                        Column {
-                            Text(accountName.ifBlank { accountEmail }, style = MaterialTheme.typography.bodyLarge)
-                            if (accountName.isNotBlank()) Text(accountEmail, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
                     }
-                }
-                if (accountMessage.isNotBlank()) {
-                    Text(accountMessage, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    TextButton(onClick = {
-                        val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                        clipboard.setPrimaryClip(
-                            android.content.ClipData.newPlainText(context.getString(R.string.google_account), accountMessage),
-                        )
-                        Toast.makeText(context, R.string.account_message_copied, Toast.LENGTH_SHORT).show()
-                    }) {
-                        Text(stringResource(R.string.copy_account_message))
+                    if (accountMessage.isNotBlank()) {
+                        Text(accountMessage, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        TextButton(onClick = {
+                            val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                            clipboard.setPrimaryClip(android.content.ClipData.newPlainText(context.getString(R.string.google_account), accountMessage))
+                            Toast.makeText(context, R.string.account_message_copied, Toast.LENGTH_SHORT).show()
+                        }) { Text(stringResource(R.string.copy_account_message)) }
                     }
-                }
-                Button(enabled = !signInBusy, onClick = onSignIn) {
-                    if (signInBusy) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
-                    else Text(stringResource(if (accountEmail.isBlank()) R.string.account_sign_in else R.string.account_switch))
-                }
-                if (accountEmail.isNotBlank()) {
-                    TextButton(onClick = onSignOut) { Text(stringResource(R.string.account_sign_out)) }
+                    Button(enabled = !signInBusy, onClick = onSignIn) {
+                        if (signInBusy) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                        else Text(stringResource(if (accountEmail.isBlank()) R.string.account_sign_in else R.string.account_switch))
+                    }
+                    if (accountEmail.isNotBlank()) TextButton(onClick = onSignOut) { Text(stringResource(R.string.account_sign_out)) }
                 }
             }
         }
-        Card(Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(stringResource(R.string.supported_links), style = MaterialTheme.typography.titleMedium)
-                Text(stringResource(R.string.supported_links_hint), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                TextButton(
-                    onClick = {
-                        val action = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                            Settings.ACTION_APP_OPEN_BY_DEFAULT_SETTINGS
-                        } else {
-                            Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+        item {
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.youtube_history_title), style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.youtube_history_experimental), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (accountEmail.isBlank()) {
+                        Text(stringResource(R.string.youtube_history_sign_in_required), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Button(enabled = accountEmail.isNotBlank() && !youtubeHistoryBusy, onClick = { onLoadYouTubeHistory(true) }) {
+                            if (youtubeHistoryBusy) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                            else Text(stringResource(R.string.youtube_history_refresh))
                         }
-                        val intent = Intent(action, Uri.fromParts("package", context.packageName, null))
-                        runCatching { context.startActivity(intent) }
-                            .onFailure { Toast.makeText(context, R.string.action_failed, Toast.LENGTH_SHORT).show() }
-                    },
-                ) { Text(stringResource(R.string.open_link_settings)) }
+                        if (youtubeHistoryHasMore) {
+                            TextButton(enabled = !youtubeHistoryBusy, onClick = { onLoadYouTubeHistory(false) }) {
+                                Text(stringResource(R.string.load_more))
+                            }
+                        }
+                    }
+                    if (youtubeHistoryMessage.isNotBlank()) {
+                        Text(youtubeHistoryMessage, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    if (youtubeHistoryItems.isNotEmpty()) {
+                        LazyColumn(Modifier.fillMaxWidth().heightIn(max = 420.dp)) {
+                            items(youtubeHistoryItems, key = { "youtube-history:${it.kind}:${it.id}" }) { video ->
+                                Row(
+                                    Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    AsyncImage(
+                                        model = video.thumbnailUrl,
+                                        contentDescription = null,
+                                        modifier = Modifier.width(96.dp).height(54.dp).clip(RoundedCornerShape(8.dp)),
+                                        contentScale = ContentScale.Crop,
+                                    )
+                                    Column(Modifier.weight(1f)) {
+                                        Text(video.title, style = MaterialTheme.typography.bodyMedium, maxLines = 2)
+                                        if (video.channel.isNotBlank()) Text(video.channel, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text(video.published, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                    TextButton(onClick = { onPlayHistoryVideo(video) }) { Text(stringResource(R.string.play)) }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        item {
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.supported_links), style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.supported_links_hint), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    TextButton(
+                        onClick = {
+                            val action = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                                Settings.ACTION_APP_OPEN_BY_DEFAULT_SETTINGS
+                            } else {
+                                Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                            }
+                            val intent = Intent(action, Uri.fromParts("package", context.packageName, null))
+                            runCatching { context.startActivity(intent) }
+                                .onFailure { Toast.makeText(context, R.string.action_failed, Toast.LENGTH_SHORT).show() }
+                        },
+                    ) { Text(stringResource(R.string.open_link_settings)) }
+                }
             }
         }
     }

@@ -27,6 +27,8 @@ import com.lowtube.android.data.GoogleAccountMessageStore
 import com.lowtube.android.data.GoogleAuthorizationDiagnostics
 import com.lowtube.android.data.GoogleProfileAvatarPolicy
 import com.lowtube.android.data.YouTubeDataApiRepository
+import com.lowtube.android.data.YouTubeAccountHistoryRepository
+import com.lowtube.android.model.SearchPage
 import com.lowtube.android.model.YouTubeSubscription
 import com.lowtube.android.model.YouTubePlaylist
 import androidx.lifecycle.lifecycleScope
@@ -83,6 +85,7 @@ class MainActivity : ComponentActivity() {
   private var pendingYoutubeAccountEmail = ""
   private var youtubeSyncGeneration = 0
   private val youtubeDataApi = YouTubeDataApiRepository()
+  private val youtubeAccountHistoryApi = YouTubeAccountHistoryRepository()
   private val googleAccountSelectionLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
     if (result.resultCode != RESULT_OK) {
       googleSignInBusy = false
@@ -265,6 +268,7 @@ class MainActivity : ComponentActivity() {
             onRequestYouTubeSync = ::syncYouTubeSubscriptions,
             onRequestYouTubePlaylists = ::loadYouTubePlaylists,
             onRequestYouTubePlaylistVideos = ::loadYouTubePlaylistVideos,
+            onRequestYouTubeHistoryPage = ::loadYouTubeHistoryPage,
             onChangeYouTubeSubscription = ::changeYouTubeSubscription,
             onDarkThemeChanged = { enabled ->
               darkTheme = enabled
@@ -601,6 +605,16 @@ class MainActivity : ComponentActivity() {
     completion: (Result<List<com.lowtube.android.model.VideoItem>>) -> Unit,
   ) {
     requestYouTubeReadData({ accessToken -> youtubeDataApi.playlistVideos(accessToken, playlistId) }, completion)
+  }
+
+  private fun loadYouTubeHistoryPage(
+    continuation: String?,
+    completion: (Result<SearchPage>) -> Unit,
+  ) {
+    requestYouTubeReadData(
+      { accessToken -> youtubeAccountHistoryApi.page(accessToken, continuation, AppLocale.language(this)) },
+      completion,
+    )
   }
 
   private fun <T> requestYouTubeReadData(
