@@ -2,15 +2,15 @@
 
 This branch publishes the latest available Android development build.
 
-## Current artifact (2026-11-20, source revision 5259c04)
+## Current artifact (2026-11-20, source revision d97abc3)
 
 - File: `LowTube-Android-debug-0.1.0.apk`; version `0.1.0-android-dev` (version code 1); minimum Android 6.0 (API 23).
 - Build type: installable debug APK, signed with the Android debug certificate; not a production-signed release.
-- Source revision: `5259c04` (`feat/android-first-run-setup`).
+- Source revision: `d97abc3` (`feat/android-first-run-setup`).
 - APK size: 25759871 bytes.
-- SHA-256: `36DBE563F685E312D6E2F56CC7D031C1BCB5805474295D4E83DE68A4365CB033`.
-- `:app:assembleDebug` and `:app:assembleDebugAndroidTest` succeeded offline. `VideoCardShareTest` passed 8/8 on Android 6/API 23 and Android 13/API 33 AVDs. Open URL now creates an HTTPS-only YouTube `ACTION_VIEW` intent and rejects non-YouTube hosts, HTTP, user-info, and non-standard ports. This verifies intent construction, not launching a browser or selecting a system handler. No video opened and playback did not run.
-- Installed on the connected Android13/API33 system; `MainActivity` is top-resumed. One post-install point sample: PSS 127,814 KiB, RSS 228,114 KiB, swap PSS 472 KiB, total/available RAM 3,802,500/1,657,076 KiB. This is a single sample, not a benchmark. System identity reports `TrebleDroid_vanilla`; Redmi Note 8 hardware remains unverified.
+- SHA-256: `04DB14385DE33D7FBB22B60469B7BD259E69109A4B936F08B4BE346B011BE9A6`.
+- `:app:assembleDebug` and `:app:assembleDebugAndroidTest` succeeded offline. `YoutubeResolverPlaybackAcceptanceTest#externalWebVttSubtitleAttachesWhilePreservingPlaybackPosition` passed on API23 AVD and the connected physical API33 system: subtitle track appeared, Off disabled it, selecting the production track option enabled it, and Auto restored it. The MediaItem was clipped at 30 seconds and playback remained well under the user's 2-minute limit. This tests external VTT track control; embedded YouTube caption/audio switching and visible caption rendering remain open.
+- Installed on the connected Android13/API33 system; `MainActivity` is top-resumed. One post-install idle point sample: PSS 127,739 KiB, RSS 223,558 KiB, swap PSS 489 KiB, total/available RAM 3,802,500/1,679,180 KiB. This is a single sample, not a benchmark. System identity reports `TrebleDroid_vanilla`; Redmi Note 8 hardware remains unverified.
 ## Previous artifact details (source revision 52c984e; historical)
 
 - Built from Android development branch `feat/android-first-run-setup` at source commit `52c984e`; the APK includes the SAF download-folder option in first-run setup and centralized persistable-grant cleanup. Unit and instrumentation test sources are not packaged in the APK.
