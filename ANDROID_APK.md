@@ -2,15 +2,22 @@
 
 This branch publishes the latest available Android development build.
 
+## Current artifact (2026-11-19)
+
+- Built from local Android branch `feat/android-first-run-setup` at `236a979`, with uncommitted resolver changes in the build input. The Kotlin source tree remains on the development branch.
+- `:app:assembleDebug --offline --no-configuration-cache` completed successfully. This publication run did not rerun test suites or live YouTube playback checks.
+- The in-progress resolver update recognizes a path-based YouTube `n` transform. Runtime path-transform and playback acceptance are still pending.
+- This is an installable debug APK signed with the debug certificate, not a production/release-signed package.
+
 - File: `LowTube-Android-debug-0.1.0.apk`
 - Version: `0.1.0-android-dev` (version code 1)
 - Minimum Android version: Android 6.0 (API 23)
 - Build type: debug; signed with the Android debug certificate (v1/v2 verified)
 - Build tools: AGP 9.2.0, Gradle 9.4.1; Kotlin metadata rewrite warning resolved
 - Updated: 2026-11-19
-- Build source revision: `73da019` (`feat/android-first-run-setup`). This branch publishes the APK artifact and release notes; the Kotlin source tree is maintained on the local development branch.
+- Build source revision: `236a979` plus uncommitted resolver edits on `feat/android-first-run-setup` (see Current artifact note above).
 - APK size: 25,751,531 bytes
-- SHA-256: `C567F5A9A47BC5F9D2CA60BEB0178606A5EF301722A90699EFC4051D270F0065`
+- SHA-256: `8A26E0C659A70399AD8E869F616D83143F39DA8CCDD110D860E1737217721729`
 - Latest build: `:app:assembleDebug :app:assembleDebugAndroidTest --offline --no-configuration-cache` succeeded. The downloaded-audio playback/session acceptance passed on API23 and API33 AVDs; the Downloads action test passed on API23. No live YouTube audio download was used in these tests.
 - Recent Android changes: tablet-aware two-column Library/Settings layouts, first-run language/UI-scale/theme/quality setup, LAME MP3 download conversion, in-app playback of completed audio downloads, and a sequential decoder-profile comparison action. Runtime decoder-comparison acceptance remains open.
 - Resolver: bounded direct-format resolution supports verified Android/WEB/iOS/MWEB fallback and the verified MWEB signature-helper path; audio-only downloads retain the Android VR fallback. The VR fallback is not used for video playback or video downloads.
