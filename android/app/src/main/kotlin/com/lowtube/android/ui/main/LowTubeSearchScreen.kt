@@ -16,8 +16,12 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
@@ -167,7 +171,7 @@ fun LowTubeSearchScreen(
     val emptySearchMessage = stringResource(R.string.search_empty_query)
     val requestFailedMessage = stringResource(R.string.request_failed_retry)
     val downloadFailedMessage = stringResource(R.string.download_failed)
-    val listState = rememberLazyListState()
+    val resultsGridState = rememberLazyGridState()
     val forYouItems = remember(state.items, state.isHome, selectedTab, followedChannelItems) {
         if (state.isHome && selectedTab == "home") {
             ForYouMixer.blend(state.items, followedChannelItems)
@@ -274,10 +278,10 @@ fun LowTubeSearchScreen(
         if (state.loading || state.loadingMore || visibleItems.isEmpty() || autoLoadAttemptedToken == attemptKey) return@LaunchedEffect
 
         fun nearEnd(lastVisibleIndex: Int) = FeedAutoPaginationPolicy.shouldPrefetch(lastVisibleIndex, displayedItems.size)
-        val lastVisibleIndex = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
-        if (!listState.isScrollInProgress || !nearEnd(lastVisibleIndex)) {
+        val lastVisibleIndex = resultsGridState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
+        if (!resultsGridState.isScrollInProgress || !nearEnd(lastVisibleIndex)) {
             snapshotFlow {
-                (listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1) to listState.isScrollInProgress
+                (resultsGridState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1) to resultsGridState.isScrollInProgress
             }.first { (index, isScrolling) -> isScrolling && nearEnd(index) }
         }
         if (autoLoadAttemptedToken == attemptKey) return@LaunchedEffect
@@ -494,14 +498,16 @@ fun LowTubeSearchScreen(
                     else -> stringResource(R.string.search_start)
                 })
             } else {
-                LazyColumn(
-                    state = listState,
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(minSize = 220.dp),
+                    state = resultsGridState,
                     modifier = Modifier.fillMaxSize().testTag(SEARCH_RESULTS_LIST_TEST_TAG),
                     contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 24.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     if (channelHeader != null) {
-                        item(key = "channel-header") {
+                        item(key = "channel-header", span = { GridItemSpan(maxLineSpan) }) {
                             ChannelHeaderCard(
                                 header = channelHeader,
                                 isFollowing = channelHeader.channelId.isNotBlank() && isFollowing(channelHeader.channelId),
@@ -566,7 +572,7 @@ fun LowTubeSearchScreen(
                         )
                     }
                     if (state.continuation != null || visibleItems.size > state.displayLimit) {
-                        item(key = "load-more") {
+                        item(key = "load-more", span = { GridItemSpan(maxLineSpan) }) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                                 if (state.error != null) Text(state.error.orEmpty(), color = MaterialTheme.colorScheme.error)
                                 Button(onClick = { viewModel.loadMore(language, requestFailedMessage, pageSize, visibleItems.size) }, enabled = !state.loadingMore) {
@@ -576,7 +582,7 @@ fun LowTubeSearchScreen(
                             }
                         }
                     }
-                    if (state.error != null && state.continuation == null) item { Text(state.error.orEmpty(), color = MaterialTheme.colorScheme.error) }
+                    if (state.error != null && state.continuation == null) item(span = { GridItemSpan(maxLineSpan) }) { Text(state.error.orEmpty(), color = MaterialTheme.colorScheme.error) }
                 }
             }
                 }
