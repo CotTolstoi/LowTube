@@ -42,6 +42,7 @@ class DownloadFormatPickerDialogTest {
             360,
             30,
             "avc1.42001E",
+            "mp4a.40.2",
             "MP4",
         )
         composeTestRule.onNodeWithText(label).performClick()

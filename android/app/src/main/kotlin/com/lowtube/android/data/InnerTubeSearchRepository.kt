@@ -21,7 +21,6 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 import java.util.concurrent.TimeUnit
-import kotlin.math.abs
 import android.os.Build
 
 /** Aggregate-only instrumentation hook for comparing anonymous YouTube player clients. */
@@ -277,10 +276,9 @@ class InnerTubeSearchRepository(context: Context? = null) {
         return selected.distinctBy { (videoFormat, audioFormat) ->
             "${videoFormat.json.optInt("itag", 0)}|${videoFormat.mimeType}|$audioOnly|${audioFormat?.json?.optInt("itag", 0) ?: 0}"
         }.sortedWith(
-            if (audioOnly) compareBy<Pair<PlaybackFormat, PlaybackFormat?>> {
-                abs((it.first.json.optLong("bitrate", 0) / 1000L).toInt() - preferences.audioBitrateKbps)
+            if (audioOnly) compareByDescending<Pair<PlaybackFormat, PlaybackFormat?>> {
+                it.first.json.optLong("bitrate", 0)
             }.thenByDescending { it.first.mimeType == "audio/mp4" }
-                .thenByDescending { it.first.json.optLong("bitrate", 0) }
             else compareByDescending<Pair<PlaybackFormat, PlaybackFormat?>> { it.first.json.optInt("height", 0) }
                 .thenByDescending { it.first.json.optDouble("fps", 0.0) }
                 .thenByDescending { it.first.json.optLong("bitrate", 0) },

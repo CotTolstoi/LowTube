@@ -58,6 +58,9 @@ class LocalAudioLibraryTest {
     private class VersionFiveDatabase(context: Context, name: String) : SQLiteOpenHelper(context, name, null, 5) {
         override fun onCreate(db: SQLiteDatabase) {
             db.execSQL("CREATE TABLE subscriptions (channel_id TEXT PRIMARY KEY NOT NULL)")
+            db.execSQL("CREATE TABLE playlist_items (row_id INTEGER PRIMARY KEY AUTOINCREMENT)")
+            db.execSQL("CREATE TABLE queue_entries (row_id INTEGER PRIMARY KEY AUTOINCREMENT)")
+            db.execSQL("CREATE TABLE watch_history (row_id INTEGER PRIMARY KEY AUTOINCREMENT)")
             db.execSQL("CREATE TABLE channel_feed_items (channel_id TEXT NOT NULL)")
             db.execSQL("CREATE TABLE channel_feed_state (channel_id TEXT PRIMARY KEY NOT NULL)")
         }

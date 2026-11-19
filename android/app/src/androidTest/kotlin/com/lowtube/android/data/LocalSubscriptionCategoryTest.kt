@@ -103,6 +103,9 @@ class LocalSubscriptionCategoryTest {
     private class VersionSevenDatabase(context: Context, name: String) : SQLiteOpenHelper(context, name, null, 7) {
         override fun onCreate(db: SQLiteDatabase) {
             db.execSQL("CREATE TABLE subscriptions (channel_id TEXT PRIMARY KEY NOT NULL, title TEXT NOT NULL, url TEXT NOT NULL, added_at INTEGER NOT NULL)")
+            db.execSQL("CREATE TABLE playlist_items (row_id INTEGER PRIMARY KEY AUTOINCREMENT)")
+            db.execSQL("CREATE TABLE queue_entries (row_id INTEGER PRIMARY KEY AUTOINCREMENT)")
+            db.execSQL("CREATE TABLE watch_history (row_id INTEGER PRIMARY KEY AUTOINCREMENT)")
             db.execSQL("CREATE TABLE channel_feed_items (channel_id TEXT NOT NULL)")
             db.execSQL("CREATE TABLE channel_feed_state (channel_id TEXT PRIMARY KEY NOT NULL)")
             db.execSQL("CREATE TABLE youtube_account_subscriptions (channel_id TEXT PRIMARY KEY NOT NULL, owner_email TEXT NOT NULL, title TEXT NOT NULL, url TEXT NOT NULL, synced_at INTEGER NOT NULL)")
