@@ -39,6 +39,7 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
             kind TEXT NOT NULL,
             thumbnail_url TEXT NOT NULL,
             url TEXT NOT NULL,
+            channel_avatar_url TEXT NOT NULL DEFAULT '',
             position INTEGER NOT NULL
         )""")
         db.execSQL("CREATE INDEX playlist_items_order ON playlist_items(playlist_id, position, row_id)")
@@ -61,6 +62,11 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
             if (oldVersion >= 7) db.execSQL("ALTER TABLE youtube_account_subscriptions ADD COLUMN category TEXT NOT NULL DEFAULT ''")
         }
         if (oldVersion in 5..8) db.execSQL("ALTER TABLE channel_feed_items ADD COLUMN channel_avatar_url TEXT NOT NULL DEFAULT ''")
+        if (oldVersion < 10) {
+            db.execSQL("ALTER TABLE playlist_items ADD COLUMN channel_avatar_url TEXT NOT NULL DEFAULT ''")
+            if (oldVersion >= 2) db.execSQL("ALTER TABLE queue_entries ADD COLUMN channel_avatar_url TEXT NOT NULL DEFAULT ''")
+            if (oldVersion >= 3) db.execSQL("ALTER TABLE watch_history ADD COLUMN channel_avatar_url TEXT NOT NULL DEFAULT ''")
+        }
     }
 
     fun localAudioTracks(): List<LocalAudioTrack> = readableDatabase.rawQuery(
@@ -433,6 +439,7 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
         put("kind", video.kind.take(30))
         put("thumbnail_url", video.thumbnailUrl.take(2000))
         put("url", video.url.take(3000))
+        put("channel_avatar_url", video.channelAvatarUrl.take(2000))
     }
 
     private fun createQueueTable(db: SQLiteDatabase, includeContinuation: Boolean = false) {
@@ -447,6 +454,7 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
             kind TEXT NOT NULL,
             thumbnail_url TEXT NOT NULL,
             url TEXT NOT NULL,
+            channel_avatar_url TEXT NOT NULL DEFAULT '',
             position INTEGER NOT NULL${if (includeContinuation) ", continuation TEXT NOT NULL DEFAULT ''" else ""}
         )""")
         db.execSQL("CREATE INDEX queue_entries_order ON queue_entries(position, row_id)")
@@ -463,6 +471,7 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
             kind TEXT NOT NULL,
             thumbnail_url TEXT NOT NULL,
             url TEXT NOT NULL,
+            channel_avatar_url TEXT NOT NULL DEFAULT '',
             position_ms INTEGER NOT NULL,
             duration_ms INTEGER NOT NULL,
             complete INTEGER NOT NULL,
@@ -472,7 +481,7 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
     }
 
     fun videos(playlistId: String) = readableDatabase.rawQuery(
-        "SELECT video_id, title, channel, channel_id, published, duration, kind, thumbnail_url, url FROM playlist_items WHERE playlist_id=? ORDER BY position, row_id",
+        "SELECT video_id, title, channel, channel_id, published, duration, kind, thumbnail_url, url, channel_avatar_url FROM playlist_items WHERE playlist_id=? ORDER BY position, row_id",
         arrayOf(playlistId),
     ).use { cursor ->
         buildList {
@@ -487,6 +496,7 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
                     kind = cursor.getString(6),
                     thumbnailUrl = cursor.getString(7),
                     url = cursor.getString(8),
+                    channelAvatarUrl = cursor.getString(9),
                 ),
             )
         }
@@ -506,7 +516,7 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
     }
 
     fun queue(): List<QueueEntry> = readableDatabase.rawQuery(
-        "SELECT row_id, video_id, title, channel, channel_id, published, duration, kind, thumbnail_url, url, continuation FROM queue_entries ORDER BY position, row_id",
+        "SELECT row_id, video_id, title, channel, channel_id, published, duration, kind, thumbnail_url, url, continuation, channel_avatar_url FROM queue_entries ORDER BY position, row_id",
         null,
     ).use { cursor ->
         buildList {
@@ -523,6 +533,7 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
                         kind = cursor.getString(7),
                         thumbnailUrl = cursor.getString(8),
                         url = cursor.getString(9),
+                        channelAvatarUrl = cursor.getString(11),
                     ),
                     continuation = cursor.getString(10),
                 ),
@@ -671,7 +682,7 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
     }
 
     fun watchHistory(): List<WatchHistoryEntry> = readableDatabase.rawQuery(
-        "SELECT video_id, title, channel, channel_id, published, duration, kind, thumbnail_url, url, position_ms, duration_ms, complete, updated_at FROM watch_history ORDER BY updated_at DESC",
+        "SELECT video_id, title, channel, channel_id, published, duration, kind, thumbnail_url, url, position_ms, duration_ms, complete, updated_at, channel_avatar_url FROM watch_history ORDER BY updated_at DESC",
         null,
     ).use { cursor ->
         buildList {
@@ -687,6 +698,7 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
                         kind = cursor.getString(6),
                         thumbnailUrl = cursor.getString(7),
                         url = cursor.getString(8),
+                        channelAvatarUrl = cursor.getString(13),
                     ),
                     positionMs = cursor.getLong(9),
                     durationMs = cursor.getLong(10),
@@ -758,7 +770,7 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
         private const val MAX_PAGE_ITEMS = 100
         private const val MAX_QUEUE_CONTINUATION_LENGTH = 16 * 1024
         private const val DATABASE_NAME = "lowtube-library.db"
-        private const val DATABASE_VERSION = 9
+        private const val DATABASE_VERSION = 10
         private const val YOUTUBE_SUBSCRIPTION_TTL_MS = 30L * 24 * 60 * 60 * 1000
         private const val WATCH_LATER_ID = "__lowtube_watch_later__"
         private const val RESUME_THRESHOLD_MS = 5000L
