@@ -2,16 +2,16 @@
 
 This branch publishes the latest available Android development build.
 
-## Current artifact (2026-11-19, source revision 376ab9e)
+## Current artifact (2026-11-19, source revision 1876981)
 
 - File: `LowTube-Android-debug-0.1.0.apk`; version `0.1.0-android-dev` (version code 1); minimum Android 6.0 (API 23).
 - Build type: installable debug APK, signed with the Android debug certificate; not a production-signed release.
-- Source revision: `376ab9e` (`feat/android-first-run-setup`).
+- Source revision: `1876981` (`feat/android-first-run-setup`).
 - APK size: 25758903 bytes.
-- SHA-256: `765CFF3808C53B684C2E8365E39BE48F6C85D00C7229D924931C1A8CAC890F36`.
-- Offline `:app:assembleDebug :app:assembleDebugAndroidTest --offline --no-configuration-cache` succeeded for armeabi-v7a, arm64-v8a, and x86_64. The artwork allowlist unit suite passed 3/3 in the preceding source revision; this build adds saved-session Media3 playback resumption and the system MediaButtonReceiver.
-- `MiniPlayerPlaybackAcceptanceTest#miniPlayerPausesAndResumesTheCurrentMediaSessionItem` passed on Android 6/API 23 and Android 13/API 33 AVDs: Play on an empty MediaSession invoked `onPlaybackResumption`, the saved YouTube item was resolved, Media3 reached READY, and artwork metadata plus pause/resume were verified. Each playback run stayed below 120 s. This does not establish process-force-stop/reboot recovery or visible notification/lock-screen rendering.
-- The final APK was installed and launched on the connected Android 13/API 33 system; `MainActivity` remained top-resumed. After 12 s idle: the short `dumpsys cpuinfo` sample emitted no LowTube row, PSS 119.6 MiB, RSS 221.2 MiB, swap PSS 257 KiB, available RAM 1,577 MiB. No playback ran during this sample. Point sample, not a benchmark. The system identifies as `TrebleDroid vanilla`, so Redmi Note 8 hardware remains unverified.
+- SHA-256: `7859DC4064A1E4DAB48425E8334B5C8DEF76FFDFE006EEB0963F366E488745FF`.
+- Offline `:app:assembleDebug :app:assembleDebugAndroidTest --offline --no-configuration-cache` succeeded for armeabi-v7a, arm64-v8a, and x86_64. The artwork allowlist unit suite passed 3/3 in the preceding source revision; this build adds a tablet-adaptive first-run setup with separately scrollable language/appearance and playback/download columns.
+- `MiniPlayerPlaybackAcceptanceTest#miniPlayerPausesAndResumesTheCurrentMediaSessionItem` passed on Android 6/API 23 and Android 13/API 33 AVDs: Play on an empty MediaSession invoked `onPlaybackResumption`, the saved YouTube item was resolved, Media3 reached READY, and artwork metadata plus pause/resume were verified. Each playback run stayed below 120 s. A separate process-death acceptance passed on API23 and API33: after force-stop of both app and test processes, a fresh LowTube process resolved and briefly played the saved video. Reboot recovery and visible notification/lock-screen rendering remain unverified.
+- `FirstRunSetupScreenTest` passed 3/3 compact scenarios on API23 and 1/1 wide-layout scenario at 960 dp on API23. APK installed on the connected Android13/API33 system; `MainActivity` remained top-resumed. After 8 s idle: `dumpsys cpuinfo` emitted no LowTube row, PSS 139.2 MiB, RSS 239.5 MiB, swap PSS 468 KiB, available RAM 1,571 MiB. No playback ran during this sample. Point sample, not a benchmark. The system identifies as `TrebleDroid vanilla`, so Redmi Note 8 hardware remains unverified.
 ## Previous artifact details (source revision 52c984e; historical)
 
 - Built from Android development branch `feat/android-first-run-setup` at source commit `52c984e`; the APK includes the SAF download-folder option in first-run setup and centralized persistable-grant cleanup. Unit and instrumentation test sources are not packaged in the APK.
