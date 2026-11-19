@@ -350,3 +350,6 @@
 19.11.2026 07:45 UTC, Redmi Note 8 serial 8LZ5ZPO7J7QOEMMZ, API33, LowTube `MainActivity` foreground after SQLite v8→v9 channel-avatar cache migration; 5 s idle sample CPU 4,6% of one core, PSS 116,9 MiB, RSS 201 MiB, peak RSS 228,9 MiB, RAM 3 713 / available 1 495 MiB. System model string: `TrebleDroid vanilla`; playback did not run. Single point sample, not a benchmark.
 
 19.11.2026 07:48 UTC, Redmi Note 8 serial 8LZ5ZPO7J7QOEMMZ, API33, LowTube `MainActivity` foreground after SQLite v9→v10 avatar persistence update; 5 s idle sample CPU 0%, PSS 140,5 MiB, RSS 223,6 MiB, peak RSS 225,4 MiB, RAM 3 713 / available 1 490 MiB. System model string: `TrebleDroid vanilla`; playback did not run. Single point sample, not a benchmark.
+
+
+19.11.2026 10:47:54 UTC, підключений Android13, LowTube на передньому плані після встановлення Google authorization error handling build; 10 s sample: CPU 0% одного ядра, PSS 116,8 MiB, RSS 200,6 MiB, peak RSS 229,6 MiB, загальна RAM 3 713 MiB / доступно 1 416 MiB. Система повідомляє модель TrebleDroid vanilla, не підтверджений Redmi Note 8. Відео й завантаження не запускалися. Це одиничний idle point sample, не benchmark.
