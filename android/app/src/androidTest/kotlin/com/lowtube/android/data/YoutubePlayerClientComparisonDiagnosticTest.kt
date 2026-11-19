@@ -164,6 +164,85 @@ class YoutubePlayerClientComparisonDiagnosticTest {
     }
 
     @Test
+    fun videoDownloadUsesAndroidVrOnlyAfterStandardClientsFail() = runBlocking {
+        val arguments = InstrumentationRegistry.getArguments()
+        assumeTrue(
+            "Pass -e runAndroidVrVideoDownloadAcceptance true to run this bounded live network check",
+            arguments.getString("runAndroidVrVideoDownloadAcceptance") == "true",
+        )
+        val videoId = arguments.getString("playerVariantVideoId")
+            ?.takeIf(VIDEO_ID::matches)
+            ?: "dQw4w9WgXcQ"
+        val configuration = readPublicConfiguration()
+        val vrVariant = PlayerVariant(
+            name = "ANDROID_VR",
+            version = "1.65.10",
+            headerId = "28",
+            userAgent = "com.google.android.apps.youtube.vr.oculus/1.65.10 (Linux; U; Android 12L; " +
+                "eureka-user Build/SQ3A.220605.009.A1) gzip",
+            fields = JSONObject()
+                .put("deviceMake", "Oculus")
+                .put("deviceModel", "Quest 3")
+                .put("androidSdkVersion", 32)
+                .put("osName", "Android")
+                .put("osVersion", "12L"),
+        )
+        val vrResponse = requestPublicPlayer(videoId, configuration, vrVariant)
+        val repository = InnerTubeSearchRepository(ApplicationProvider.getApplicationContext<Context>())
+        val attemptedClients = mutableListOf<String>()
+        repository.playerRequestOverrideForAcceptance = { body, version, clientId, userAgent ->
+            val name = JSONObject(body).getJSONObject("context").getJSONObject("client").optString("clientName")
+            attemptedClients.add(name)
+            if (name == "ANDROID_VR") {
+                assertEquals(vrVariant.version, version)
+                assertEquals(vrVariant.headerId, clientId)
+                assertEquals(vrVariant.userAgent, userAgent)
+                vrResponse
+            } else {
+                assertTrue("Unexpected player client $name", name in listOf("WEB", "ANDROID", "IOS"))
+                JSONObject().put("playabilityStatus", JSONObject().put("status", "LOGIN_REQUIRED"))
+            }
+        }
+        val video = VideoItem(
+            id = videoId,
+            title = "Public Android VR video download fixture",
+            duration = "3:33",
+            url = "https://www.youtube.com/watch?v=$videoId",
+        )
+        val cpuStarted = Process.getElapsedCpuTime()
+        val wallStarted = SystemClock.elapsedRealtime()
+        val pssStarted = Debug.getPss()
+        val options = repository.resolveDownloadOptions(
+            video,
+            DownloadStreamPreferences(maxHeight = 2160, h264Only = true, fps30Only = false),
+        )
+        assertEquals(listOf("WEB", "ANDROID", "IOS", "ANDROID_VR"), attemptedClients)
+        assertTrue("Android VR returned no downloadable video format", options.isNotEmpty())
+        assertTrue("Android VR option has neither muxed audio nor a separate audio track", options.any {
+            it.stream.isMuxed || it.audioStream != null
+        })
+        val rangeResults = options.take(8).mapNotNull { option ->
+            if (!option.stream.mimeType.startsWith("video/")) return@mapNotNull null
+            val videoRange = boundedRange(option.stream.uri, option.stream.userAgent)
+            val audioRange = option.audioStream?.let { boundedRange(it.uri, it.userAgent) }
+            Triple(option, videoRange, audioRange)
+        }
+        val accepted = rangeResults.firstOrNull { (_, videoRange, audioRange) ->
+            videoRange?.status == HttpURLConnection.HTTP_PARTIAL && videoRange.bytes == MAX_RANGE_BYTES &&
+                (audioRange == null || audioRange.status == HttpURLConnection.HTTP_PARTIAL && audioRange.bytes == MAX_RANGE_BYTES)
+        } ?: error("Android VR video/audio formats had no successful bounded Range response.")
+        assertTrue("The resolver did not retain the Android VR User-Agent", accepted.first.stream.userAgent.contains("youtube.vr.oculus"))
+        System.out.println(
+            "androidVrVideoDownloadAcceptance; clients=${attemptedClients.joinToString(",")}; " +
+                "options=${options.size}; itag=${accepted.first.stream.itag}; audioItag=${accepted.first.audioStream?.itag ?: 0}; " +
+                "videoStatus=${accepted.second?.status}; videoBytes=${accepted.second?.bytes}; " +
+                "audioStatus=${accepted.third?.status ?: 0}; audioBytes=${accepted.third?.bytes ?: 0}; " +
+                "cpuMs=${Process.getElapsedCpuTime() - cpuStarted}; " +
+                "wallMs=${SystemClock.elapsedRealtime() - wallStarted}; pssKiB=$pssStarted->${Debug.getPss()}",
+        )
+    }
+
+    @Test
     fun videoDownloadDeciphersMwebSignatureAfterStandardClientsFail() = runBlocking {
         val arguments = InstrumentationRegistry.getArguments()
         assumeTrue(

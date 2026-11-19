@@ -168,7 +168,7 @@ class InnerTubeSearchRepository(context: Context? = null) {
     private suspend fun resolvePlayerData(
         video: VideoItem,
         preferWebClient: Boolean,
-        allowVrAudioFallback: Boolean = false,
+        allowVrFallback: Boolean = false,
         acceptsStreaming: (JSONObject) -> Boolean,
     ): ResolvedPlayerData {
         require(VIDEO_ID.matches(video.id)) { "This item is not a playable video." }
@@ -191,7 +191,7 @@ class InnerTubeSearchRepository(context: Context? = null) {
             player,
             preferWebClient,
             requestSignatureTimestamp,
-            allowVrAudioFallback,
+            allowVrFallback,
             acceptsStreaming,
         )
             .takeIf { acceptsStreaming(it.streaming) }
@@ -232,7 +232,7 @@ class InnerTubeSearchRepository(context: Context? = null) {
         audioOnly: Boolean = false,
     ): List<DownloadFormatOption> = withContext(Dispatchers.IO) {
         operationMutex.withLock {
-            val resolved = resolvePlayerData(video, preferWebClient = true, allowVrAudioFallback = audioOnly) { streaming ->
+            val resolved = resolvePlayerData(video, preferWebClient = true, allowVrFallback = true) { streaming ->
                 hasDownloadableFormat(streaming, preferences, audioOnly) ||
                     (playerJavaScriptRuntime != null && hasResolvableSignatureDownloadFormat(streaming, preferences, audioOnly))
             }
@@ -813,7 +813,7 @@ class InnerTubeSearchRepository(context: Context? = null) {
         pageResponse: JSONObject,
         preferWebClient: Boolean,
         requestSignatureTimestamp: Int,
-        allowVrAudioFallback: Boolean,
+        allowVrFallback: Boolean,
         acceptsStreaming: (JSONObject) -> Boolean,
     ): ResolvedPlayerResponse {
         if (apiKey.isBlank()) throw IOException("YouTube player configuration is incomplete. Retry the video.")
@@ -825,7 +825,7 @@ class InnerTubeSearchRepository(context: Context? = null) {
         } else {
             listOf(androidClient, webClient, iosClient)
         }
-        val clients = if (allowVrAudioFallback) {
+        val clients = if (allowVrFallback) {
             baseClients + PlayerRequestClient(
                 name = "ANDROID_VR",
                 version = ANDROID_VR_CLIENT_VERSION,
