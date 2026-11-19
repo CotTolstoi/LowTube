@@ -2,6 +2,7 @@ package com.lowtube.android.downloads
 
 import android.Manifest
 import android.app.ActivityManager
+import android.app.Notification
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
@@ -16,6 +17,7 @@ import androidx.core.content.ContextCompat
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.lowtube.android.R
 import com.lowtube.android.data.DownloadJobStore
 import com.lowtube.android.data.DownloadStreamPreferences
 import com.lowtube.android.data.InnerTubeSearchRepository
@@ -668,6 +670,7 @@ class DownloadServiceAcceptanceTest {
                 assertEquals(partial.length(), cancelled.downloadedBytes)
                 assertTrue("Client connection remained open after OkHttp cancel", server.awaitClientClosed())
                 waitForServiceStopped(context)
+                assertTerminalNotificationText(context, R.string.download_cancelled)
                 Log.i(TAG, "serviceCancelStatus=${cancelled.status}, bytes=${cancelled.downloadedBytes}")
             } finally {
                 context.stopService(Intent(context, DownloadService::class.java))
@@ -677,6 +680,8 @@ class DownloadServiceAcceptanceTest {
                 store.close()
                 context.deleteDatabase(dbName)
                 (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(NOTIFICATION_ID)
+                (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
+                    .cancel(DownloadService.TERMINAL_NOTIFICATION_ID)
             }
         }
     }
@@ -721,14 +726,46 @@ class DownloadServiceAcceptanceTest {
             Log.i(TAG, "notificationPayloadCheck=skipped; POST_NOTIFICATIONS is not granted")
             return null
         }
-        val notification = (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
-            .activeNotifications
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notification = notificationManager.activeNotifications
             .firstOrNull { it.id == NOTIFICATION_ID }
             ?.notification
         assertTrue("Foreground download notification was not posted", notification != null)
-        val cancelAction = notification?.actions.orEmpty().firstOrNull { it.title?.toString() == "Cancel" }
+        assertEquals(
+            context.getString(R.string.downloads),
+            notification?.extras?.getCharSequence(Notification.EXTRA_TITLE)?.toString(),
+        )
+        if (Build.VERSION.SDK_INT >= 26) {
+            val channel = notificationManager.getNotificationChannel("lowtube_downloads")
+            assertEquals(context.getString(R.string.downloads), channel?.name?.toString())
+        }
+        val cancelAction = notification?.actions.orEmpty().firstOrNull {
+            it.title?.toString() == context.getString(R.string.cancel_download)
+        }
         assertTrue("Foreground download notification is missing the Cancel action", cancelAction?.actionIntent != null)
         return cancelAction?.actionIntent
+    }
+
+    private fun assertTerminalNotificationText(context: Context, expectedText: Int) {
+        if (Build.VERSION.SDK_INT >= 33 &&
+            context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            Log.i(TAG, "terminalNotificationCheck=skipped; POST_NOTIFICATIONS is not granted")
+            return
+        }
+        val notification = (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
+            .activeNotifications
+            .firstOrNull { it.id == DownloadService.TERMINAL_NOTIFICATION_ID }
+            ?.notification
+        assertTrue("Terminal download notification was not retained", notification != null)
+        assertEquals(
+            context.getString(expectedText),
+            notification?.extras?.getCharSequence(Notification.EXTRA_TEXT)?.toString(),
+        )
+        assertFalse(
+            "Terminal download notification still has a Cancel action",
+            notification?.actions.orEmpty().any { it.title?.toString() == context.getString(R.string.cancel_download) },
+        )
     }
 
     private fun startService(context: Context, dbName: String, testStreamUrl: String? = null, testAudioStreamUrl: String? = null) {

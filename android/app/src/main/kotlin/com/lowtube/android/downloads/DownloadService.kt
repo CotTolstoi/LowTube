@@ -100,6 +100,7 @@ class DownloadService : Service() {
             stopSelf()
             return
         }
+        (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).cancel(TERMINAL_NOTIFICATION_ID)
         if (wakeLock?.isHeld != true) {
             wakeLock = (getSystemService(POWER_SERVICE) as PowerManager)
                 .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "LowTube:DownloadQueue")
@@ -369,7 +370,10 @@ class DownloadService : Service() {
         if (transferStartNs == 0L) transferStartNs = System.nanoTime()
         val title = message ?: job.fileName
         val notification = buildNotification(title, downloaded, total, active, job.id)
-        (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).notify(NOTIFICATION_ID, notification)
+        val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        if (active) manager.cancel(TERMINAL_NOTIFICATION_ID)
+        else manager.notify(TERMINAL_NOTIFICATION_ID, notification)
+        manager.notify(NOTIFICATION_ID, notification)
     }
 
     private fun buildNotification(title: String, downloaded: Long, total: Long, active: Boolean, id: Long = 0): Notification {
@@ -398,6 +402,7 @@ class DownloadService : Service() {
         const val EXTRA_TEST_STREAM_URL = "test_stream_url"
         const val EXTRA_TEST_AUDIO_STREAM_URL = "test_audio_stream_url"
         private const val NOTIFICATION_ID = 4207
+        internal const val TERMINAL_NOTIFICATION_ID = 4208
         private const val CHANNEL_ID = "lowtube_downloads"
     }
 }
