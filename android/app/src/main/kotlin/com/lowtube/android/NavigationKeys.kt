@@ -8,4 +8,5 @@ import kotlinx.serialization.Serializable
 @Serializable data object Library : NavKey
 @Serializable data object Queue : NavKey
 @Serializable data object Downloads : NavKey
+@Serializable data object DecoderBenchmark : NavKey
 @Serializable data object Player : NavKey

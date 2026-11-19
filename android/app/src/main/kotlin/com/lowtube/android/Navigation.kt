@@ -49,6 +49,7 @@ import com.lowtube.android.ui.library.LibraryScreen
 import com.lowtube.android.ui.queue.QueueScreen
 import com.lowtube.android.ui.downloads.DownloadsScreen
 import com.lowtube.android.ui.playback.PlaybackScreen
+import com.lowtube.android.benchmark.DecoderBenchmarkScreen
 import kotlinx.coroutines.launch
 
 @Composable
@@ -414,6 +415,7 @@ fun MainNavigation(
                     onOpenMiniPlayer = { if (selectedVideo != null) backStack.add(Player) },
                     onOpenQueue = { backStack.add(Queue) },
                     onOpenDownloads = { backStack.add(Downloads) },
+                    onOpenDecoderBenchmark = { backStack.add(DecoderBenchmark) },
                     onPlay = { video -> selectedQueueRowId = null; selectedLocalAudio = null; selectedVideo = video; playbackRequestId++; backStack.add(Player) },
                     onResolveDownloadOptions = { video, audioOnly, callback ->
                         scope.launch {
@@ -660,6 +662,9 @@ fun MainNavigation(
                             .onFailure { Toast.makeText(context, it.message ?: context.getString(R.string.action_failed), Toast.LENGTH_LONG).show() }
                     },
                 )
+            }
+            entry<DecoderBenchmark> {
+                DecoderBenchmarkScreen(onBack = navigateBack)
             }
             entry<Player> {
                 val video = selectedVideo

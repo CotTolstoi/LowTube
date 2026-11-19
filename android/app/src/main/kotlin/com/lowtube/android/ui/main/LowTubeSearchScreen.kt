@@ -104,6 +104,7 @@ fun LowTubeSearchScreen(
     onOpenMiniPlayer: () -> Unit,
     onOpenQueue: () -> Unit,
     onOpenDownloads: () -> Unit,
+    onOpenDecoderBenchmark: () -> Unit = {},
     onPlay: (VideoItem) -> Unit,
     onAddToQueue: (VideoItem) -> Unit,
     onResolveDownloadOptions: (VideoItem, Boolean, (Result<List<DownloadFormatOption>>) -> Unit) -> Unit,
@@ -287,6 +288,7 @@ fun LowTubeSearchScreen(
                             DropdownMenuItem(text = { Text(stringResource(R.string.library)) }, onClick = { moreMenuExpanded = false; onOpenLibrary(selectedTab) })
                             DropdownMenuItem(text = { Text(stringResource(R.string.watch_queue)) }, onClick = { moreMenuExpanded = false; onOpenQueue() })
                             DropdownMenuItem(text = { Text(stringResource(R.string.downloads)) }, onClick = { moreMenuExpanded = false; onOpenDownloads() })
+                            DropdownMenuItem(text = { Text(stringResource(R.string.decoder_benchmark)) }, onClick = { moreMenuExpanded = false; onOpenDecoderBenchmark() })
                             DropdownMenuItem(text = { Text(stringResource(R.string.settings)) }, onClick = { moreMenuExpanded = false; onOpenSettings(selectedTab) })
                         }
                     }
