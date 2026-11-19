@@ -9,7 +9,10 @@ import android.net.Uri
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
+import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
@@ -24,14 +27,32 @@ import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import com.lowtube.android.MainActivity
+import com.lowtube.android.data.InnerTubeSearchRepository
+import com.lowtube.android.data.LocalLibraryRepository
+import com.lowtube.android.data.PlaybackSession
+import com.lowtube.android.data.PlaybackSessionStore
 import com.lowtube.android.data.PlaybackBufferPreferences
+import com.lowtube.android.data.PlaybackStreamPreferences
+import com.lowtube.android.model.ResolvedVideoStream
+import com.google.common.util.concurrent.Futures
+import com.google.common.util.concurrent.ListenableFuture
+import com.google.common.util.concurrent.MoreExecutors
+import com.google.common.util.concurrent.SettableFuture
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /** Owns Android media playback independently of the Activity lifecycle. */
-@OptIn(UnstableApi::class)
+@UnstableApi
 class PlaybackService : MediaSessionService() {
     private var mediaSession: MediaSession? = null
     private var settings: SharedPreferences? = null
     private var settingsListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onCreate() {
         super.onCreate()
@@ -86,6 +107,14 @@ class PlaybackService : MediaSessionService() {
         )
         mediaSession = MediaSession.Builder(this, player)
             .setSessionActivity(activityIntent)
+            .setCallback(object : MediaSession.Callback {
+                override fun onPlaybackResumption(
+                    mediaSession: MediaSession,
+                    controller: MediaSession.ControllerInfo,
+                    isForPlayback: Boolean,
+                ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> =
+                    playbackResumption(isForPlayback)
+            })
             .build()
     }
 
@@ -95,12 +124,131 @@ class PlaybackService : MediaSessionService() {
         settingsListener?.let { listener -> settings?.unregisterOnSharedPreferenceChangeListener(listener) }
         settingsListener = null
         settings = null
+        serviceScope.cancel()
         mediaSession?.run {
             player.release()
             release()
         }
         mediaSession = null
         super.onDestroy()
+    }
+
+    private fun playbackResumption(
+        isForPlayback: Boolean,
+    ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> {
+        val checkpoint = PlaybackSessionStore(this).load()
+            ?: return Futures.immediateFailedFuture(IllegalStateException("No saved media item is available to resume."))
+        if (!isForPlayback) {
+            val metadataOnlyItem = resumptionMediaItem(checkpoint, stream = null, includeLocalUri = false, includeArtwork = false)
+            return Futures.immediateFuture(
+                MediaSession.MediaItemsWithStartPosition(listOf(metadataOnlyItem), 0, C.TIME_UNSET),
+            )
+        }
+
+        val future = SettableFuture.create<MediaSession.MediaItemsWithStartPosition>()
+        val job = serviceScope.launch {
+            try {
+                val stream = if (checkpoint.localAudioTrack == null && checkpoint.localVideoSource == null) {
+                    InnerTubeSearchRepository(applicationContext).resolvePlayback(
+                        checkpoint.video,
+                        streamPreferences(),
+                    )
+                } else null
+                val item = resumptionMediaItem(
+                    checkpoint,
+                    stream,
+                    includeLocalUri = true,
+                    includeArtwork = true,
+                )
+                val position = resumePositionMs(checkpoint)
+                val savedSpeed = getSharedPreferences("lowtube_settings", Context.MODE_PRIVATE)
+                    .getFloat("playback_speed", 1f)
+                    .coerceIn(0.25f, 2f)
+                withContext(Dispatchers.Main.immediate) {
+                    mediaSession?.player?.setPlaybackParameters(PlaybackParameters(savedSpeed))
+                }
+                future.set(MediaSession.MediaItemsWithStartPosition(listOf(item), 0, position))
+            } catch (cancelled: CancellationException) {
+                future.cancel(false)
+                throw cancelled
+            } catch (failure: Exception) {
+                future.setException(failure)
+            }
+        }
+        future.addListener({ if (future.isCancelled) job.cancel() }, MoreExecutors.directExecutor())
+        job.invokeOnCompletion { failure ->
+            if (failure is CancellationException && !future.isDone) future.cancel(false)
+        }
+        return future
+    }
+
+    private fun streamPreferences(): PlaybackStreamPreferences {
+        val current = settings ?: getSharedPreferences("lowtube_settings", Context.MODE_PRIVATE)
+        val storedHeight = current.getInt("playback_height", PlaybackStreamPreferences().maxHeight)
+        val height = storedHeight.takeIf { it in PlaybackStreamPreferences.SUPPORTED_HEIGHTS }
+            ?: PlaybackStreamPreferences().maxHeight
+        return PlaybackStreamPreferences(
+            maxHeight = height,
+            h264Only = current.getBoolean("playback_h264", true),
+            fps30Only = current.getBoolean("playback_fps30", true),
+            audioOnly = current.getBoolean("playback_audio_only", false),
+        )
+    }
+
+    private fun resumePositionMs(checkpoint: PlaybackSession): Long {
+        if (!getSharedPreferences("lowtube_settings", Context.MODE_PRIVATE).getBoolean("resume_playback", true) ||
+            checkpoint.localAudioTrack != null
+        ) return 0L
+        val library = LocalLibraryRepository(applicationContext)
+        return try {
+            library.resumePositionMs(checkpoint.video.id).coerceAtLeast(0L)
+        } finally {
+            library.close()
+        }
+    }
+
+    private fun resumptionMediaItem(
+        checkpoint: PlaybackSession,
+        stream: ResolvedVideoStream?,
+        includeLocalUri: Boolean,
+        includeArtwork: Boolean,
+    ): MediaItem {
+        val video = stream?.video ?: checkpoint.video
+        val audioTrack = checkpoint.localAudioTrack
+        val metadata = MediaMetadata.Builder()
+            .setTitle(audioTrack?.title ?: video.title)
+            .setArtist(video.channel)
+            .apply {
+                if (includeArtwork) PlaybackArtworkPolicy.resolve(video)?.let { setArtworkUri(Uri.parse(it)) }
+            }
+            .build()
+        val builder = MediaItem.Builder()
+            .setMediaId(video.id)
+            .setMediaMetadata(metadata)
+
+        if (!includeLocalUri) return builder.build()
+        if (audioTrack != null) {
+            return builder
+                .setUri(Uri.parse(audioTrack.uri))
+                .setMimeType(audioTrack.mimeType)
+                .build()
+        }
+        val localVideo = checkpoint.localVideoSource
+        if (localVideo != null) {
+            return builder
+                .setUri(Uri.parse(localVideo.uri))
+                .setMimeType(localVideo.mimeType)
+                .build()
+        }
+
+        val resolved = requireNotNull(stream) { "A playable stream was not resolved." }
+        builder.setUri(resolved.uri)
+        if (resolved.isDashManifest || resolved.mimeType.contains("dash", ignoreCase = true)) {
+            builder.setMimeType(MimeTypes.APPLICATION_MPD)
+        } else if (resolved.isHlsManifest || resolved.mimeType.contains("mpegurl", ignoreCase = true)) {
+            builder.setMimeType(MimeTypes.APPLICATION_M3U8)
+        }
+        return builder.build()
     }
 }
 

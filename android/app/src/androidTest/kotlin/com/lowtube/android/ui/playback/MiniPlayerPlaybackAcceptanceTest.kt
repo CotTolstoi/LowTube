@@ -16,7 +16,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.lowtube.android.model.VideoItem
 import com.lowtube.android.playback.PlaybackService
-import com.lowtube.android.data.InnerTubeSearchRepository
+import com.lowtube.android.data.PlaybackSession
+import com.lowtube.android.data.PlaybackSessionStore
 import com.lowtube.android.ui.theme.LowTubeTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -50,7 +51,13 @@ class MiniPlayerPlaybackAcceptanceTest {
             thumbnailUrl = "https://i.ytimg.com/vi/aqz-KE-bpKQ/hqdefault.jpg",
             url = "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
         )
-        val stream = InnerTubeSearchRepository(context).resolvePlayback(video)
+        val sessionStore = PlaybackSessionStore(context)
+        val previousSession = sessionStore.load()
+        val settings = context.getSharedPreferences("lowtube_settings", Context.MODE_PRIVATE)
+        val hadResumePreference = settings.contains("resume_playback")
+        val previousResumePreference = settings.getBoolean("resume_playback", true)
+        sessionStore.save(video, null, null, null)
+        settings.edit().putBoolean("resume_playback", false).commit()
         val controllerFuture = MediaController.Builder(
             context,
             SessionToken(context, ComponentName(context, PlaybackService::class.java)),
@@ -66,11 +73,13 @@ class MiniPlayerPlaybackAcceptanceTest {
         }
         try {
             withContext(Dispatchers.Main.immediate) {
-                controller.setMediaItem(remoteMediaItem(stream))
-                controller.prepare()
+                controller.pause()
+                controller.clearMediaItems()
+                controller.play()
                 withTimeout(45_000) {
-                    while (controller.playbackState != Player.STATE_READY) delay(100)
+                    while (controller.currentMediaItem == null || controller.playbackState != Player.STATE_READY) delay(100)
                 }
+                assertTrue("Playback resumption should restore the saved video", controller.currentMediaItem?.mediaId == video.id)
                 assertTrue(
                     "The MediaSession item should expose the validated YouTube thumbnail to system media controls",
                     controller.currentMediaItem?.mediaMetadata?.artworkUri ==
@@ -119,6 +128,16 @@ class MiniPlayerPlaybackAcceptanceTest {
                 controller.clearMediaItems()
                 MediaController.releaseFuture(controllerFuture)
             }
+            restoreSession(sessionStore, previousSession)
+            settings.edit().apply {
+                if (hadResumePreference) putBoolean("resume_playback", previousResumePreference)
+                else remove("resume_playback")
+            }.commit()
         }
+    }
+
+    private fun restoreSession(store: PlaybackSessionStore, previous: PlaybackSession?) {
+        if (previous == null) store.clear()
+        else store.save(previous.video, previous.queueRowId, previous.localAudioTrack, previous.localVideoSource)
     }
 }
