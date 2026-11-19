@@ -128,6 +128,9 @@ fun LibraryScreen(
     var youtubePlaylistVideos by remember { mutableStateOf(emptyList<VideoItem>()) }
     var youtubePlaylistVideosBusy by remember { mutableStateOf(false) }
     var youtubePlaylistVideosMessage by remember { mutableStateOf("") }
+    val availableYouTubePlaylistVideos = remember(youtubePlaylistVideos) {
+        youtubePlaylistVideos.filter { it.kind != "unavailable" }
+    }
 
     LaunchedEffect(accountEmail) {
         selectedYouTubePlaylist = null
@@ -255,10 +258,10 @@ fun LibraryScreen(
                             }
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Button(onClick = { onPlayPlaylist(youtubePlaylistVideos) }, enabled = youtubePlaylistVideos.isNotEmpty()) {
+                            Button(onClick = { onPlayPlaylist(availableYouTubePlaylistVideos) }, enabled = availableYouTubePlaylistVideos.isNotEmpty()) {
                                 Text(stringResource(R.string.play_all))
                             }
-                            TextButton(onClick = { onAddToQueue(youtubePlaylistVideos) }, enabled = youtubePlaylistVideos.isNotEmpty()) {
+                            TextButton(onClick = { onAddToQueue(availableYouTubePlaylistVideos) }, enabled = availableYouTubePlaylistVideos.isNotEmpty()) {
                                 Text(stringResource(R.string.add_playlist_to_queue))
                             }
                         }
@@ -646,19 +649,25 @@ private fun WatchHistoryRow(entry: WatchHistoryEntry, onPlay: () -> Unit, onRemo
 
 @Composable
 private fun YouTubePlaylistVideoRow(video: VideoItem, onPlay: () -> Unit, onQueue: () -> Unit) {
-    Card(Modifier.fillMaxWidth()) {
+    val unavailable = video.kind == "unavailable"
+    Card(Modifier.fillMaxWidth().then(if (unavailable) Modifier else Modifier.clickable(onClick = onPlay))) {
         Row(
             Modifier.fillMaxWidth().padding(12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(Modifier.weight(1f).clickable(onClick = onPlay)) {
-                Text(video.title, style = MaterialTheme.typography.titleSmall)
-                if (video.channel.isNotBlank()) Text(video.channel, style = MaterialTheme.typography.bodySmall)
+            Column(Modifier.weight(1f)) {
+                Text(video.title.ifBlank { stringResource(R.string.video_unavailable) }, style = MaterialTheme.typography.titleSmall)
+                if (unavailable) Text(stringResource(R.string.video_unavailable), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                else if (video.channel.isNotBlank()) Text(video.channel, style = MaterialTheme.typography.bodySmall)
             }
-            Column {
-                TextButton(onClick = onPlay) { Text(stringResource(R.string.play)) }
-                TextButton(onClick = onQueue) { Text(stringResource(R.string.add_to_queue)) }
+            if (unavailable) {
+                Text(stringResource(R.string.video_unavailable), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            } else {
+                Column {
+                    TextButton(onClick = onPlay) { Text(stringResource(R.string.play)) }
+                    TextButton(onClick = onQueue) { Text(stringResource(R.string.add_to_queue)) }
+                }
             }
         }
     }

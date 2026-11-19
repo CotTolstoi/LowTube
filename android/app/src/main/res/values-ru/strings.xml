@@ -69,6 +69,7 @@
     <string name="youtube_playlists_failed">Не удалось загрузить плейлисты YouTube. Попробуйте ещё раз.</string>
     <string name="open_youtube_playlist">Открыть плейлист</string>
     <string name="youtube_playlist_open_failed">Не удалось открыть этот плейлист YouTube. Попробуйте ещё раз.</string>
+    <string name="video_unavailable">Видео недоступно</string>
     <string name="youtube_playlist_empty">В этом плейлисте нет доступных видео.</string>
     <string name="close">Закрыть</string>
     <string name="library_empty">Локальных плейлистов пока нет.</string>

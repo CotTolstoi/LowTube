@@ -69,6 +69,7 @@
     <string name="youtube_playlists_failed">Could not load YouTube playlists. Try again.</string>
     <string name="open_youtube_playlist">Open playlist</string>
     <string name="youtube_playlist_open_failed">Could not open this YouTube playlist. Try again.</string>
+    <string name="video_unavailable">Video unavailable</string>
     <string name="youtube_playlist_empty">This playlist has no available videos.</string>
     <string name="close">Close</string>
     <string name="library_empty">No local playlists yet.</string>

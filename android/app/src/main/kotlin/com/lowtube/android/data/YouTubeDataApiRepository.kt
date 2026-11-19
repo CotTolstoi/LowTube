@@ -198,21 +198,23 @@ class YouTubeDataApiRepository {
                 val items = json.optJSONArray("items") ?: throw IOException("YouTube returned an invalid playlist-items response.")
                 for (index in 0 until items.length()) {
                     val item = items.optJSONObject(index) ?: throw IOException("YouTube returned an invalid playlist item.")
-                    val snippet = item.optJSONObject("snippet") ?: continue
-                    val videoId = snippet.optJSONObject("resourceId")?.optString("videoId").orEmpty()
-                    val title = snippet.optString("title").trim().take(MAX_TITLE_LENGTH)
-                    if (!VIDEO_ID.matches(videoId) || title.isBlank() || title == "[Deleted video]" || title == "[Private video]") continue
-                    val channelId = snippet.optString("videoOwnerChannelId").takeIf(CHANNEL_ID::matches).orEmpty()
+                    val snippet = item.optJSONObject("snippet")
+                    val videoId = snippet?.optJSONObject("resourceId")?.optString("videoId").orEmpty()
+                    val title = snippet?.optString("title").orEmpty().trim().take(MAX_TITLE_LENGTH)
+                    val playableVideoId = videoId.takeIf(VIDEO_ID::matches)
+                    val unavailable = snippet == null || playableVideoId == null || title.isBlank() || title == "[Deleted video]" || title == "[Private video]"
+                    val playlistItemId = item.optString("id").takeIf { it.matches(PLAYLIST_ITEM_ID) }.orEmpty()
+                    val channelId = snippet?.optString("videoOwnerChannelId")?.takeIf(CHANNEL_ID::matches).orEmpty()
                     result += VideoItem(
-                        id = videoId,
+                        id = playableVideoId ?: "unavailable-${playlistItemId.ifBlank { "$pageCount-$index" }}",
                         title = title,
-                        channel = snippet.optString("videoOwnerChannelTitle").trim().take(MAX_TITLE_LENGTH),
-                        channelId = channelId,
-                        kind = "video",
-                        thumbnailUrl = "https://i.ytimg.com/vi/$videoId/hqdefault.jpg",
-                        url = "https://www.youtube.com/watch?v=$videoId",
+                        channel = if (unavailable) "" else snippet.optString("videoOwnerChannelTitle").trim().take(MAX_TITLE_LENGTH),
+                        channelId = if (unavailable) "" else channelId,
+                        kind = if (unavailable) "unavailable" else "video",
+                        thumbnailUrl = if (unavailable) "" else "https://i.ytimg.com/vi/$playableVideoId/hqdefault.jpg",
+                        url = playableVideoId?.let { "https://www.youtube.com/watch?v=$it" }.orEmpty(),
                     )
-                    if (result.size > MAX_PLAYLIST_VIDEOS) throw IOException("This playlist has too many available videos to load.")
+                    if (result.size > MAX_PLAYLIST_VIDEOS) throw IOException("This playlist has too many items to load in one request.")
                 }
                 pageToken = json.optString("nextPageToken").takeIf(String::isNotBlank)
             }
@@ -368,6 +370,7 @@ class YouTubeDataApiRepository {
         private val CHANNEL_ID = Regex("^UC[A-Za-z0-9_-]{22}$")
         private val PLAYLIST_ID = Regex("^[A-Za-z0-9_-]{1,256}$")
         private val VIDEO_ID = Regex("^[A-Za-z0-9_-]{11}$")
+        private val PLAYLIST_ITEM_ID = Regex("^[A-Za-z0-9_-]{1,128}$")
         private const val MAX_PLAYLIST_PAGES = 100
         private const val MAX_PLAYLISTS = PAGE_SIZE * MAX_PLAYLIST_PAGES
         private const val MAX_PLAYLIST_VIDEOS = PAGE_SIZE * MAX_PLAYLIST_PAGES
