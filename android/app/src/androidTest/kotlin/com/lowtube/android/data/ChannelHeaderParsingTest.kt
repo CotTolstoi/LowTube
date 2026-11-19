@@ -50,4 +50,44 @@ class ChannelHeaderParsingTest {
         assertEquals("https://yt3.googleusercontent.com/banner=s1024", header?.bannerUrl)
         assertEquals(1, page.items.size)
     }
+
+    @Test
+    fun modernPageHeaderViewModelProvidesChannelDetails() {
+        val root = JSONObject(
+            """
+            {
+              "contents": {},
+              "header": {"pageHeaderRenderer": {
+                "pageTitle": {"runs": [{"text": "Science Channel", "navigationEndpoint": {
+                  "browseEndpoint": {"browseId": "UCabcdefghijklmnopqrstuv"}
+                }}]},
+                "content": {"pageHeaderViewModel": {
+                  "title": {"dynamicTextViewModel": {"text": {"content": "Science Channel"}}},
+                  "image": {"decoratedAvatarViewModel": {"avatar": {"avatarViewModel": {"image": {
+                    "sources": [{"url": "https://yt3.googleusercontent.com/avatar=s160"}]
+                  }}}}},
+                  "metadata": {"contentMetadataViewModel": {"metadataRows": [
+                    {"metadataParts": [{"text": {"content": "@Science"}}]},
+                    {"metadataParts": [{"text": {"content": "1.2M subscribers"}, "accessibilityLabel": "1.2 million subscribers"}]}
+                  ]}},
+                  "description": {"descriptionPreviewViewModel": {"description": {"content": "Public science videos."}}},
+                  "banner": {"imageBannerViewModel": {"image": {"sources": [
+                    {"url": "https://yt3.ggpht.com/banner=w1138"}
+                  ]}}}
+                }}
+              }}
+            }
+            """.trimIndent(),
+        )
+
+        val header = InnerTubeSearchRepository().parseSearchPage(root).channelHeader
+
+        assertNotNull(header)
+        assertEquals("Science Channel", header?.title)
+        assertEquals("UCabcdefghijklmnopqrstuv", header?.channelId)
+        assertEquals("1.2M subscribers", header?.subscriberCountText)
+        assertEquals("Public science videos.", header?.description)
+        assertEquals("https://yt3.googleusercontent.com/avatar=s160", header?.avatarUrl)
+        assertEquals("https://yt3.ggpht.com/banner=w1138", header?.bannerUrl)
+    }
 }

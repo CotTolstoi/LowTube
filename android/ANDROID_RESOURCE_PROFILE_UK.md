@@ -367,4 +367,6 @@
 
 19.11.2026 13:45:23 UTC, підключений Android13/API33, LowTube MainActivity після встановлення channel-header APK, Home без playback; 10 s sample: CPU 0,4% одного ядра, PSS 134,1 MiB, RSS 221,2 MiB, peak RSS 223 MiB, RAM 3 713 MiB / доступно 1 446 MiB. Система визначається як TrebleDroid vanilla. Це одиничний snapshot, не benchmark і не вимір сторінки каналу.
 
+19.11.2026 14:04:25 UTC, підключений Android13/API33, live NASA channel header та перші відеокартки у foreground без playback; 10 s sample: CPU 0%, PSS 124,1 MiB, RSS 211 MiB, peak RSS 229,7 MiB, RAM 3 713 MiB / доступно 1 429 MiB. Система визначається як TrebleDroid vanilla. Це одиничний network/UI snapshot, не benchmark.
+
 19.11.2026 13:42:13 UTC, підключений Android13/API33, LowTube MainActivity після встановлення channel-header build, Home без playback; 10 s sample: CPU 2,5% одного ядра, PSS 112,6 MiB, RSS 200,5 MiB, peak RSS 228,6 MiB, RAM 3 713 MiB / доступно 1 451 MiB. Система визначається як TrebleDroid vanilla. Це одиничний point sample після запуску, не порівняльний benchmark і не навантаження сторінки каналу.

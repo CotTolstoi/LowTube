@@ -70,10 +70,15 @@ class InnerTubeSearchRepository(context: Context? = null) {
                 configure(language)
                 val body = JSONObject().put("context", context(language))
                 val endpoint = if (playlistId != null || channelUrl) "browse" else "search"
+                var channelBrowseId = ""
                 if (continuation.isNullOrBlank()) {
                     when {
                         playlistId != null -> body.put("browseId", "VL$playlistId")
-                        channelUrl -> body.put("browse", resolveChannelBrowse(query, language))
+                        channelUrl -> {
+                            val browse = resolveChannelBrowse(query, language)
+                            channelBrowseId = browse.optString("browseId")
+                            body.put("browse", browse)
+                        }
                         else -> body.put("query", query)
                     }
                 } else body.put("continuation", continuation)
@@ -85,7 +90,11 @@ class InnerTubeSearchRepository(context: Context? = null) {
                 } else body
                 val root = JSONObject(request("/youtubei/v1/$endpoint?prettyPrint=false", requestBody.toString(), true))
                 root.optJSONObject("responseContext")?.optString("visitorData")?.takeIf(String::isNotBlank)?.let { visitorData = it }
-                parseSearchPage(root)
+                val page = parseSearchPage(root)
+                val header = page.channelHeader
+                if (channelUrl && header != null && header.channelId.isBlank() && CHANNEL_ID.matches(channelBrowseId)) {
+                    page.copy(channelHeader = header.copy(channelId = channelBrowseId))
+                } else page
             }
         }
 
@@ -1174,11 +1183,12 @@ class InnerTubeSearchRepository(context: Context? = null) {
                         val key = keys.next()
                         val renderer = value.optJSONObject(key)
                         when (key) {
-                            "channelMetadataRenderer", "c4TabbedHeaderRenderer", "pageHeaderViewModel" -> {
+                            "channelMetadataRenderer", "c4TabbedHeaderRenderer", "pageHeaderRenderer" -> {
                                 val parsed = parseChannelHeader(key, renderer)
                                 if (parsed != null && channelHeader?.title.isNullOrBlank()) channelHeader = parsed
                                 visit(renderer, depth + 1)
                             }
+                            "pageHeaderViewModel" -> visit(renderer, depth + 1)
                             "playlistHeaderRenderer", "playlistMetadataRenderer" -> {
                                 val title = text(renderer?.opt("title")).takeIf(String::isNotBlank)
                                 if (!title.isNullOrBlank()) playlistTitle = title
@@ -1228,23 +1238,76 @@ class InnerTubeSearchRepository(context: Context? = null) {
 
     private fun parseChannelHeader(rendererName: String, renderer: JSONObject?): ChannelHeader? {
         renderer ?: return null
-        val title = text(renderer.opt("title")).trim().take(250)
+        val viewModel = if (rendererName == "pageHeaderRenderer") {
+            renderer.optJSONObject("content")?.optJSONObject("pageHeaderViewModel") ?: return null
+        } else renderer
+        val titleNode = viewModel.optJSONObject("title")
+        val title = text(viewModel.opt("title"))
+            .ifBlank { text(titleNode?.optJSONObject("dynamicTextViewModel")?.opt("text")) }
+            .trim().take(250)
         if (title.isBlank()) return null
         val channelId = renderer.optString("externalId")
             .ifBlank { renderer.optString("channelId") }
+            .ifBlank { channelIdIn(renderer) }
             .takeIf { it.startsWith("UC") && it.length == 24 }
             .orEmpty()
         val avatar = channelImageUrl(
-            renderer.opt("avatar")
-                ?: renderer.opt("channelThumbnail")
-                ?: renderer.opt("image"),
+            viewModel.opt("avatar")
+                ?: viewModel.opt("channelThumbnail")
+                ?: viewModel.opt("image"),
         )
-        val banner = if (rendererName == "c4TabbedHeaderRenderer") channelImageUrl(renderer.opt("banner")) else ""
-        val subscriberCount = text(renderer.opt("subscriberCountText"))
-            .ifBlank { text(renderer.opt("subscriberCount")) }
+        val banner = if (rendererName == "c4TabbedHeaderRenderer" || rendererName == "pageHeaderRenderer") {
+            channelImageUrl(viewModel.opt("banner"))
+        } else ""
+        val subscriberCount = text(viewModel.opt("subscriberCountText"))
+            .ifBlank { text(viewModel.opt("subscriberCount")) }
+            .ifBlank { channelSubscriberCount(viewModel.optJSONObject("metadata")) }
             .take(120)
-        val description = text(renderer.opt("description")).take(500)
+        val descriptionNode = viewModel.optJSONObject("description")
+        val description = text(viewModel.opt("description"))
+            .ifBlank { text(descriptionNode?.optJSONObject("descriptionPreviewViewModel")?.opt("description")) }
+            .take(500)
         return ChannelHeader(channelId, title, avatar, banner, subscriberCount, description)
+    }
+
+    private fun channelIdIn(root: JSONObject): String {
+        var channelId = ""
+        fun visit(node: Any?, depth: Int) {
+            if (depth > 12 || channelId.isNotBlank()) return
+            when (node) {
+                is JSONArray -> for (i in 0 until node.length()) visit(node.opt(i), depth + 1)
+                is JSONObject -> {
+                    val candidate = node.optString("browseId")
+                    if (candidate.startsWith("UC") && candidate.length == 24) {
+                        channelId = candidate
+                    } else {
+                        val keys = node.keys()
+                        while (keys.hasNext() && channelId.isBlank()) visit(node.opt(keys.next()), depth + 1)
+                    }
+                }
+            }
+        }
+        visit(root, 0)
+        return channelId
+    }
+
+    private fun channelSubscriberCount(metadata: JSONObject?): String {
+        val rows = metadata?.optJSONObject("contentMetadataViewModel")?.optJSONArray("metadataRows") ?: return ""
+        for (rowIndex in 0 until rows.length()) {
+            val parts = rows.optJSONObject(rowIndex)?.optJSONArray("metadataParts") ?: continue
+            for (partIndex in 0 until parts.length()) {
+                val part = parts.optJSONObject(partIndex) ?: continue
+                val value = text(part.opt("text")).take(120)
+                val marker = part.optString("accessibilityLabel") + " " + value
+                if (marker.contains("subscriber", ignoreCase = true) ||
+                    marker.contains("підпис", ignoreCase = true) ||
+                    marker.contains("подпис", ignoreCase = true) ||
+                    marker.contains("abonn", ignoreCase = true) ||
+                    marker.contains("suscrip", ignoreCase = true)
+                ) return value
+            }
+        }
+        return ""
     }
 
     private fun channelImageUrl(value: Any?): String {
