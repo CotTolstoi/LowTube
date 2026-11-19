@@ -252,4 +252,6 @@
 
 19.11.2026 00:05 UTC, Redmi Note 8 / Android13 API33 після встановлення збірки з WorkManager для локальної стрічки підписок: LowTube `MainActivity` залишена у foreground. Settled Home 10 s sample — CPU 0%, PSS 118,6 MiB, RSS 209,0 MiB, peak RSS 230,4 MiB, RAM 3 713 MiB / доступно 1 352 MiB. Відео не запускалося. Це короткий idle snapshot, не benchmark і не вимір фонового виконання WorkManager.
 
+19.11.2026 00:10 UTC, Redmi Note 8 / Android13 API33 після `SubscriptionFeedRefreshSchedulerTest`: LowTube `MainActivity` знову у foreground. Settled Home 10 s sample — CPU 0,9% одного ядра, PSS 120 MiB, RSS 205,8 MiB, peak RSS 214,1 MiB, RAM 3 713 MiB / доступно 1 359 MiB. Тест не запускав періодичний worker чи відео. Короткий idle point sample, не benchmark.
+
 19.11.2026, API23 AVD, natural-order MWEB fallback acceptance без Media3: CPU процесу 4 175 ms за 4 254 ms wall; PSS 26 928→52 155 KiB. Network fixture прочитав лише 65 536 байтів Range; process snapshot, не benchmark.
