@@ -2,15 +2,15 @@
 
 This branch publishes the latest available Android development build.
 
-## Current artifact (2026-11-19, source revision 1a16e8b)
+## Current artifact (2026-11-19, source revision 9b47818)
 
 - File: `LowTube-Android-debug-0.1.0.apk`; version `0.1.0-android-dev` (version code 1); minimum Android 6.0 (API 23).
 - Build type: installable debug APK, signed with the Android debug certificate; not a production-signed release.
-- Source revision: `1a16e8b` (`feat/android-first-run-setup`).
+- Source revision: `9b47818` (`feat/android-first-run-setup`).
 - APK size: 25758903 bytes.
-- SHA-256: `6BC1C68BAAF2A7235ED732523AEF612BBDFE590B33D7BE5368202D269E432817`.
-- Offline `:app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest --offline --no-configuration-cache` succeeded. `PlaybackSeekGestureTest` passed on API 23; `tenSecondSeekTargetsMoveMediaInsideThirtySecondClip` passed on API 23 and API 33 with forward/backward ten-second seeks, stopping near 1 second of the 30-second test clip. No full video was played.
-- Installed and launched on the connected Android 13/API 33 system; `MainActivity` remained top-resumed after verification. The system identifies as `TrebleDroid vanilla`, so Redmi Note 8 hardware is unverified. Resource samples immediately after launch (5 s): CPU 118.4% of one core, PSS 142.1 MiB, RSS 225.9 MiB, available RAM 1,571 MiB. After 15 s settling (5 s sample): CPU 0%, PSS 122.9 MiB, RSS 208.5 MiB, peak RSS 232.4 MiB, available RAM 1,573 MiB. These are point samples, not a benchmark.
+- SHA-256: `703FFF898E65731FDD91CC1727F84310C88B13DC4499EFA2FBB9069F24E48E26`.
+- Offline `:app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest --offline --no-configuration-cache` succeeded. Bounded `YoutubeDownloadFormatsAcceptanceTest` passed on Android 6/API 23 and Android 13/API 33 AVDs: direct Android-client video/audio formats, HTTP 206 ranges, video resume to 128 KiB, and a 64 KiB separate AAC range. Android VR fallback passed on both AVDs with clients `ANDROID,WEB,IOS,ANDROID_VR` and 64 KiB video/audio ranges. No playback or full download was run.
+- Installed and launched on the connected Android 13/API 33 system; `MainActivity` remained top-resumed. The system identifies as `TrebleDroid vanilla`, so Redmi Note 8 hardware is unverified. Idle snapshot after 5 s: CPU 0% in `dumpsys cpuinfo`, PSS 142.6 MiB, RSS 239.6 MiB, available RAM 1,600 MiB. Point sample, not a benchmark.
 ## Previous artifact details (source revision 52c984e; historical)
 
 - Built from Android development branch `feat/android-first-run-setup` at source commit `52c984e`; the APK includes the SAF download-folder option in first-run setup and centralized persistable-grant cleanup. Unit and instrumentation test sources are not packaged in the APK.
