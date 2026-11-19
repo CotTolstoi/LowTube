@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -50,6 +51,7 @@ import com.lowtube.android.R
 import com.lowtube.android.data.PlaybackStreamPreferences
 import com.lowtube.android.data.PlaybackBufferPreferences
 import com.lowtube.android.data.DownloadStreamPreferences
+import com.lowtube.android.data.UiScaleOptions
 import com.lowtube.android.data.DiagnosticReportFormatter
 import com.lowtube.android.data.DiagnosticReportSnapshot
 import com.lowtube.android.data.DownloadRepository
@@ -79,6 +81,9 @@ fun SettingsScreen(
     onPlaybackBufferPreferencesChanged: (PlaybackBufferPreferences) -> Unit = {},
     downloadPreferences: DownloadStreamPreferences = DownloadStreamPreferences(),
     onDownloadPreferencesChanged: (DownloadStreamPreferences) -> Unit = {},
+    uiScale: Float = UiScaleOptions.DEFAULT,
+    onUiScaleChanged: (Float) -> Unit = {},
+    onStartFirstRunSetup: () -> Unit = {},
     resumePlayback: Boolean = true,
     onResumePlaybackChanged: (Boolean) -> Unit = {},
     autoRecover: Boolean = true,
@@ -143,7 +148,7 @@ fun SettingsScreen(
     }
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         if (uri != null) transferScope.launch {
-            val snapshot = SettingsTransferRepository.Snapshot(language, darkTheme, discoveryTopic, discoveryLanguage, playbackPreferences.maxHeight, playbackPreferences.h264Only, playbackPreferences.fps30Only, playbackPreferences.audioOnly, downloadPreferences.maxHeight, downloadPreferences.h264Only, downloadPreferences.fps30Only, downloadPreferences.limitKiB, resumePlayback, playbackBufferPreferences.maximumSeconds, playbackBufferPreferences.memoryLimitMiB, playbackBufferPreferences.backBufferMiB, playbackBufferPreferences.startupSeconds, autoRecover, autoNext, preloadNext, feedRefreshPreset, pageSize, downloadPreferences.audioBitrateKbps)
+            val snapshot = SettingsTransferRepository.Snapshot(language, darkTheme, discoveryTopic, discoveryLanguage, playbackPreferences.maxHeight, playbackPreferences.h264Only, playbackPreferences.fps30Only, playbackPreferences.audioOnly, downloadPreferences.maxHeight, downloadPreferences.h264Only, downloadPreferences.fps30Only, downloadPreferences.limitKiB, resumePlayback, playbackBufferPreferences.maximumSeconds, playbackBufferPreferences.memoryLimitMiB, playbackBufferPreferences.backBufferMiB, playbackBufferPreferences.startupSeconds, autoRecover, autoNext, preloadNext, feedRefreshPreset, pageSize, downloadPreferences.audioBitrateKbps, uiScale)
             val result = runCatching {
                 val json = SettingsTransferRepository.encode(snapshot)
                 withContext(Dispatchers.IO) {
@@ -156,7 +161,7 @@ fun SettingsScreen(
     }
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) transferScope.launch {
-            val fallback = SettingsTransferRepository.Snapshot(language, darkTheme, discoveryTopic, discoveryLanguage, playbackPreferences.maxHeight, playbackPreferences.h264Only, playbackPreferences.fps30Only, playbackPreferences.audioOnly, downloadPreferences.maxHeight, downloadPreferences.h264Only, downloadPreferences.fps30Only, downloadPreferences.limitKiB, resumePlayback, playbackBufferPreferences.maximumSeconds, playbackBufferPreferences.memoryLimitMiB, playbackBufferPreferences.backBufferMiB, playbackBufferPreferences.startupSeconds, autoRecover, autoNext, preloadNext, feedRefreshPreset, pageSize, downloadPreferences.audioBitrateKbps)
+            val fallback = SettingsTransferRepository.Snapshot(language, darkTheme, discoveryTopic, discoveryLanguage, playbackPreferences.maxHeight, playbackPreferences.h264Only, playbackPreferences.fps30Only, playbackPreferences.audioOnly, downloadPreferences.maxHeight, downloadPreferences.h264Only, downloadPreferences.fps30Only, downloadPreferences.limitKiB, resumePlayback, playbackBufferPreferences.maximumSeconds, playbackBufferPreferences.memoryLimitMiB, playbackBufferPreferences.backBufferMiB, playbackBufferPreferences.startupSeconds, autoRecover, autoNext, preloadNext, feedRefreshPreset, pageSize, downloadPreferences.audioBitrateKbps, uiScale)
             val result = runCatching {
                 val json = withContext(Dispatchers.IO) {
                     context.contentResolver.openInputStream(uri)?.use(::readSettingsTransfer)
@@ -171,6 +176,7 @@ fun SettingsScreen(
                 onPlaybackPreferencesChanged(PlaybackStreamPreferences(imported.maxHeight, imported.h264Only, imported.fps30Only, imported.audioOnly))
                 onPlaybackBufferPreferencesChanged(PlaybackBufferPreferences(imported.bufferSeconds, imported.bufferMiB, imported.backBufferMiB, imported.bufferStartSeconds))
                 onDownloadPreferencesChanged(DownloadStreamPreferences(imported.downloadMaxHeight, imported.downloadH264Only, imported.downloadFps30Only, imported.downloadLimitKiB, imported.downloadAudioBitrateKbps))
+                onUiScaleChanged(imported.uiScale)
                 onResumePlaybackChanged(imported.resumePlayback)
                 onAutoRecoverChanged(imported.autoRecover)
                 onAutoNextChanged(imported.autoNext)
@@ -213,6 +219,19 @@ fun SettingsScreen(
                     })
                     Text(stringResource(label), modifier = Modifier.padding(start = 8.dp))
                 }
+            }
+            Text(stringResource(R.string.interface_scale), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 12.dp))
+            UiScaleOptions.VALUES.forEach { scale ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth().clickable { onUiScaleChanged(scale) },
+                ) {
+                    RadioButton(selected = uiScale == scale, onClick = { onUiScaleChanged(scale) })
+                    Text("${(scale * 100).toInt()}%")
+                }
+            }
+            TextButton(onClick = onStartFirstRunSetup, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.onboarding_run_again))
             }
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             Text(stringResource(R.string.discovery), style = MaterialTheme.typography.titleMedium)

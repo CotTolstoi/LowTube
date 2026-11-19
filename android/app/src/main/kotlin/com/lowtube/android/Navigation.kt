@@ -38,6 +38,7 @@ import com.lowtube.android.data.PlaybackStreamPreferences
 import com.lowtube.android.data.PlaybackBufferPreferences
 import com.lowtube.android.data.PlaybackSessionStore
 import com.lowtube.android.data.DownloadStreamPreferences
+import com.lowtube.android.data.UiScaleOptions
 import com.lowtube.android.data.DownloadRepository
 import com.lowtube.android.data.InnerTubeSearchRepository
 import com.lowtube.android.data.SubscriptionFeedRefreshScheduler
@@ -74,6 +75,9 @@ fun MainNavigation(
     onChangeYouTubeSubscription: (String, Boolean, (Result<Unit>) -> Unit) -> Unit,
     onDarkThemeChanged: (Boolean) -> Unit,
     onLanguageChanged: (String) -> Unit,
+    uiScale: Float = UiScaleOptions.DEFAULT,
+    onUiScaleChanged: (Float) -> Unit = {},
+    onStartFirstRunSetup: () -> Unit = {},
     onBackHandlerChanged: ((() -> Boolean) -> Unit),
     externalYoutubeUrl: String?,
     externalYoutubeRequestId: Int,
@@ -535,6 +539,9 @@ fun MainNavigation(
                 SettingsScreen(
                     onDarkThemeChanged = onDarkThemeChanged,
                     onLanguageChanged = onLanguageChanged,
+                    uiScale = uiScale,
+                    onUiScaleChanged = onUiScaleChanged,
+                    onStartFirstRunSetup = onStartFirstRunSetup,
                     onBack = navigateBack,
                     discoveryTopic = discoveryTopic,
                     discoveryLanguage = discoveryLanguage,

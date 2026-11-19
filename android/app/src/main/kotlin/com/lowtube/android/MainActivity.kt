@@ -42,9 +42,15 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.core.view.WindowCompat
 import com.lowtube.android.ui.theme.LowTubeTheme
+import com.lowtube.android.data.UiScaleOptions
+import com.lowtube.android.ui.onboarding.FirstRunSetupScreen
 
 class MainActivity : ComponentActivity() {
   private data class YoutubeSubscriptionChange(
@@ -56,6 +62,8 @@ class MainActivity : ComponentActivity() {
   )
 
   private var darkTheme by mutableStateOf(true)
+  private var uiScale by mutableStateOf(UiScaleOptions.DEFAULT)
+  private var firstRunComplete by mutableStateOf(false)
   private var externalYoutubeUrl by mutableStateOf<String?>(null)
   private var externalYoutubeRequestId by mutableIntStateOf(0)
   private var navigationBackHandler: (() -> Boolean)? = null
@@ -180,6 +188,8 @@ class MainActivity : ComponentActivity() {
     googleAccountMessageStore = GoogleAccountMessageStore(this)
     googleAccountMessage = googleAccountMessageStore?.load().orEmpty()
     darkTheme = preferences.getBoolean("dark_theme", true)
+    uiScale = UiScaleOptions.normalize(preferences.getFloat("ui_scale", UiScaleOptions.DEFAULT))
+    firstRunComplete = preferences.getBoolean("first_run_complete", false)
     googleAccountName = preferences.getString("google_account_name", "").orEmpty()
     googleAccountEmail = preferences.getString("google_account_email", "").orEmpty()
     googleAccountAvatarUrl = GoogleProfileAvatarPolicy.validate(preferences.getString("google_account_avatar_url", "").orEmpty())
@@ -202,9 +212,48 @@ class MainActivity : ComponentActivity() {
           insetsController.isAppearanceLightNavigationBars = !darkTheme
         }
       }
-      LowTubeTheme(darkTheme = darkTheme) {
-        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-          MainNavigation(
+      val baseDensity = LocalDensity.current
+      val scaledDensity = remember(baseDensity, uiScale) {
+        Density(
+          density = baseDensity.density * uiScale,
+          fontScale = baseDensity.fontScale * uiScale,
+        )
+      }
+      CompositionLocalProvider(LocalDensity provides scaledDensity) {
+        LowTubeTheme(darkTheme = darkTheme) {
+          Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            if (!firstRunComplete) {
+              FirstRunSetupScreen(
+                language = AppLocale.language(this),
+                uiScale = uiScale,
+                darkTheme = darkTheme,
+                playbackMaxHeight = getSharedPreferences("lowtube_settings", MODE_PRIVATE).getInt("playback_height", 720),
+                downloadAudioBitrateKbps = getSharedPreferences("lowtube_settings", MODE_PRIVATE)
+                  .getInt("download_audio_bitrate", com.lowtube.android.data.DownloadStreamPreferences.DEFAULT_AUDIO_BITRATE_KBPS),
+                onPreviewUiScale = { uiScale = it },
+                onApply = { language, scale, dark, height, bitrate ->
+                  getSharedPreferences("lowtube_settings", MODE_PRIVATE).edit()
+                    .putBoolean("first_run_complete", true)
+                    .putBoolean("dark_theme", dark)
+                    .putFloat("ui_scale", scale)
+                    .putInt("playback_height", height)
+                    .putInt("download_audio_bitrate", bitrate)
+                    .apply()
+                  AppLocale.setLanguage(this, language)
+                  firstRunComplete = true
+                  darkTheme = dark
+                  uiScale = scale
+                  recreate()
+                },
+                onSkip = {
+                  getSharedPreferences("lowtube_settings", MODE_PRIVATE).edit().putBoolean("first_run_complete", true).apply()
+                  uiScale = UiScaleOptions.normalize(
+                    getSharedPreferences("lowtube_settings", MODE_PRIVATE).getFloat("ui_scale", UiScaleOptions.DEFAULT),
+                  )
+                  firstRunComplete = true
+                },
+              )
+            } else MainNavigation(
             googleAccountName = googleAccountName,
             googleAccountEmail = googleAccountEmail,
             googleAccountAvatarUrl = googleAccountAvatarUrl,
@@ -225,6 +274,16 @@ class MainActivity : ComponentActivity() {
               AppLocale.setLanguage(this, language)
               recreate()
             },
+            uiScale = uiScale,
+            onUiScaleChanged = { scale ->
+              val normalized = UiScaleOptions.normalize(scale)
+              uiScale = normalized
+              getSharedPreferences("lowtube_settings", MODE_PRIVATE).edit().putFloat("ui_scale", normalized).apply()
+            },
+            onStartFirstRunSetup = {
+              getSharedPreferences("lowtube_settings", MODE_PRIVATE).edit().putBoolean("first_run_complete", false).apply()
+              firstRunComplete = false
+            },
             onBackHandlerChanged = { handler -> navigationBackHandler = handler },
             inPictureInPictureMode = inPictureInPictureMode,
             onPictureInPictureEligibilityChanged = ::setPictureInPictureEligibility,
@@ -233,7 +292,8 @@ class MainActivity : ComponentActivity() {
             onExternalYoutubeUrlConsumed = { requestId ->
               if (requestId == externalYoutubeRequestId) externalYoutubeUrl = null
             },
-          )
+            )
+          }
         }
       }
     }

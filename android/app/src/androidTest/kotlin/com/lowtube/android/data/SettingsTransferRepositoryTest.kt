@@ -83,6 +83,17 @@ class SettingsTransferRepositoryTest {
     }
 
     @Test
+    fun uiScaleRoundTripsAndLegacySettingsKeepTheCurrentScale() {
+        val selected = defaults.copy(uiScale = 1.15f)
+        assertEquals(selected, SettingsTransferRepository.decode(SettingsTransferRepository.encode(selected), defaults))
+        assertEquals(1.30f, SettingsTransferRepository.decode("""{"Language":"en","UiScale":1.3}""", defaults).uiScale)
+        assertEquals(defaults.uiScale, SettingsTransferRepository.decode("""{"Language":"en"}""", defaults).uiScale)
+        assertThrows(IllegalArgumentException::class.java) {
+            SettingsTransferRepository.decode("""{"UiScale":3.0}""", defaults)
+        }
+    }
+
+    @Test
     fun convertsPcDefaultMemoryLimitToAndroidBoundedDefault() {
         val imported = SettingsTransferRepository.decode("""{"BufferMiB":0}""", defaults)
         assertEquals(PlaybackBufferPreferences.DEFAULT_MEMORY_LIMIT_MIB, imported.bufferMiB)

@@ -29,6 +29,7 @@ internal object SettingsTransferRepository {
         val feedPreset: Int = 1,
         val pageSize: Int = 25,
         val downloadAudioBitrateKbps: Int = DownloadStreamPreferences.DEFAULT_AUDIO_BITRATE_KBPS,
+        val uiScale: Float = UiScaleOptions.DEFAULT,
     )
 
     fun encode(snapshot: Snapshot): String {
@@ -48,6 +49,7 @@ internal object SettingsTransferRepository {
             .put("DownloadFps30", snapshot.downloadFps30Only)
             .put("DownloadLimitKiB", snapshot.downloadLimitKiB)
             .put("AudioBitrate", snapshot.downloadAudioBitrateKbps)
+            .put("UiScale", snapshot.uiScale.toDouble())
             .put("ResumePlayback", snapshot.resumePlayback)
             .put("BufferSeconds", snapshot.bufferSeconds)
             .put("BufferMiB", snapshot.bufferMiB)
@@ -89,6 +91,7 @@ internal object SettingsTransferRepository {
             downloadFps30Only = bool(root, "DownloadFps30", "downloadFps30Only", fallback.downloadFps30Only),
             downloadLimitKiB = int(root, "DownloadLimitKiB", "downloadLimitKiB", fallback.downloadLimitKiB),
             downloadAudioBitrateKbps = int(root, "AudioBitrate", "downloadAudioBitrateKbps", fallback.downloadAudioBitrateKbps),
+            uiScale = float(root, "UiScale", "uiScale", fallback.uiScale),
             resumePlayback = bool(root, "ResumePlayback", "resumePlayback", fallback.resumePlayback),
             bufferSeconds = bufferSeconds,
             bufferMiB = if (importedBufferMiB == 0) PlaybackBufferPreferences.memoryLimitForPcDefault(bufferSeconds) else importedBufferMiB,
@@ -137,6 +140,16 @@ internal object SettingsTransferRepository {
         return root.get(key) as? Boolean ?: throw IllegalArgumentException("Invalid $pc setting.")
     }
 
+    private fun float(root: JSONObject, pc: String, android: String, fallback: Float): Float {
+        val key = when {
+            root.has(pc) -> pc
+            root.has(android) -> android
+            else -> return fallback
+        }
+        val value = root.get(key) as? Number ?: throw IllegalArgumentException("Invalid $pc setting.")
+        return value.toFloat().takeIf { it.isFinite() } ?: throw IllegalArgumentException("Invalid $pc setting.")
+    }
+
     private fun validate(snapshot: Snapshot) {
         require(snapshot.language in LANGUAGES) { "Unsupported interface language." }
         require(snapshot.discoveryLanguage in DISCOVERY_LANGUAGES) { "Unsupported discovery language." }
@@ -145,6 +158,7 @@ internal object SettingsTransferRepository {
         require(snapshot.downloadMaxHeight in PlaybackStreamPreferences.SUPPORTED_HEIGHTS) { "Unsupported download quality cap." }
         require(snapshot.downloadLimitKiB in 0..1_048_576) { "Unsupported download speed limit." }
         require(snapshot.downloadAudioBitrateKbps in DownloadStreamPreferences.SUPPORTED_AUDIO_BITRATES_KBPS) { "Unsupported audio bitrate." }
+        require(snapshot.uiScale in UiScaleOptions.VALUES) { "Unsupported interface scale." }
         require(snapshot.feedPreset in 0..2) { "Unsupported subscription feed refresh preset." }
         require(snapshot.pageSize in 1..250) { "Unsupported page size." }
         PlaybackBufferPreferences(

@@ -49,6 +49,12 @@
     <string name="load_more">Загрузить ещё</string>
     <string name="settings">Настройки</string>
     <string name="appearance">Внешний вид</string>
+    <string name="onboarding_title">Добро пожаловать в LowTube</string>
+    <string name="onboarding_description">Выберите основные параметры. Их можно изменить позже в настройках. Вход в Google необязателен.</string>
+    <string name="onboarding_finish">Сохранить и продолжить</string>
+    <string name="onboarding_skip">Пропустить настройку</string>
+    <string name="onboarding_run_again">Запустить начальную настройку снова</string>
+    <string name="interface_scale">Масштаб интерфейса</string>
     <string name="discovery">Рекомендации на главной</string>
     <string name="discovery_topic">Тема</string>
     <string name="discovery_topic_hint">До 200 символов; пустое поле использует тему по умолчанию.</string>

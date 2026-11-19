@@ -49,6 +49,12 @@
     <string name="load_more">Load more</string>
     <string name="settings">Settings</string>
     <string name="appearance">Appearance</string>
+    <string name="onboarding_title">Welcome to LowTube</string>
+    <string name="onboarding_description">Choose a few preferences to get started. You can change them later in Settings. Google sign-in is optional.</string>
+    <string name="onboarding_finish">Save and continue</string>
+    <string name="onboarding_skip">Skip setup</string>
+    <string name="onboarding_run_again">Run initial setup again</string>
+    <string name="interface_scale">Interface size</string>
     <string name="discovery">Home recommendations</string>
     <string name="discovery_topic">Topic</string>
     <string name="discovery_topic_hint">Up to 200 characters; leave blank for the default topic.</string>
