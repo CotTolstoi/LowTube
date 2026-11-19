@@ -277,7 +277,7 @@ class YoutubePlayerClientComparisonDiagnosticTest {
                 assertEquals(MWEB_USER_AGENT, userAgent)
                 mwebResponse
             } else {
-                assertTrue("Unexpected player client $name", name in listOf("WEB", "ANDROID", "IOS"))
+                assertTrue("Unexpected player client $name", name in listOf("ANDROID", "WEB", "IOS", "ANDROID_VR"))
                 JSONObject().put("playabilityStatus", JSONObject().put("status", "LOGIN_REQUIRED"))
             }
         }
@@ -291,7 +291,7 @@ class YoutubePlayerClientComparisonDiagnosticTest {
         val wallStarted = SystemClock.elapsedRealtime()
         val pssStarted = Debug.getPss()
         val options = repository.resolveDownloadOptions(video, DownloadStreamPreferences(), audioOnly = false)
-        assertEquals(listOf("ANDROID", "WEB", "IOS", "MWEB"), attemptedClients)
+        assertEquals(listOf("ANDROID", "WEB", "IOS", "ANDROID_VR", "MWEB"), attemptedClients)
         assertTrue("The transformed MWEB signature produced no video download options", options.isNotEmpty())
         val rangeProbes = options.take(3).map { option ->
             assertTrue("The resolved video download MIME is not video/*: ${option.stream.mimeType}", option.stream.mimeType.startsWith("video/"))
