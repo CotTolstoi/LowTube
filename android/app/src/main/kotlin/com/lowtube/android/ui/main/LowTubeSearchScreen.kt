@@ -926,9 +926,9 @@ internal fun VideoCard(
                             text = { Text(stringResource(R.string.open_url)) },
                             onClick = {
                                 moreActionsExpanded = false
-                                val uri = Uri.parse(item.url)
-                                if (isTrustedYouTubeUri(uri)) {
-                                    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, uri)) }
+                                val intent = runCatching { createOpenUrlIntent(item) }.getOrNull()
+                                if (intent != null) {
+                                    runCatching { context.startActivity(intent) }
                                         .onFailure { Toast.makeText(context, R.string.action_failed, Toast.LENGTH_SHORT).show() }
                                 } else {
                                     Toast.makeText(context, R.string.action_failed, Toast.LENGTH_SHORT).show()
@@ -991,9 +991,18 @@ internal fun createShareIntent(item: VideoItem): Intent {
         .putExtra(Intent.EXTRA_TEXT, content)
 }
 
+internal fun createOpenUrlIntent(item: VideoItem): Intent {
+    val uri = Uri.parse(item.url)
+    require(isTrustedYouTubeUri(uri)) { "Only HTTPS YouTube links can be opened externally." }
+    return Intent(Intent.ACTION_VIEW, uri)
+}
+
 private fun isTrustedYouTubeUri(uri: Uri): Boolean {
     val host = uri.host?.lowercase(java.util.Locale.ROOT)
-    return uri.scheme == "https" && host in setOf("youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be")
+    return uri.scheme == "https" &&
+        host in setOf("youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be") &&
+        uri.userInfo == null &&
+        (uri.port == -1 || uri.port == 443)
 }
 
 internal fun youtubePlaylistQueueMarker(input: String, title: String): VideoItem? {

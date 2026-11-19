@@ -160,6 +160,31 @@ class VideoCardShareTest {
         assertFalse(runCatching { createShareIntent(unsafe) }.isSuccess)
     }
 
+    @Test
+    fun openUrlIntentUsesHttpsYoutubeViewAction() {
+        val item = fixture()
+        val intent = createOpenUrlIntent(item)
+
+        assertEquals(Intent.ACTION_VIEW, intent.action)
+        assertEquals(item.url, intent.dataString)
+    }
+
+    @Test
+    fun openUrlIntentRejectsUntrustedAuthorityAndPort() {
+        val invalidUrls = listOf(
+            "http://www.youtube.com/watch?v=fixture-video",
+            "https://www.youtube.com.evil.example/watch?v=fixture-video",
+            "https://user@www.youtube.com/watch?v=fixture-video",
+            "https://www.youtube.com:444/watch?v=fixture-video",
+        )
+
+        invalidUrls.forEach { url ->
+            assertFalse("Unsafe URL must not create an external intent: $url", runCatching {
+                createOpenUrlIntent(fixture().copy(url = url))
+            }.isSuccess)
+        }
+    }
+
     private fun fixture() = VideoItem(
         id = "fixture-video",
         title = "Fixture video",
