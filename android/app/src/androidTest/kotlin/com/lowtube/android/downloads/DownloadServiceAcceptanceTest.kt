@@ -353,6 +353,44 @@ class DownloadServiceAcceptanceTest {
     }
 
     @Test
+    fun downloadNotificationPayloadUsesSelectedAppLanguage() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val originalLanguage = AppLocale.language(context)
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        try {
+            for (language in listOf("en", "uk", "ru")) {
+                AppLocale.setLanguage(context, language)
+                val localized = AppLocale.wrap(context)
+                DownloadNotificationFactory.createChannel(localized)
+
+                val preparingText = localized.getString(R.string.download_preparing)
+                val preparing = DownloadNotificationFactory.build(localized, preparingText, 0, 0, false)
+                assertEquals("Preparing title failed for $language", localized.getString(R.string.downloads), preparing.extras.getCharSequence(Notification.EXTRA_TITLE))
+                assertEquals("Preparing text failed for $language", preparingText, preparing.extras.getCharSequence(Notification.EXTRA_TEXT))
+                assertTrue("Preparing notice must not show actions for $language", preparing.actions.orEmpty().isEmpty())
+
+                val active = DownloadNotificationFactory.build(localized, "fixture.mp4", 16, 64, true, 57L)
+                assertEquals("Cancel action is not localized for $language", localized.getString(R.string.cancel_download), active.actions.single().title)
+                assertTrue("Active notice must remain ongoing for $language", active.flags and Notification.FLAG_ONGOING_EVENT != 0)
+
+                val terminalText = localized.getString(R.string.download_failed)
+                val terminal = DownloadNotificationFactory.build(localized, terminalText, 16, 64, false, 57L)
+                assertEquals("Terminal text failed for $language", terminalText, terminal.extras.getCharSequence(Notification.EXTRA_TEXT))
+                assertTrue("Terminal notice must not show actions for $language", terminal.actions.orEmpty().isEmpty())
+                assertEquals("Terminal notice must be dismissible for $language", 0, terminal.flags and Notification.FLAG_ONGOING_EVENT)
+
+                if (Build.VERSION.SDK_INT >= 26) {
+                    assertEquals("Channel name failed for $language", localized.getString(R.string.downloads), manager.getNotificationChannel(DownloadNotificationFactory.CHANNEL_ID)?.name)
+                }
+            }
+        } finally {
+            AppLocale.setLanguage(context, originalLanguage)
+            val restored = AppLocale.wrap(context)
+            DownloadNotificationFactory.createChannel(restored)
+        }
+    }
+
+    @Test
     fun pausedTransferRetainsLocalizedTerminalNotification() {
         runBlocking {
             assumeTrue(

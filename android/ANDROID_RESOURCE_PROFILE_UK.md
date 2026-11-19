@@ -382,3 +382,5 @@
 19.11.2026 14:58:32 UTC, connected Android13/API33, LowTube MainActivity foreground after download notification acceptance; 5 s idle sample CPU 0% one core, PSS 116.7 MiB, RSS 213.6 MiB, peak RSS 228.6 MiB, RAM 3,713 MiB / available 1,471 MiB. System model remains TrebleDroid vanilla. No playback or download active during sample; single point sample, not benchmark.
 
 19.11.2026 15:03:34 UTC, connected Android13/API33, LowTube MainActivity foreground after EN/UK/RU download-notification acceptance; 5 s idle sample CPU 0% one core, PSS 122.7 MiB, RSS 220.6 MiB, peak RSS 230.0 MiB, RAM 3,713 MiB / available 1,442 MiB. System model remains TrebleDroid vanilla. No playback or download active during sample; single point sample, not benchmark.
+
+19.11.2026 15:09:14 UTC, connected Android13/API33, LowTube MainActivity foreground after download notification factory acceptance; 5 s idle sample CPU 0.2% one core, PSS 141.0 MiB, RSS 237.8 MiB, peak RSS 229.3 MiB, RAM 3,713 MiB / available 1,486 MiB. System model remains TrebleDroid vanilla. No playback or download active during sample; single point sample, not benchmark.

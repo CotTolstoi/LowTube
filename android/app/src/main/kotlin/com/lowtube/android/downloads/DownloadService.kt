@@ -1,9 +1,7 @@
 package com.lowtube.android.downloads
 
 import android.app.Notification
-import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -11,11 +9,9 @@ import android.net.Uri
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
-import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import android.content.pm.ServiceInfo
 import com.lowtube.android.AppLocale
-import com.lowtube.android.MainActivity
 import com.lowtube.android.R
 import com.lowtube.android.data.DownloadJobStore
 import com.lowtube.android.data.DownloadStreamPreferences
@@ -384,19 +380,10 @@ class DownloadService : Service() {
     }
 
     private fun buildNotification(title: String, downloaded: Long, total: Long, active: Boolean, id: Long = 0): Notification {
-        val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-        val builder = NotificationCompat.Builder(this, CHANNEL_ID).setSmallIcon(R.mipmap.ic_launcher).setContentTitle(getString(R.string.downloads)).setContentText(title).setContentIntent(open).setOnlyAlertOnce(true).setOngoing(active).setCategory(NotificationCompat.CATEGORY_PROGRESS)
-        if (total > 0) builder.setProgress(100, ((downloaded * 100L) / total).toInt().coerceIn(0, 100), false) else if (active) builder.setProgress(0, 0, true)
-        if (active && id > 0) {
-            val cancel = PendingIntent.getService(this, id.toInt(), Intent(this, DownloadService::class.java).setAction(ACTION_CANCEL).putExtra(EXTRA_ID, id), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-            builder.addAction(0, getString(R.string.cancel_download), cancel)
-        }
-        return builder.build()
+        return DownloadNotificationFactory.build(this, title, downloaded, total, active, id)
     }
 
-    private fun createChannel() {
-        if (Build.VERSION.SDK_INT >= 26) (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(NotificationChannel(CHANNEL_ID, getString(R.string.downloads), NotificationManager.IMPORTANCE_LOW))
-    }
+    private fun createChannel() = DownloadNotificationFactory.createChannel(this)
 
     override fun onBind(intent: Intent?): IBinder? = null
     override fun onDestroy() { activeCall?.cancel(); wakeLock?.takeIf { it.isHeld }?.release(); scope.cancel(); super.onDestroy() }
@@ -410,7 +397,6 @@ class DownloadService : Service() {
         const val EXTRA_TEST_AUDIO_STREAM_URL = "test_audio_stream_url"
         private const val NOTIFICATION_ID = 4207
         internal const val TERMINAL_NOTIFICATION_ID = 4208
-        private const val CHANNEL_ID = "lowtube_downloads"
     }
 }
 
