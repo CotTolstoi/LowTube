@@ -50,6 +50,10 @@ Downloads/
 !android/app/src/main/kotlin/com/lowtube/android/downloads/**
 !android/app/src/androidTest/kotlin/com/lowtube/android/downloads/
 !android/app/src/androidTest/kotlin/com/lowtube/android/downloads/**
+!android/app/src/androidTest/assets/
+!android/app/src/androidTest/assets/**
+!android/app/src/androidTest/assets/com/lowtube/android/downloads/
+!android/app/src/androidTest/assets/com/lowtube/android/downloads/**
 !android/app/src/main/kotlin/com/lowtube/android/ui/downloads/
 !android/app/src/main/kotlin/com/lowtube/android/ui/downloads/**
 !android/app/src/androidTest/kotlin/com/lowtube/android/ui/downloads/
