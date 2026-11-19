@@ -12,6 +12,12 @@ data class SavedChannel(
 
 data class YouTubeSubscription(val channelId: String, val title: String)
 
+data class YouTubePlaylist(
+    val id: String,
+    val title: String,
+    val videoCount: Int,
+)
+
 data class LocalAudioTrack(val uri: String, val title: String, val mimeType: String, val addedAt: Long)
 
 data class QueueEntry(val rowId: Long, val video: VideoItem, val continuation: String = "")

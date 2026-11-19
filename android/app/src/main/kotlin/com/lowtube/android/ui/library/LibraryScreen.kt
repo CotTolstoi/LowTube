@@ -26,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -48,6 +49,7 @@ import com.lowtube.android.model.LocalPlaylist
 import com.lowtube.android.model.LocalAudioTrack
 import com.lowtube.android.model.VideoItem
 import com.lowtube.android.model.WatchHistoryEntry
+import com.lowtube.android.model.YouTubePlaylist
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -59,6 +61,13 @@ fun LibraryScreen(
     accountEmail: String,
     refreshRevision: Int,
     feedRefreshPreset: Int = 1,
+    youtubePlaylists: List<YouTubePlaylist> = emptyList(),
+    youtubePlaylistsBusy: Boolean = false,
+    youtubePlaylistsMessage: String = "",
+    onLoadYouTubePlaylists: () -> Unit = {},
+    onLoadYouTubePlaylistVideos: (String, (Result<List<VideoItem>>) -> Unit) -> Unit = { _, callback ->
+        callback(Result.failure(IllegalStateException("YouTube playlist access is unavailable.")))
+    },
     onBack: () -> Unit,
     onPlay: (VideoItem) -> Unit,
     onPlayPlaylist: (List<VideoItem>) -> Unit,
@@ -108,6 +117,17 @@ fun LibraryScreen(
     var deleteTarget by remember { mutableStateOf<LocalPlaylist?>(null) }
     var confirmHistoryClear by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var selectedYouTubePlaylist by remember { mutableStateOf<YouTubePlaylist?>(null) }
+    var youtubePlaylistVideos by remember { mutableStateOf(emptyList<VideoItem>()) }
+    var youtubePlaylistVideosBusy by remember { mutableStateOf(false) }
+    var youtubePlaylistVideosMessage by remember { mutableStateOf("") }
+
+    LaunchedEffect(accountEmail) {
+        selectedYouTubePlaylist = null
+        youtubePlaylistVideos = emptyList()
+        youtubePlaylistVideosBusy = false
+        youtubePlaylistVideosMessage = ""
+    }
 
     Scaffold(topBar = {
         TopAppBar(
@@ -163,6 +183,93 @@ fun LibraryScreen(
                             }
                         }
                     }
+                }
+            }
+
+            item {
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.youtube_playlists), style = MaterialTheme.typography.titleLarge)
+                        if (youtubePlaylistsMessage.isNotBlank()) {
+                            Text(youtubePlaylistsMessage, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                    TextButton(onClick = onLoadYouTubePlaylists, enabled = !youtubePlaylistsBusy) {
+                        Text(stringResource(if (youtubePlaylistsBusy) R.string.loading_youtube_playlists else R.string.load_youtube_playlists))
+                    }
+                }
+            }
+            items(youtubePlaylists, key = { "youtube-playlist:${it.id}" }) { playlist ->
+                Card(Modifier.fillMaxWidth()) {
+                    Row(
+                        Modifier.fillMaxWidth().padding(12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(playlist.title, style = MaterialTheme.typography.titleMedium)
+                            Text(stringResource(R.string.youtube_playlist_video_count, playlist.videoCount), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        TextButton(
+                            onClick = {
+                                selectedYouTubePlaylist = playlist
+                                youtubePlaylistVideos = emptyList()
+                                youtubePlaylistVideosMessage = ""
+                                youtubePlaylistVideosBusy = true
+                                onLoadYouTubePlaylistVideos(playlist.id) { result ->
+                                    youtubePlaylistVideosBusy = false
+                                    result.onSuccess { youtubePlaylistVideos = it }
+                                        .onFailure { youtubePlaylistVideosMessage = it.message ?: context.getString(R.string.youtube_playlist_open_failed) }
+                                }
+                            },
+                            enabled = !youtubePlaylistVideosBusy,
+                        ) {
+                            Text(stringResource(if (youtubePlaylistVideosBusy) R.string.loading_youtube_playlists else R.string.open_youtube_playlist))
+                        }
+                    }
+                }
+            }
+
+            selectedYouTubePlaylist?.let { playlist ->
+                item(key = "youtube-playlist-content:${playlist.id}") {
+                    Column(Modifier.fillMaxWidth().padding(top = 12.dp)) {
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(playlist.title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                            TextButton(onClick = { selectedYouTubePlaylist = null; youtubePlaylistVideos = emptyList() }) {
+                                Text(stringResource(R.string.close))
+                            }
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(onClick = { onPlayPlaylist(youtubePlaylistVideos) }, enabled = youtubePlaylistVideos.isNotEmpty()) {
+                                Text(stringResource(R.string.play_all))
+                            }
+                            TextButton(onClick = { onAddToQueue(youtubePlaylistVideos) }, enabled = youtubePlaylistVideos.isNotEmpty()) {
+                                Text(stringResource(R.string.add_playlist_to_queue))
+                            }
+                        }
+                    }
+                }
+                if (youtubePlaylistVideosBusy) item(key = "youtube-playlist-loading:${playlist.id}") {
+                    androidx.compose.material3.LinearProgressIndicator(Modifier.fillMaxWidth())
+                }
+                if (youtubePlaylistVideosMessage.isNotBlank()) item(key = "youtube-playlist-error:${playlist.id}") {
+                    Text(youtubePlaylistVideosMessage, color = MaterialTheme.colorScheme.error)
+                }
+                if (!youtubePlaylistVideosBusy && youtubePlaylistVideos.isEmpty() && youtubePlaylistVideosMessage.isBlank()) {
+                    item(key = "youtube-playlist-empty:${playlist.id}") {
+                        Text(stringResource(R.string.youtube_playlist_empty), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+                items(youtubePlaylistVideos, key = { "youtube-playlist-video:${playlist.id}:${it.id}" }) { video ->
+                    YouTubePlaylistVideoRow(video, onPlay = { onPlay(video) }, onQueue = { onAddToQueue(listOf(video)) })
                 }
             }
 
@@ -505,6 +612,26 @@ private fun WatchHistoryRow(entry: WatchHistoryEntry, onPlay: () -> Unit, onRemo
                 Text(progressText, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             TextButton(onClick = onRemove) { Text(stringResource(R.string.remove)) }
+        }
+    }
+}
+
+@Composable
+private fun YouTubePlaylistVideoRow(video: VideoItem, onPlay: () -> Unit, onQueue: () -> Unit) {
+    Card(Modifier.fillMaxWidth()) {
+        Row(
+            Modifier.fillMaxWidth().padding(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f).clickable(onClick = onPlay)) {
+                Text(video.title, style = MaterialTheme.typography.titleSmall)
+                if (video.channel.isNotBlank()) Text(video.channel, style = MaterialTheme.typography.bodySmall)
+            }
+            Column {
+                TextButton(onClick = onPlay) { Text(stringResource(R.string.play)) }
+                TextButton(onClick = onQueue) { Text(stringResource(R.string.add_to_queue)) }
+            }
         }
     }
 }

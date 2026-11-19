@@ -45,6 +45,7 @@ import com.lowtube.android.model.QueueEntry
 import com.lowtube.android.model.DownloadFormatOption
 import com.lowtube.android.model.LocalAudioTrack
 import com.lowtube.android.model.YouTubeSubscription
+import com.lowtube.android.model.YouTubePlaylist
 import com.lowtube.android.ui.library.LibraryScreen
 import com.lowtube.android.ui.queue.QueueScreen
 import com.lowtube.android.ui.downloads.DownloadsScreen
@@ -62,6 +63,8 @@ fun MainNavigation(
     onGoogleSignIn: () -> Unit,
     onGoogleSignOut: () -> Unit,
     onRequestYouTubeSync: ((Result<List<YouTubeSubscription>>) -> Unit) -> Unit,
+    onRequestYouTubePlaylists: ((Result<List<YouTubePlaylist>>) -> Unit) -> Unit,
+    onRequestYouTubePlaylistVideos: (String, (Result<List<VideoItem>>) -> Unit) -> Unit,
     onChangeYouTubeSubscription: (String, Boolean, (Result<Unit>) -> Unit) -> Unit,
     onDarkThemeChanged: (Boolean) -> Unit,
     onLanguageChanged: (String) -> Unit,
@@ -148,6 +151,14 @@ fun MainNavigation(
         }
     }
     var youtubeSyncMessage by remember { mutableStateOf("") }
+    var youtubePlaylists by remember { mutableStateOf(emptyList<YouTubePlaylist>()) }
+    var youtubePlaylistsMessage by remember { mutableStateOf("") }
+    var youtubePlaylistsBusy by remember { mutableStateOf(false) }
+    LaunchedEffect(googleAccountEmail) {
+        youtubePlaylists = emptyList()
+        youtubePlaylistsMessage = ""
+        youtubePlaylistsBusy = false
+    }
     var selectedVideo by rememberSaveable(stateSaver = videoItemSaver) { mutableStateOf<VideoItem?>(null) }
     var shortsSession by remember { mutableStateOf(emptyList<VideoItem>()) }
     var shortsSessionIndex by remember { mutableIntStateOf(-1) }
@@ -567,6 +578,33 @@ fun MainNavigation(
                     accountEmail = googleAccountEmail,
                     refreshRevision = libraryRevision,
                     feedRefreshPreset = feedRefreshPreset,
+                    youtubePlaylists = youtubePlaylists,
+                    youtubePlaylistsBusy = youtubePlaylistsBusy || youtubeSyncBusy,
+                    youtubePlaylistsMessage = youtubePlaylistsMessage,
+                    onLoadYouTubePlaylistVideos = { playlistId, callback ->
+                        if (youtubeSyncBusy) callback(Result.failure(IllegalStateException("Another YouTube account request is already in progress.")))
+                        else onRequestYouTubePlaylistVideos(playlistId, callback)
+                    },
+                    onLoadYouTubePlaylists = {
+                        if (!youtubePlaylistsBusy && !youtubeSyncBusy) {
+                            youtubePlaylistsBusy = true
+                            youtubePlaylistsMessage = ""
+                            onRequestYouTubePlaylists { result ->
+                                youtubePlaylistsBusy = false
+                                if (currentGoogleAccountEmail.equals(googleAccountEmail, ignoreCase = true)) {
+                                    result.onSuccess { playlists ->
+                                        youtubePlaylists = playlists
+                                        youtubePlaylistsMessage = context.getString(R.string.youtube_playlists_loaded, playlists.size)
+                                    }.onFailure { failure ->
+                                        youtubePlaylistsMessage = failure.message ?: context.getString(R.string.youtube_playlists_failed)
+                                    }
+                                } else {
+                                    youtubePlaylists = emptyList()
+                                    youtubePlaylistsMessage = context.getString(R.string.youtube_playlists_failed)
+                                }
+                            }
+                        }
+                    },
                     onBack = navigateBack,
                     onPlay = { video ->
                         shortsSession = emptyList()

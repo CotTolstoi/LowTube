@@ -60,6 +60,16 @@
     <string name="back">Back</string>
     <string name="new_playlist">New playlist</string>
     <string name="local_playlists">Local playlists</string>
+    <string name="youtube_playlists">YouTube playlists</string>
+    <string name="load_youtube_playlists">Load</string>
+    <string name="loading_youtube_playlists">Loading…</string>
+    <string name="youtube_playlist_video_count">%1$d videos</string>
+    <string name="youtube_playlists_loaded">Loaded %1$d playlists from your YouTube account.</string>
+    <string name="youtube_playlists_failed">Could not load YouTube playlists. Try again.</string>
+    <string name="open_youtube_playlist">Open playlist</string>
+    <string name="youtube_playlist_open_failed">Could not open this YouTube playlist. Try again.</string>
+    <string name="youtube_playlist_empty">This playlist has no available videos.</string>
+    <string name="close">Close</string>
     <string name="library_empty">No local playlists yet.</string>
     <string name="local_audio">Local audio</string>
     <string name="add_audio_files">Add audio</string>

@@ -60,6 +60,16 @@
     <string name="back">Назад</string>
     <string name="new_playlist">Новый плейлист</string>
     <string name="local_playlists">Локальные плейлисты</string>
+    <string name="youtube_playlists">Плейлисты YouTube</string>
+    <string name="load_youtube_playlists">Загрузить</string>
+    <string name="loading_youtube_playlists">Загрузка…</string>
+    <string name="youtube_playlist_video_count">%1$d видео</string>
+    <string name="youtube_playlists_loaded">Загружено плейлистов YouTube: %1$d.</string>
+    <string name="youtube_playlists_failed">Не удалось загрузить плейлисты YouTube. Попробуйте ещё раз.</string>
+    <string name="open_youtube_playlist">Открыть плейлист</string>
+    <string name="youtube_playlist_open_failed">Не удалось открыть этот плейлист YouTube. Попробуйте ещё раз.</string>
+    <string name="youtube_playlist_empty">В этом плейлисте нет доступных видео.</string>
+    <string name="close">Закрыть</string>
     <string name="library_empty">Локальных плейлистов пока нет.</string>
     <string name="local_audio">Локальное аудио</string>
     <string name="add_audio_files">Добавить аудио</string>

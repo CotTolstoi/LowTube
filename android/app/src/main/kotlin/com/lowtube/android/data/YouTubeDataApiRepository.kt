@@ -1,6 +1,8 @@
 package com.lowtube.android.data
 
 import com.lowtube.android.model.YouTubeSubscription
+import com.lowtube.android.model.YouTubePlaylist
+import com.lowtube.android.model.VideoItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.HttpUrl
@@ -94,6 +96,109 @@ class YouTubeDataApiRepository {
             }
         } while (pageToken != null)
         result.values.toList()
+    }
+
+    /** Lists the signed-in user's own playlists. The caller decides whether to retain results in memory. */
+    suspend fun userPlaylists(accessToken: String): List<YouTubePlaylist> = withContext(Dispatchers.IO) {
+        require(accessToken.isNotBlank() && accessToken.length <= MAX_ACCESS_TOKEN_LENGTH) {
+            "Google authorization is missing. Load playlists again."
+        }
+        val result = LinkedHashMap<String, YouTubePlaylist>()
+        var pageToken: String? = null
+        var pageCount = 0
+        do {
+            if (++pageCount > MAX_PLAYLIST_PAGES) throw IOException("This account has too many playlists to load in one request.")
+            val url = HttpUrl.Builder()
+                .scheme("https")
+                .host("www.googleapis.com")
+                .addPathSegments("youtube/v3/playlists")
+                .addQueryParameter("part", "snippet,contentDetails")
+                .addQueryParameter("mine", "true")
+                .addQueryParameter("maxResults", PAGE_SIZE.toString())
+                .apply { if (!pageToken.isNullOrBlank()) addQueryParameter("pageToken", pageToken) }
+                .build()
+            val request = Request.Builder()
+                .url(url)
+                .header("Authorization", "Bearer $accessToken")
+                .header("Accept", "application/json")
+                .get()
+                .build()
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) throw IOException(apiError(response.code))
+                val body = response.body ?: throw IOException("YouTube returned an empty playlists response.")
+                if (body.contentLength() > MAX_PAGE_BYTES) throw IOException("YouTube returned an oversized playlists page.")
+                val json = JSONObject(readBounded(body.byteStream(), MAX_PAGE_BYTES))
+                val items = json.optJSONArray("items") ?: throw IOException("YouTube returned an invalid playlists response.")
+                for (index in 0 until items.length()) {
+                    val item = items.optJSONObject(index) ?: throw IOException("YouTube returned an invalid playlist entry.")
+                    val id = item.optString("id")
+                    val snippet = item.optJSONObject("snippet") ?: throw IOException("YouTube returned an invalid playlist entry.")
+                    val title = snippet.optString("title").trim().take(MAX_TITLE_LENGTH)
+                    val videoCount = item.optJSONObject("contentDetails")?.optInt("itemCount", 0)?.coerceAtLeast(0) ?: 0
+                    if (!PLAYLIST_ID.matches(id) || title.isBlank()) throw IOException("YouTube returned an invalid playlist entry.")
+                    result[id] = YouTubePlaylist(id, title, videoCount)
+                    if (result.size > MAX_PLAYLISTS) throw IOException("This account has too many playlists to load.")
+                }
+                pageToken = json.optString("nextPageToken").takeIf(String::isNotBlank)
+            }
+        } while (pageToken != null)
+        result.values.toList()
+    }
+
+    /** Reads one authenticated playlist, including private playlists owned by the signed-in user. */
+    suspend fun playlistVideos(accessToken: String, playlistId: String): List<VideoItem> = withContext(Dispatchers.IO) {
+        require(accessToken.isNotBlank() && accessToken.length <= MAX_ACCESS_TOKEN_LENGTH) {
+            "Google authorization is missing. Open the playlist again."
+        }
+        require(PLAYLIST_ID.matches(playlistId)) { "This YouTube playlist has an invalid ID." }
+        val result = ArrayList<VideoItem>()
+        var pageToken: String? = null
+        var pageCount = 0
+        do {
+            if (++pageCount > MAX_PLAYLIST_PAGES) throw IOException("This playlist has too many videos to load in one request.")
+            val url = HttpUrl.Builder()
+                .scheme("https")
+                .host("www.googleapis.com")
+                .addPathSegments("youtube/v3/playlistItems")
+                .addQueryParameter("part", "snippet,contentDetails")
+                .addQueryParameter("playlistId", playlistId)
+                .addQueryParameter("maxResults", PAGE_SIZE.toString())
+                .apply { if (!pageToken.isNullOrBlank()) addQueryParameter("pageToken", pageToken) }
+                .build()
+            val request = Request.Builder()
+                .url(url)
+                .header("Authorization", "Bearer $accessToken")
+                .header("Accept", "application/json")
+                .get()
+                .build()
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) throw IOException(apiError(response.code))
+                val body = response.body ?: throw IOException("YouTube returned an empty playlist-items response.")
+                if (body.contentLength() > MAX_PAGE_BYTES) throw IOException("YouTube returned an oversized playlist page.")
+                val json = JSONObject(readBounded(body.byteStream(), MAX_PAGE_BYTES))
+                val items = json.optJSONArray("items") ?: throw IOException("YouTube returned an invalid playlist-items response.")
+                for (index in 0 until items.length()) {
+                    val item = items.optJSONObject(index) ?: throw IOException("YouTube returned an invalid playlist item.")
+                    val snippet = item.optJSONObject("snippet") ?: continue
+                    val videoId = snippet.optJSONObject("resourceId")?.optString("videoId").orEmpty()
+                    val title = snippet.optString("title").trim().take(MAX_TITLE_LENGTH)
+                    if (!VIDEO_ID.matches(videoId) || title.isBlank() || title == "[Deleted video]" || title == "[Private video]") continue
+                    val channelId = snippet.optString("videoOwnerChannelId").takeIf(CHANNEL_ID::matches).orEmpty()
+                    result += VideoItem(
+                        id = videoId,
+                        title = title,
+                        channel = snippet.optString("videoOwnerChannelTitle").trim().take(MAX_TITLE_LENGTH),
+                        channelId = channelId,
+                        kind = "video",
+                        thumbnailUrl = "https://i.ytimg.com/vi/$videoId/hqdefault.jpg",
+                        url = "https://www.youtube.com/watch?v=$videoId",
+                    )
+                    if (result.size > MAX_PLAYLIST_VIDEOS) throw IOException("This playlist has too many available videos to load.")
+                }
+                pageToken = json.optString("nextPageToken").takeIf(String::isNotBlank)
+            }
+        } while (pageToken != null)
+        result.toList()
     }
 
     suspend fun setSubscription(accessToken: String, channelId: String, subscribe: Boolean) = withContext(Dispatchers.IO) {
@@ -242,5 +347,10 @@ class YouTubeDataApiRepository {
         private const val MAX_TITLE_LENGTH = 250
         private const val MAX_ACCESS_TOKEN_LENGTH = 8192
         private val CHANNEL_ID = Regex("^UC[A-Za-z0-9_-]{22}$")
+        private val PLAYLIST_ID = Regex("^[A-Za-z0-9_-]{1,256}$")
+        private val VIDEO_ID = Regex("^[A-Za-z0-9_-]{11}$")
+        private const val MAX_PLAYLIST_PAGES = 100
+        private const val MAX_PLAYLISTS = PAGE_SIZE * MAX_PLAYLIST_PAGES
+        private const val MAX_PLAYLIST_VIDEOS = PAGE_SIZE * MAX_PLAYLIST_PAGES
     }
 }
