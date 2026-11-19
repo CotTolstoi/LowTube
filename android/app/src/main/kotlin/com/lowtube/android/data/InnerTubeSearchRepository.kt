@@ -1189,7 +1189,8 @@ class InnerTubeSearchRepository(context: Context? = null) {
                                 ).ifBlank { nestedString(renderer, "continuationCommand", "token") }
                             }
                             "nextContinuationData" -> continuation = renderer?.optString("continuation")?.takeIf(String::isNotBlank)
-                            "videoRenderer", "gridVideoRenderer", "playlistVideoRenderer", "playlistPanelVideoRenderer", "reelItemRenderer" -> add(legacyVideo(renderer, key))
+                            "videoRenderer", "gridVideoRenderer", "reelItemRenderer" -> add(legacyVideo(renderer, key))
+                            "playlistVideoRenderer", "playlistPanelVideoRenderer" -> add(legacyVideo(renderer, key, preserveUnavailable = true))
                             "playlistRenderer", "gridPlaylistRenderer" -> add(playlist(renderer))
                             "lockupViewModel" -> add(lockup(renderer))
                             "shortsLockupViewModel" -> add(shorts(renderer))
@@ -1210,18 +1211,23 @@ class InnerTubeSearchRepository(context: Context? = null) {
         return SearchPage(result.values.take(MAX_PAGE_ITEMS), continuation, playlistTitle)
     }
 
-    private fun legacyVideo(renderer: JSONObject?, rendererName: String): VideoItem? {
+    private fun legacyVideo(renderer: JSONObject?, rendererName: String, preserveUnavailable: Boolean = false): VideoItem? {
         renderer ?: return null
         val id = renderer.optString("videoId")
-        if (!isVideoId(id) || renderer.optString("isPlayable") == "false") return null
+        if (!isVideoId(id)) return null
         val title = text(renderer.opt("title"))
-        if (title == "[Deleted video]" || title == "[Private video]") return null
+        val unavailable = renderer.optString("isPlayable") == "false" || title == "[Deleted video]" || title == "[Private video]"
+        if (unavailable && !preserveUnavailable) return null
         val byline = renderer.opt("ownerText") ?: renderer.opt("shortBylineText") ?: renderer.opt("longBylineText")
         val channel = text(byline)
         val channelId = channelId(byline)
         val date = text(renderer.opt("publishedTimeText"))
         val endpointUrl = nestedString(renderer, "navigationEndpoint", "commandMetadata", "webCommandMetadata", "url")
-        var kind = if (rendererName == "reelItemRenderer" || endpointUrl.startsWith("/shorts/")) "shorts" else "video"
+        var kind = when {
+            unavailable -> "unavailable"
+            rendererName == "reelItemRenderer" || endpointUrl.startsWith("/shorts/") -> "shorts"
+            else -> "video"
+        }
         val flags = renderer.opt("badges")?.toString().orEmpty() + renderer.opt("thumbnailOverlays")?.toString().orEmpty()
         val liveStatus = when {
             renderer.optJSONObject("upcomingEventData") != null -> "is_upcoming"
@@ -1229,11 +1235,11 @@ class InnerTubeSearchRepository(context: Context? = null) {
             date.contains("streamed", ignoreCase = true) -> "was_live"
             else -> ""
         }
-        if (liveStatus.isNotEmpty()) kind = "live"
+        if (liveStatus.isNotEmpty() && !unavailable) kind = "live"
         val duration = text(renderer.opt("lengthText")).ifBlank { formatDuration(renderer.optString("lengthSeconds")) }
         return VideoItem(
             id, title, channel, channelId, date, duration, kind, liveStatus,
-            thumbnail(renderer), "https://www.youtube.com/watch?v=$id",
+            if (unavailable) "" else thumbnail(renderer), "https://www.youtube.com/watch?v=$id",
             channelAvatarUrl = channelAvatar(renderer),
         )
     }

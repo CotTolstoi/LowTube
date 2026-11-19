@@ -688,11 +688,12 @@ internal fun VideoCard(
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val thumbnailUrl = VideoThumbnailPolicy.resolve(item)
+    val unavailable = item.kind == "unavailable"
     var followed by remember(item.channelId) { mutableStateOf(isFollowing) }
     var moreActionsExpanded by remember(item.id) { mutableStateOf(false) }
     LaunchedEffect(isFollowing) { followed = isFollowing }
     Card(
-        modifier = Modifier.fillMaxWidth().then(if (onClick == null) Modifier else Modifier.clickable(onClick = onClick)),
+        modifier = Modifier.fillMaxWidth().then(if (onClick == null || unavailable) Modifier else Modifier.clickable(onClick = onClick)),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
     ) {
         Column {
@@ -742,9 +743,13 @@ internal fun VideoCard(
                             maxLines = 1,
                         )
                     }
-                    val details = listOf(item.duration.takeIf { it != "—" }, item.published.takeIf(String::isNotBlank), item.kind.takeIf { it != "video" })
-                        .filterNotNull().joinToString(" · ")
-                    if (details.isNotBlank()) Text(details, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                    if (unavailable) {
+                        Text(stringResource(R.string.video_unavailable), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                    } else {
+                        val details = listOf(item.duration.takeIf { it != "—" }, item.published.takeIf(String::isNotBlank), item.kind.takeIf { it != "video" })
+                            .filterNotNull().joinToString(" · ")
+                        if (details.isNotBlank()) Text(details, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                    }
                 }
                 Box {
                     IconButton(
@@ -757,11 +762,13 @@ internal fun VideoCard(
                         expanded = moreActionsExpanded,
                         onDismissRequest = { moreActionsExpanded = false },
                     ) {
-                        androidx.compose.material3.DropdownMenuItem(
-                            text = { Text(stringResource(R.string.add_to_queue)) },
-                            onClick = { moreActionsExpanded = false; onQueue() },
-                        )
-                        if (item.kind != "playlist") {
+                        if (!unavailable) {
+                            androidx.compose.material3.DropdownMenuItem(
+                                text = { Text(stringResource(R.string.add_to_queue)) },
+                                onClick = { moreActionsExpanded = false; onQueue() },
+                            )
+                        }
+                        if (item.kind != "playlist" && !unavailable) {
                             androidx.compose.material3.DropdownMenuItem(
                                 text = { Text(stringResource(R.string.download)) },
                                 onClick = { moreActionsExpanded = false; onDownload() },

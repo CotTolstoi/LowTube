@@ -591,20 +591,21 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
 
     fun expandQueuedPlaylist(rowId: Long, videos: List<VideoItem>, nextContinuation: String?) {
         require(videos.size <= MAX_PAGE_ITEMS) { "The playlist page is too large." }
-        require(videos.none { it.kind == "playlist" || !VIDEO_ID.matches(it.id) }) { "The playlist page contains an invalid item." }
+        val playableVideos = videos.filter { it.kind != "unavailable" }
+        require(playableVideos.none { it.kind == "playlist" || !VIDEO_ID.matches(it.id) }) { "The playlist page contains an invalid item." }
         if (!nextContinuation.isNullOrBlank()) require(nextContinuation.length <= MAX_QUEUE_CONTINUATION_LENGTH) { "The playlist continuation is too large." }
         val rows = queue().toMutableList()
         val index = rows.indexOfFirst { it.rowId == rowId }
         require(index >= 0 && rows[index].video.kind == "playlist") { "This playlist is no longer in the queue." }
         val original = rows[index]
         val keepMarker = !nextContinuation.isNullOrBlank()
-        val newCount = rows.size + videos.size - if (keepMarker) 0 else 1
+        val newCount = rows.size + playableVideos.size - if (keepMarker) 0 else 1
         require(newCount <= MAX_QUEUE_ITEMS) { "The watch queue is full." }
 
         val db = writableDatabase
         db.beginTransaction()
         try {
-            val addedEntries = videos.map { video ->
+            val addedEntries = playableVideos.map { video ->
                 val values = videoValues(video).apply { put("position", 0); put("continuation", "") }
                 val insertedId = db.insert("queue_entries", null, values)
                 require(insertedId != -1L) { "Could not add playlist videos to the queue." }
