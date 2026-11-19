@@ -59,6 +59,7 @@ import com.lowtube.android.model.LocalAudioTrack
 import com.lowtube.android.model.VideoItem
 import com.lowtube.android.model.WatchHistoryEntry
 import com.lowtube.android.model.YouTubePlaylist
+import com.lowtube.android.ui.main.channelBrowseUrl
 import com.lowtube.android.ui.main.VideoThumbnailPolicy
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -326,20 +327,37 @@ fun LibraryScreen(
             if (channels.isEmpty()) item { Text(stringResource(R.string.subscriptions_empty), color = MaterialTheme.colorScheme.onSurfaceVariant) }
             items(channels, key = { "channel:${it.id}" }) { channel ->
                 Card(Modifier.fillMaxWidth()) {
-                    Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Column(Modifier.weight(1f)) {
-                            Text(channel.title.ifBlank { channel.id }, style = MaterialTheme.typography.titleMedium)
-                            Text(channel.id, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Column(Modifier.fillMaxWidth().padding(12.dp)) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(channel.title.ifBlank { channel.id }, style = MaterialTheme.typography.titleMedium)
+                                Text(channel.id, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            if (channel.fromYouTubeAccount) {
+                                Text(stringResource(R.string.youtube_account_subscription), style = MaterialTheme.typography.bodySmall)
+                            } else {
+                                TextButton(onClick = {
+                                    repository.unfollow(channel.id)
+                                    if (selectedFeedChannelId == channel.id) selectedFeedChannelId = ""
+                                    refresh++
+                                }) { Text(stringResource(R.string.unfollow)) }
+                            }
                         }
-                        TextButton(onClick = { onBrowseChannel(channel.url) }) { Text(stringResource(R.string.browse_channel)) }
-                        if (channel.fromYouTubeAccount) {
-                            Text(stringResource(R.string.youtube_account_subscription), style = MaterialTheme.typography.bodySmall)
-                        } else {
-                            TextButton(onClick = {
-                                repository.unfollow(channel.id)
-                                if (selectedFeedChannelId == channel.id) selectedFeedChannelId = ""
-                                refresh++
-                            }) { Text(stringResource(R.string.unfollow)) }
+
+                        Row(
+                            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            listOf(
+                                "video" to R.string.filter_videos,
+                                "shorts" to R.string.filter_shorts,
+                                "live" to R.string.filter_live,
+                                "playlist" to R.string.filter_playlists,
+                            ).forEach { (kind, label) ->
+                                TextButton(modifier = Modifier.testTag("library-channel-tab-$kind"), onClick = {
+                                    channelBrowseUrl(channel.url, kind)?.let(onBrowseChannel)
+                                }) { Text(stringResource(label)) }
+                            }
                         }
                     }
                 }

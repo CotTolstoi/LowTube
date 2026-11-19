@@ -362,3 +362,5 @@
 19.11.2026 11:27:51 UTC, підключений Android13/API33, LowTube MainActivity після встановлення Google authorization diagnostics follow-up, 10 s sample: CPU 0,3% одного ядра, PSS 139,4 MiB, RSS 224,1 MiB, peak RSS 225,1 MiB, RAM 3 713 MiB / доступно 1 463 MiB. Система визначається як TrebleDroid vanilla. Authorization prompt, playback і download не запускалися. Одиничний foreground sample, не benchmark.
 
 19.11.2026 13:20:18 UTC, підключений Android13/API33, LowTube MainActivity після встановлення microG cancellation diagnostics build, 10 s sample: CPU 0% одного ядра, PSS 112,4 MiB, RSS 200,1 MiB, peak RSS 227,7 MiB, RAM 3 713 MiB / доступно 1 436 MiB. Система визначається як TrebleDroid vanilla. Authorization prompt, playback і download не запускалися. Одиничний foreground sample, не benchmark.
+
+19.11.2026 13:29:40 UTC, підключений Android13/API33, LowTube MainActivity після встановлення Library channel-tab build, 10 s sample: CPU 0% одного ядра, PSS 118,8 MiB, RSS 207,5 MiB, peak RSS 230,6 MiB, RAM 3 713 MiB / доступно 1 444 MiB. Система визначається як TrebleDroid vanilla. Playback і download не запускалися. Одиничний foreground sample, не benchmark.

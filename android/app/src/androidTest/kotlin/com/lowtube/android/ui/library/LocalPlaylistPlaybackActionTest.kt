@@ -15,6 +15,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasText
 import androidx.test.core.app.ApplicationProvider
 import com.lowtube.android.R
 import com.lowtube.android.data.LocalLibraryRepository
@@ -167,6 +168,62 @@ class LocalPlaylistPlaybackActionTest {
             composeTestRule.onNodeWithContentDescription(removeDescription).assertIsDisplayed().assertHasClickAction().performClick()
             composeTestRule.waitForIdle()
             assertEquals(listOf("video000001"), repository.videos(playlistId).map { it.id })
+        } finally {
+            repository.close()
+            context.deleteDatabase(databaseName)
+        }
+    }
+
+    @Test
+    fun localSubscriptionCanOpenVideosShortsStreamsAndPlaylists() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val resources: Resources = context.resources
+        val databaseName = "channel-tabs-${System.currentTimeMillis()}.db"
+        val repository = LocalLibraryRepository(context, databaseName)
+        val channelId = "UCabcdefghijklmnopqrstuv"
+        val channelUrl = "https://www.youtube.com/channel/$channelId"
+        repository.follow(channelId, "Channel tabs acceptance", channelUrl)
+        val requests = mutableListOf<String>()
+        try {
+            composeTestRule.setContent {
+                MaterialTheme {
+                    LibraryScreen(
+                        repository = repository,
+                        accountEmail = "",
+                        refreshRevision = 0,
+                        onBack = {},
+                        onPlay = {},
+                        onPlayPlaylist = {},
+                        onPickAudio = {},
+                        onPlayLocalAudio = {},
+                        onRemoveLocalAudio = {},
+                        onAddToQueue = {},
+                        onBrowseChannel = requests::add,
+                        onAddChannel = {},
+                    )
+                }
+            }
+
+            val list = composeTestRule.onNodeWithTag(LIBRARY_LIST_TEST_TAG)
+            list.performScrollToNode(hasText("Channel tabs acceptance"))
+            val destinations = listOf(
+                R.string.filter_videos to "$channelUrl/videos",
+                R.string.filter_shorts to "$channelUrl/shorts",
+                R.string.filter_live to "$channelUrl/streams",
+                R.string.filter_playlists to "$channelUrl/playlists",
+            )
+            destinations.forEach { (labelResource, destination) ->
+                val kind = when (labelResource) {
+                    R.string.filter_videos -> "video"
+                    R.string.filter_shorts -> "shorts"
+                    R.string.filter_live -> "live"
+                    else -> "playlist"
+                }
+                val tab = composeTestRule.onNodeWithTag("library-channel-tab-$kind")
+                list.performScrollToNode(hasText(resources.getString(labelResource)))
+                tab.assertIsDisplayed().assertHasClickAction().performClick()
+                assertEquals(destination, requests.lastOrNull())
+            }
         } finally {
             repository.close()
             context.deleteDatabase(databaseName)

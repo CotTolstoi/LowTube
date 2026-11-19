@@ -242,7 +242,7 @@ fun LowTubeSearchScreen(
 
     LaunchedEffect(channelBrowseRequest, language) {
         val request = channelBrowseRequest?.takeIf(String::isNotBlank) ?: return@LaunchedEffect
-        val target = channelBrowseUrl(request, "video") ?: request
+        val target = channelBrowseUrl(request) ?: request
         query = target
         searchKind = channelBrowseTab(target)?.kind ?: "all"
         onSelectedTabChanged("search")
