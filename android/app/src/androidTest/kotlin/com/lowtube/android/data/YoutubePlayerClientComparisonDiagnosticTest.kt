@@ -164,6 +164,70 @@ class YoutubePlayerClientComparisonDiagnosticTest {
     }
 
     @Test
+    fun videoDownloadDeciphersMwebSignatureAfterStandardClientsFail() = runBlocking {
+        val arguments = InstrumentationRegistry.getArguments()
+        assumeTrue(
+            "Pass -e runMwebSignatureDownloadAcceptance true to run this bounded download-resolver check",
+            arguments.getString("runMwebSignatureDownloadAcceptance") == "true",
+        )
+        val videoId = arguments.getString("playerVariantVideoId")
+            ?.takeIf(VIDEO_ID::matches)
+            ?: "dQw4w9WgXcQ"
+        val configuration = readPublicConfiguration()
+        val mwebConfig = readMwebWatchPlayerConfig(videoId, MWEB_USER_AGENT)
+            ?: error("The MWEB watch page did not provide public player configuration.")
+        val mwebVersion = mwebConfig.clientVersion.ifBlank { configuration.clientVersion }
+        val mwebResponse = requestPublicPlayer(
+            videoId,
+            configuration.copy(signatureTimestamp = mwebConfig.signatureTimestamp),
+            PlayerVariant("MWEB", mwebVersion, "2", MWEB_USER_AGENT),
+        )
+        val mwebStreaming = mwebResponse.optJSONObject("streamingData")
+            ?: error("The live MWEB response did not contain streaming data.")
+        assertTrue("The live MWEB fixture has no obfuscated signature challenge", (summarizeFormats(mwebStreaming)["obfuscatedS"] ?: 0) > 0)
+
+        val repository = InnerTubeSearchRepository(ApplicationProvider.getApplicationContext<Context>())
+        val attemptedClients = mutableListOf<String>()
+        repository.playerRequestOverrideForAcceptance = { body, version, clientId, userAgent ->
+            val client = JSONObject(body).getJSONObject("context").getJSONObject("client")
+            val name = client.optString("clientName")
+            attemptedClients.add(name)
+            if (name == "MWEB") {
+                assertEquals(mwebVersion, version)
+                assertEquals("2", clientId)
+                assertEquals(MWEB_USER_AGENT, userAgent)
+                mwebResponse
+            } else {
+                assertTrue("Unexpected player client $name", name in listOf("WEB", "ANDROID", "IOS"))
+                JSONObject().put("playabilityStatus", JSONObject().put("status", "LOGIN_REQUIRED"))
+            }
+        }
+        val video = VideoItem(
+            id = videoId,
+            title = "Public MWEB signature download fixture",
+            duration = "3:33",
+            url = "https://www.youtube.com/watch?v=$videoId",
+        )
+        val cpuStarted = Process.getElapsedCpuTime()
+        val wallStarted = SystemClock.elapsedRealtime()
+        val pssStarted = Debug.getPss()
+        val option = repository.resolveDownloadOptions(video, DownloadStreamPreferences(), audioOnly = false).first()
+        assertEquals(listOf("WEB", "ANDROID", "IOS", "MWEB"), attemptedClients)
+        assertTrue("The resolved video download MIME is not video/*: ${option.stream.mimeType}", option.stream.mimeType.startsWith("video/"))
+        assertTrue("The resolved download URL is not a trusted CDN URL", Uri.parse(option.stream.uri).host.orEmpty().endsWith("googlevideo.com"))
+        val range = boundedRange(option.stream.uri, option.stream.userAgent)
+            ?: error("The transformed MWEB video download did not return an HTTP response.")
+        assertEquals(HttpURLConnection.HTTP_PARTIAL, range.status)
+        assertEquals(MAX_RANGE_BYTES, range.bytes)
+        System.out.println(
+            "mwebSignatureDownloadAcceptance; clients=${attemptedClients.joinToString(",")}; " +
+                "itag=${option.stream.itag}; mime=${option.stream.mimeType}; height=${option.stream.videoHeight}; " +
+                "httpStatus=${range.status}; bytes=${range.bytes}; cpuMs=${Process.getElapsedCpuTime() - cpuStarted}; " +
+                "wallMs=${SystemClock.elapsedRealtime() - wallStarted}; pssKiB=$pssStarted->${Debug.getPss()}",
+        )
+    }
+
+    @Test
     fun resolvesLiveMwebAsLastFallbackAfterAndroidAndWebReturnNoStreams() = runBlocking {
         val arguments = InstrumentationRegistry.getArguments()
         assumeTrue(

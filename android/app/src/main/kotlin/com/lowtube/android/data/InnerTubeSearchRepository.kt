@@ -231,8 +231,9 @@ class InnerTubeSearchRepository(context: Context? = null) {
         audioOnly: Boolean = false,
     ): List<DownloadFormatOption> = withContext(Dispatchers.IO) {
         operationMutex.withLock {
-            val resolved = resolvePlayerData(video, preferWebClient = true, allowVrAudioFallback = audioOnly) {
-                hasDownloadableFormat(it, preferences, audioOnly)
+            val resolved = resolvePlayerData(video, preferWebClient = true, allowVrAudioFallback = audioOnly) { streaming ->
+                hasDownloadableFormat(streaming, preferences, audioOnly) ||
+                    (playerJavaScriptRuntime != null && hasResolvableSignatureDownloadFormat(streaming, preferences, audioOnly))
             }
             downloadOptions(resolved.video, resolved.streaming, preferences, audioOnly, resolved.userAgent)
         }
@@ -372,6 +373,35 @@ class InnerTubeSearchRepository(context: Context? = null) {
         preferences: DownloadStreamPreferences,
         audioOnly: Boolean,
     ): Boolean = downloadableFormats(streaming, preferences, audioOnly).isNotEmpty()
+
+    private fun hasResolvableSignatureDownloadFormat(
+        streaming: JSONObject,
+        preferences: DownloadStreamPreferences,
+        audioOnly: Boolean,
+    ): Boolean {
+        for (key in arrayOf("formats", "adaptiveFormats")) {
+            val formats = streaming.optJSONArray(key) ?: continue
+            for (index in 0 until formats.length()) {
+                val format = formats.optJSONObject(index) ?: continue
+                val mime = format.optString("mimeType").substringBefore(';')
+                if (audioOnly) {
+                    if (mime !in SUPPORTED_DOWNLOAD_MIME_TYPES || !mime.startsWith("audio/")) continue
+                } else {
+                    if (!mime.startsWith("video/") || !format.has("audioQuality")) continue
+                    if (format.optInt("height", 0) !in 1..preferences.maxHeight) continue
+                    val codec = format.optString("mimeType").substringAfter("codecs=\"", "").substringBefore('"').substringBefore(',')
+                    if (preferences.h264Only && !codec.startsWith("avc1")) continue
+                    if (preferences.fps30Only && format.optDouble("fps", 0.0) > 30.0) continue
+                }
+                val cipher = format.optString("signatureCipher").ifBlank { format.optString("cipher") }
+                if (cipher.isBlank() || cipher.length > MAX_CIPHER_LENGTH) continue
+                val fields = Uri.parse("https://cipher.invalid/?$cipher")
+                if (fields.getQueryParameter("s").orEmpty().isBlank()) continue
+                if (isTrustedStreamUrl(fields.getQueryParameter("url").orEmpty())) return true
+            }
+        }
+        return false
+    }
 
     private fun downloadableFormats(
         streaming: JSONObject,
