@@ -64,7 +64,7 @@
     <string name="interface_scale">Масштаб интерфейса</string>
     <string name="discovery">Рекомендации на главной</string>
     <string name="discovery_topic">Тема</string>
-    <string name="discovery_topic_hint">Используется, если гостевая лента YouTube Home пуста; до 200 символов, пустое поле — тема по умолчанию.</string>
+    <string name="discovery_topic_hint">Задает тему гостевых рекомендаций; до 200 символов, пустое поле — тема по умолчанию.</string>
     <string name="discovery_language">Язык поиска</string>
     <string name="discovery_language_any">Любой язык</string>
     <string name="page_size">Результатов на странице</string>

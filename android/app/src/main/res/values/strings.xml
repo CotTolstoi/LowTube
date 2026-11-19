@@ -64,7 +64,7 @@
     <string name="interface_scale">Interface size</string>
     <string name="discovery">Home recommendations</string>
     <string name="discovery_topic">Topic</string>
-    <string name="discovery_topic_hint">Used if YouTube Home has no guest recommendations; up to 200 characters, blank uses the default topic.</string>
+    <string name="discovery_topic_hint">Sets the guest recommendation topic; up to 200 characters, blank uses the default topic.</string>
     <string name="discovery_language">Search language</string>
     <string name="discovery_language_any">Any language</string>
     <string name="page_size">Results per page</string>
