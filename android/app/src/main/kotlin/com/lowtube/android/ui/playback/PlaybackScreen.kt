@@ -46,6 +46,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -680,7 +681,7 @@ fun PlaybackScreen(
         )
     }) { padding ->
         if (immersiveShorts) {
-            Box(Modifier.fillMaxSize().background(Color.Black)) {
+            Box(Modifier.fillMaxSize().background(Color.Black).padding(padding)) {
                 var verticalDrag by remember(video.id, playbackRequestId) { mutableStateOf(0f) }
                 val swipeThresholdPx = with(androidx.compose.ui.platform.LocalDensity.current) { 72.dp.toPx() }
                 controller?.let { activeController ->
@@ -752,12 +753,18 @@ fun PlaybackScreen(
                     }) { Text(stringResource(R.string.share_link), color = Color.White) }
                 }
                 androidx.compose.foundation.layout.Column(
-                    modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth()
-                        .background(Color.Black.copy(alpha = 0.58f)).padding(16.dp),
+                    modifier = Modifier.align(Alignment.BottomStart).padding(end = 176.dp, bottom = 80.dp).fillMaxWidth()
+                        .background(Color.Black.copy(alpha = 0.88f)).padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Text(watchedVideo.channel, color = Color.White, style = MaterialTheme.typography.titleSmall)
-                    Text(watchedVideo.title, color = Color.White, style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        watchedVideo.title,
+                        color = Color.White,
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
                 if (loading) CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 message?.let { Text(it, modifier = Modifier.align(Alignment.TopCenter).padding(16.dp), color = Color.White) }
