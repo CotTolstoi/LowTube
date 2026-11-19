@@ -176,6 +176,47 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
         } finally { db.endTransaction() }
     }
 
+    fun setYouTubeAccountSubscription(
+        accountEmail: String,
+        channelId: String,
+        title: String,
+        subscribed: Boolean,
+        syncedAt: Long = System.currentTimeMillis(),
+    ) {
+        val owner = accountEmail.trim().lowercase()
+        require(owner.isNotBlank() && owner.length <= MAX_ACCOUNT_EMAIL_LENGTH)
+        require(CHANNEL_ID.matches(channelId))
+        require(title.isNotBlank() && title.length <= 250)
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            if (subscribed) {
+                val category = db.rawQuery(
+                    "SELECT category FROM youtube_account_subscriptions WHERE owner_email=? AND channel_id=?",
+                    arrayOf(owner, channelId),
+                ).use { cursor -> if (cursor.moveToFirst()) cursor.getString(0) else "" }
+                val values = ContentValues().apply {
+                    put("owner_email", owner)
+                    put("channel_id", channelId)
+                    put("title", title)
+                    put("url", "https://www.youtube.com/channel/$channelId")
+                    put("synced_at", syncedAt)
+                    put("category", category)
+                }
+                check(db.insertWithOnConflict("youtube_account_subscriptions", null, values, SQLiteDatabase.CONFLICT_REPLACE) != -1L) {
+                    "Could not save the YouTube subscription."
+                }
+            } else {
+                db.delete("youtube_account_subscriptions", "owner_email=? AND channel_id=?", arrayOf(owner, channelId))
+                if (!isFollowing(channelId)) {
+                    db.delete("channel_feed_items", "channel_id=?", arrayOf(channelId))
+                    db.delete("channel_feed_state", "channel_id=?", arrayOf(channelId))
+                }
+            }
+            db.setTransactionSuccessful()
+        } finally { db.endTransaction() }
+    }
+
     fun clearYouTubeAccountSubscriptions() {
         val db = writableDatabase
         db.beginTransaction()

@@ -117,6 +117,7 @@
     <string name="saved_to_playlist">Збережено в плейлист</string>
     <string name="follow">Підписатися</string>
     <string name="followed">Ви підписані</string>
+    <string name="youtube_subscription_change_failed">Не вдалося змінити підписку YouTube. Перевірте дозвіл для акаунта й з’єднання та спробуйте ще раз.</string>
     <string name="browse_channel">Відео каналу</string>
     <string name="saved_to_watch_later">Збережено в «Переглянути пізніше»</string>
     <string name="watch_later">Переглянути пізніше</string>

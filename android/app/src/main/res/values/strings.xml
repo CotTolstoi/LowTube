@@ -115,8 +115,9 @@
     <string name="save_to_playlist">Save to playlist</string>
     <string name="no_local_playlists">No local playlists yet. Create one in Library.</string>
     <string name="saved_to_playlist">Saved to playlist</string>
-    <string name="follow">Follow</string>
-    <string name="followed">Following</string>
+    <string name="follow">Subscribe</string>
+    <string name="followed">Subscribed</string>
+    <string name="youtube_subscription_change_failed">Could not update the YouTube subscription. Check account permission and connection, then try again.</string>
     <string name="browse_channel">Browse videos</string>
     <string name="saved_to_watch_later">Saved to Watch later</string>
     <string name="watch_later">Watch later</string>

@@ -61,6 +61,7 @@ fun MainNavigation(
     onGoogleSignIn: () -> Unit,
     onGoogleSignOut: () -> Unit,
     onRequestYouTubeSync: ((Result<List<YouTubeSubscription>>) -> Unit) -> Unit,
+    onChangeYouTubeSubscription: (String, Boolean, (Result<Unit>) -> Unit) -> Unit,
     onDarkThemeChanged: (Boolean) -> Unit,
     onLanguageChanged: (String) -> Unit,
     onBackHandlerChanged: ((() -> Boolean) -> Unit),
@@ -82,6 +83,7 @@ fun MainNavigation(
         onDispose { library.close() }
     }
     var libraryRevision by remember(library) { mutableIntStateOf(0) }
+    var pendingYouTubeSubscriptionChanges by remember(library) { mutableStateOf(emptyMap<String, Boolean>()) }
     var previousGoogleAccountEmail by remember(library) { mutableStateOf(googleAccountEmail) }
     LaunchedEffect(library, googleAccountEmail) {
         if (!previousGoogleAccountEmail.equals(googleAccountEmail, ignoreCase = true)) {
@@ -97,9 +99,36 @@ fun MainNavigation(
         library.channels(googleAccountEmail).filter { it.fromYouTubeAccount }.map { it.id }.toSet()
     }
     val toggleFollowChannel: (VideoItem) -> Boolean = { video ->
-        if (video.channelId in youtubeFollowedChannels && video.channelId !in followedChannels) {
-            Toast.makeText(context, R.string.youtube_unsubscribe_not_available, Toast.LENGTH_LONG).show()
-            true
+        if (googleAccountEmail.isNotBlank()) {
+            val channelId = video.channelId
+            val pending = pendingYouTubeSubscriptionChanges[channelId]
+            if (pending != null) {
+                pending || channelId in followedChannels
+            } else {
+                val current = channelId in youtubeFollowedChannels
+                val requested = !current
+                pendingYouTubeSubscriptionChanges = pendingYouTubeSubscriptionChanges + (channelId to requested)
+                onChangeYouTubeSubscription(channelId, requested) { result ->
+                    result.onSuccess {
+                        runCatching {
+                            library.setYouTubeAccountSubscription(
+                                googleAccountEmail,
+                                channelId,
+                                video.channel.ifBlank { channelId },
+                                requested,
+                            )
+                        }
+                            .onSuccess { libraryRevision++ }
+                            .onFailure { Toast.makeText(context, R.string.youtube_subscription_change_failed, Toast.LENGTH_LONG).show() }
+                    }.onFailure { failure ->
+                        if (failure.message?.contains("cancel", ignoreCase = true) != true) {
+                            Toast.makeText(context, R.string.youtube_subscription_change_failed, Toast.LENGTH_LONG).show()
+                        }
+                    }
+                    pendingYouTubeSubscriptionChanges = pendingYouTubeSubscriptionChanges - channelId
+                }
+                requested || channelId in followedChannels
+            }
         } else {
             runCatching {
                 val nowFollowing = if (video.channelId in followedChannels) {
@@ -420,7 +449,9 @@ fun MainNavigation(
                             .onFailure { Toast.makeText(context, it.message ?: context.getString(R.string.action_failed), Toast.LENGTH_LONG).show() }
                     },
                     onToggleFollow = toggleFollowChannel,
-                    isFollowing = { channelId -> channelId in followedChannels || channelId in youtubeFollowedChannels },
+                    isFollowing = { channelId ->
+                        channelId in followedChannels || (pendingYouTubeSubscriptionChanges[channelId] ?: (channelId in youtubeFollowedChannels))
+                    },
                     discoveryTopic = discoveryTopic,
                     discoveryLanguage = discoveryLanguage,
                     feedRefreshPreset = feedRefreshPreset,
@@ -636,7 +667,7 @@ fun MainNavigation(
                 else PlaybackScreen(
                     video = video,
                     playbackRequestId = playbackRequestId,
-                    isFollowing = video.channelId in followedChannels || video.channelId in youtubeFollowedChannels,
+                    isFollowing = video.channelId in followedChannels || (pendingYouTubeSubscriptionChanges[video.channelId] ?: (video.channelId in youtubeFollowedChannels)),
                     onToggleFollow = toggleFollowChannel,
                     localAudioTrack = selectedLocalAudio,
                     library = library,

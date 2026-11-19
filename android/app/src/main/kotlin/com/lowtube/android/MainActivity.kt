@@ -43,6 +43,14 @@ import androidx.core.view.WindowCompat
 import com.lowtube.android.ui.theme.LowTubeTheme
 
 class MainActivity : ComponentActivity() {
+  private data class YoutubeSubscriptionChange(
+    val accountEmail: String,
+    val channelId: String,
+    val subscribe: Boolean,
+    val generation: Int,
+    val completion: (Result<Unit>) -> Unit,
+  )
+
   private var darkTheme by mutableStateOf(true)
   private var externalYoutubeUrl by mutableStateOf<String?>(null)
   private var externalYoutubeRequestId by mutableIntStateOf(0)
@@ -55,6 +63,7 @@ class MainActivity : ComponentActivity() {
   private var pictureInPictureEligible = false
   private var inPictureInPictureMode by mutableStateOf(false)
   private var pendingYoutubeSync: ((Result<List<YouTubeSubscription>>) -> Unit)? = null
+  private var pendingYoutubeSubscriptionChange: YoutubeSubscriptionChange? = null
   private var pendingGoogleProfileSignIn = false
   private var pendingYoutubeAccountEmail = ""
   private var youtubeSyncGeneration = 0
@@ -88,6 +97,24 @@ class MainActivity : ComponentActivity() {
       } catch (failure: Exception) {
         googleSignInBusy = false
         googleAccountMessage = accountAuthorizationError(failure)
+      }
+      return@registerForActivityResult
+    }
+    val subscriptionChange = pendingYoutubeSubscriptionChange
+    if (subscriptionChange != null) {
+      pendingYoutubeSubscriptionChange = null
+      if (result.resultCode != RESULT_OK) {
+        youtubeSyncBusy = false
+        subscriptionChange.completion(Result.failure(IllegalStateException("YouTube permission request was cancelled.")))
+        return@registerForActivityResult
+      }
+      try {
+        val data = result.data ?: throw IllegalStateException("YouTube authorization returned no result.")
+        val authorization = Identity.getAuthorizationClient(this).getAuthorizationResultFromIntent(data)
+        useYoutubeSubscriptionAuthorization(authorization, subscriptionChange)
+      } catch (failure: Exception) {
+        youtubeSyncBusy = false
+        subscriptionChange.completion(Result.failure(IllegalStateException(accountAuthorizationError(failure))))
       }
       return@registerForActivityResult
     }
@@ -150,6 +177,7 @@ class MainActivity : ComponentActivity() {
             onGoogleSignIn = ::signInWithGoogle,
             onGoogleSignOut = ::signOutGoogle,
             onRequestYouTubeSync = ::syncYouTubeSubscriptions,
+            onChangeYouTubeSubscription = ::changeYouTubeSubscription,
             onDarkThemeChanged = { enabled ->
               darkTheme = enabled
               getSharedPreferences("lowtube_settings", MODE_PRIVATE).edit().putBoolean("dark_theme", enabled).apply()
@@ -363,6 +391,8 @@ class MainActivity : ComponentActivity() {
     youtubeSyncBusy = false
     youtubeSyncGeneration++
     pendingYoutubeSync = null
+    pendingYoutubeSubscriptionChange?.completion(Result.failure(IllegalStateException("Google account changed during the subscription update.")))
+    pendingYoutubeSubscriptionChange = null
     pendingYoutubeAccountEmail = ""
     getSharedPreferences("lowtube_settings", MODE_PRIVATE).edit()
       .remove("google_account_name")
@@ -416,6 +446,96 @@ class MainActivity : ComponentActivity() {
       }
   }
 
+  private fun changeYouTubeSubscription(
+    channelId: String,
+    subscribe: Boolean,
+    completion: (Result<Unit>) -> Unit,
+  ) {
+    val email = googleAccountEmail
+    if (email.isBlank()) {
+      completion(Result.failure(IllegalStateException("Sign in with Google before changing YouTube subscriptions.")))
+      return
+    }
+    if (youtubeSyncBusy) {
+      completion(Result.failure(IllegalStateException("A YouTube account request is already in progress.")))
+      return
+    }
+    youtubeSyncBusy = true
+    val generation = ++youtubeSyncGeneration
+    pendingYoutubeAccountEmail = email
+    val change = YoutubeSubscriptionChange(email, channelId, subscribe, generation, completion)
+    val request = AuthorizationRequest.builder()
+      .setAccount(Account(email, GOOGLE_ACCOUNT_TYPE))
+      .setRequestedScopes(listOf(Scope(YOUTUBE_MANAGE_SCOPE)))
+      .build()
+    Identity.getAuthorizationClient(this).authorize(request)
+      .addOnSuccessListener { authorization ->
+        if (generation == youtubeSyncGeneration && googleAccountEmail.equals(email, ignoreCase = true)) {
+          useYoutubeSubscriptionAuthorization(authorization, change)
+        } else {
+          youtubeSyncBusy = false
+          completion(Result.failure(IllegalStateException("The Google account changed before the subscription update.")))
+        }
+      }
+      .addOnFailureListener { failure ->
+        if (generation == youtubeSyncGeneration) youtubeSyncBusy = false
+        completion(Result.failure(IllegalStateException(accountAuthorizationError(failure))))
+      }
+  }
+
+  private fun useYoutubeSubscriptionAuthorization(
+    authorization: AuthorizationResult,
+    change: YoutubeSubscriptionChange,
+  ) {
+    if (change.generation != youtubeSyncGeneration || !googleAccountEmail.equals(change.accountEmail, ignoreCase = true)) {
+      youtubeSyncBusy = false
+      change.completion(Result.failure(IllegalStateException("The Google account changed before the subscription update.")))
+      return
+    }
+    if (authorization.hasResolution()) {
+      val pendingIntent = authorization.pendingIntent
+      if (pendingIntent == null) {
+        youtubeSyncBusy = false
+        change.completion(Result.failure(IllegalStateException("Google did not return a YouTube permission request.")))
+        return
+      }
+      pendingYoutubeSubscriptionChange = change
+      try {
+        youtubeAuthorizationLauncher.launch(IntentSenderRequest.Builder(pendingIntent).build())
+      } catch (_: Exception) {
+        pendingYoutubeSubscriptionChange = null
+        youtubeSyncBusy = false
+        change.completion(Result.failure(IllegalStateException("Could not open the YouTube permission request.")))
+      }
+      return
+    }
+    val accessToken = authorization.accessToken.orEmpty()
+    if (accessToken.isBlank()) {
+      youtubeSyncBusy = false
+      change.completion(Result.failure(IllegalStateException("Google returned no YouTube access token.")))
+      return
+    }
+    lifecycleScope.launch {
+      val result = try {
+        Result.success(withContext(Dispatchers.IO) {
+          youtubeDataApi.setSubscription(accessToken, change.channelId, change.subscribe)
+          Unit
+        })
+      } catch (cancelled: CancellationException) {
+        throw cancelled
+      } catch (failure: Exception) {
+        Result.failure(failure)
+      } finally {
+        youtubeSyncBusy = false
+      }
+      if (change.generation == youtubeSyncGeneration && googleAccountEmail.equals(change.accountEmail, ignoreCase = true)) {
+        change.completion(result)
+      } else {
+        change.completion(Result.failure(IllegalStateException("The Google account changed before the subscription update completed.")))
+      }
+    }
+  }
+
   private fun useYoutubeAuthorization(
     authorization: AuthorizationResult,
     completion: (Result<List<YouTubeSubscription>>) -> Unit,
@@ -467,6 +587,7 @@ class MainActivity : ComponentActivity() {
     private const val EMAIL_SCOPE = "email"
     private const val PROFILE_SCOPE = "profile"
     private const val YOUTUBE_READONLY_SCOPE = "https://www.googleapis.com/auth/youtube.readonly"
+    private const val YOUTUBE_MANAGE_SCOPE = "https://www.googleapis.com/auth/youtube"
     private const val GOOGLE_ACCOUNT_TYPE = "com.google"
     private val YOUTUBE_LINK_HOSTS = setOf("youtube.com", "www.youtube.com", "m.youtube.com", "music.youtube.com", "youtu.be")
     private val VIDEO_ID = Regex("^[A-Za-z0-9_-]{11}$")
