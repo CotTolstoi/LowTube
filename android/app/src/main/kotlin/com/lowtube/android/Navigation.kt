@@ -369,16 +369,27 @@ fun MainNavigation(
         Toast.makeText(context, context.getString(R.string.audio_import_result, added, skipped), Toast.LENGTH_LONG).show()
     }
     val backStack = rememberNavBackStack(Main)
+    val popBackStackEntry: () -> Unit = {
+        val removed = backStack.removeLastOrNull()
+        if (removed == Player) {
+            // Playback persists watch progress while it is disposed. Refresh the library
+            // after this navigation turn so the History screen reads the saved row.
+            scope.launch {
+                kotlinx.coroutines.yield()
+                libraryRevision++
+            }
+        }
+    }
     LaunchedEffect(externalYoutubeRequestId, externalYoutubeUrl) {
         val url = externalYoutubeUrl?.takeIf(String::isNotBlank) ?: return@LaunchedEffect
-        while (backStack.size > 1) backStack.removeLastOrNull()
+        while (backStack.size > 1) popBackStackEntry()
         mainTab = "search"
         browseChannelRequest = url
         onExternalYoutubeUrlConsumed(externalYoutubeRequestId)
     }
     val navigateBack: () -> Unit = {
         if (backStack.size > 1) {
-            backStack.removeLastOrNull()
+            popBackStackEntry()
             if (backStack.lastOrNull() == Main && mainTab in setOf("settings", "library")) {
                 mainTab = returnMainTab
             }
@@ -787,7 +798,7 @@ fun MainNavigation(
             }
             entry<Player> {
                 val video = selectedVideo
-                if (video == null) backStack.removeLastOrNull()
+                if (video == null) popBackStackEntry()
                 else PlaybackScreen(
                     video = video,
                     playbackRequestId = playbackRequestId,
