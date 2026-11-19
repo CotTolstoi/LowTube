@@ -19,6 +19,16 @@ data class SearchPage(
     val items: List<VideoItem>,
     val continuation: String?,
     val playlistTitle: String? = null,
+    val channelHeader: ChannelHeader? = null,
+)
+
+data class ChannelHeader(
+    val channelId: String = "",
+    val title: String,
+    val avatarUrl: String = "",
+    val bannerUrl: String = "",
+    val subscriberCountText: String = "",
+    val description: String = "",
 )
 
 data class ResolvedVideoStream(

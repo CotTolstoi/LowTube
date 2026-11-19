@@ -15,6 +15,7 @@ data class SearchUiState(
     val items: List<VideoItem> = emptyList(),
     val continuation: String? = null,
     val playlistTitle: String? = null,
+    val channelHeader: com.lowtube.android.model.ChannelHeader? = null,
     val loading: Boolean = false,
     val loadingMore: Boolean = false,
     val displayLimit: Int = FeedPagePolicy.DEFAULT_PAGE_SIZE,
@@ -136,6 +137,7 @@ class SearchViewModel(
                         items = page.items,
                         continuation = page.continuation,
                         playlistTitle = page.playlistTitle,
+                        channelHeader = page.channelHeader,
                         searched = true,
                         displayLimit = pageSize,
                     )
@@ -183,6 +185,7 @@ class SearchViewModel(
                         items = merged,
                         continuation = page.continuation,
                         playlistTitle = page.playlistTitle ?: current.playlistTitle,
+                        channelHeader = page.channelHeader ?: current.channelHeader,
                         loadingMore = false,
                     )
                     mutableState.value = updated

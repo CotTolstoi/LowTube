@@ -3,6 +3,7 @@ package com.lowtube.android.data
 import android.content.Context
 import android.net.Uri
 import com.lowtube.android.model.SearchPage
+import com.lowtube.android.model.ChannelHeader
 import com.lowtube.android.model.ResolvedVideoStream
 import com.lowtube.android.model.SavedChannel
 import com.lowtube.android.model.VideoItem
@@ -1152,10 +1153,11 @@ class InnerTubeSearchRepository(context: Context? = null) {
         }
     }
 
-    private fun parseSearchPage(root: JSONObject): SearchPage {
+    internal fun parseSearchPage(root: JSONObject): SearchPage {
         val result = linkedMapOf<String, VideoItem>()
         var continuation: String? = null
         var playlistTitle: String? = null
+        var channelHeader: ChannelHeader? = null
         fun add(item: VideoItem?) {
             if (item != null) {
                 val key = item.kind + ":" + item.id
@@ -1172,6 +1174,11 @@ class InnerTubeSearchRepository(context: Context? = null) {
                         val key = keys.next()
                         val renderer = value.optJSONObject(key)
                         when (key) {
+                            "channelMetadataRenderer", "c4TabbedHeaderRenderer", "pageHeaderViewModel" -> {
+                                val parsed = parseChannelHeader(key, renderer)
+                                if (parsed != null && channelHeader?.title.isNullOrBlank()) channelHeader = parsed
+                                visit(renderer, depth + 1)
+                            }
                             "playlistHeaderRenderer", "playlistMetadataRenderer" -> {
                                 val title = text(renderer?.opt("title")).takeIf(String::isNotBlank)
                                 if (!title.isNullOrBlank()) playlistTitle = title
@@ -1216,7 +1223,51 @@ class InnerTubeSearchRepository(context: Context? = null) {
                 .ifBlank { "none" }
             throw IOException("YouTube returned an unsupported search response (top-level fields: $responseFields).")
         }
-        return SearchPage(result.values.take(MAX_PAGE_ITEMS), continuation, playlistTitle)
+        return SearchPage(result.values.take(MAX_PAGE_ITEMS), continuation, playlistTitle, channelHeader)
+    }
+
+    private fun parseChannelHeader(rendererName: String, renderer: JSONObject?): ChannelHeader? {
+        renderer ?: return null
+        val title = text(renderer.opt("title")).trim().take(250)
+        if (title.isBlank()) return null
+        val channelId = renderer.optString("externalId")
+            .ifBlank { renderer.optString("channelId") }
+            .takeIf { it.startsWith("UC") && it.length == 24 }
+            .orEmpty()
+        val avatar = channelImageUrl(
+            renderer.opt("avatar")
+                ?: renderer.opt("channelThumbnail")
+                ?: renderer.opt("image"),
+        )
+        val banner = if (rendererName == "c4TabbedHeaderRenderer") channelImageUrl(renderer.opt("banner")) else ""
+        val subscriberCount = text(renderer.opt("subscriberCountText"))
+            .ifBlank { text(renderer.opt("subscriberCount")) }
+            .take(120)
+        val description = text(renderer.opt("description")).take(500)
+        return ChannelHeader(channelId, title, avatar, banner, subscriberCount, description)
+    }
+
+    private fun channelImageUrl(value: Any?): String {
+        val urls = ArrayList<String>()
+        fun visit(node: Any?, depth: Int) {
+            if (depth > 8 || urls.size >= 32) return
+            when (node) {
+                is JSONArray -> for (i in 0 until node.length()) visit(node.opt(i), depth + 1)
+                is JSONObject -> {
+                    val direct = node.optString("url")
+                    if (direct.isNotBlank()) urls += direct
+                    val keys = node.keys()
+                    while (keys.hasNext()) visit(node.opt(keys.next()), depth + 1)
+                }
+            }
+        }
+        visit(value, 0)
+        return urls.lastOrNull { candidate ->
+            candidate.length <= 2_000 && runCatching {
+                val uri = Uri.parse(candidate)
+                uri.scheme == "https" && uri.host?.lowercase() in setOf("yt3.ggpht.com", "yt3.googleusercontent.com")
+            }.getOrDefault(false)
+        }.orEmpty()
     }
 
     private fun legacyVideo(renderer: JSONObject?, rendererName: String, preserveUnavailable: Boolean = false): VideoItem? {

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -65,6 +66,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import android.os.Build
 import android.content.ClipData
@@ -174,6 +176,7 @@ fun LowTubeSearchScreen(
     val channelBrowse = remember(query, selectedTab) {
         if (selectedTab == "search") channelBrowseTab(query) else null
     }
+    val channelHeader = state.channelHeader.takeIf { channelBrowse != null }
     val activeKind = when {
         selectedTab == "home" -> recommendationKind
         channelBrowse != null -> channelBrowse.kind
@@ -484,7 +487,7 @@ fun LowTubeSearchScreen(
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
             } else if (state.error != null && state.items.isEmpty()) {
                 MessagePanel(state.error.orEmpty())
-            } else if (visibleItems.isEmpty()) {
+            } else if (visibleItems.isEmpty() && channelHeader == null) {
                 MessagePanel(when {
                     state.isHome -> stringResource(R.string.recommendations_empty)
                     state.searched -> stringResource(R.string.search_empty)
@@ -497,6 +500,28 @@ fun LowTubeSearchScreen(
                     contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
+                    if (channelHeader != null) {
+                        item(key = "channel-header") {
+                            ChannelHeaderCard(
+                                header = channelHeader,
+                                isFollowing = channelHeader.channelId.isNotBlank() && isFollowing(channelHeader.channelId),
+                                onToggleFollow = {
+                                    if (channelHeader.channelId.isNotBlank()) {
+                                        onToggleFollow(
+                                            VideoItem(
+                                                id = channelHeader.channelId,
+                                                title = channelHeader.title,
+                                                channel = channelHeader.title,
+                                                channelId = channelHeader.channelId,
+                                                kind = "channel",
+                                                url = "https://www.youtube.com/channel/${channelHeader.channelId}",
+                                            ),
+                                        )
+                                    }
+                                },
+                            )
+                        }
+                    }
                     items(displayedItems, key = { it.kind + ":" + it.id }) { item ->
                         VideoCard(
                             item = item,
@@ -620,6 +645,71 @@ fun LowTubeSearchScreen(
                 onDownload(formatVideo, option)
             },
         )
+    }
+}
+
+@Composable
+internal fun ChannelHeaderCard(
+    header: com.lowtube.android.model.ChannelHeader,
+    isFollowing: Boolean,
+    onToggleFollow: () -> Unit,
+) {
+    Card(Modifier.fillMaxWidth().testTag(CHANNEL_HEADER_TEST_TAG)) {
+        Column {
+            if (header.bannerUrl.isNotBlank()) {
+                AsyncImage(
+                    model = header.bannerUrl,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxWidth().height(112.dp),
+                    contentScale = ContentScale.Crop,
+                )
+            }
+            Row(
+                Modifier.fillMaxWidth().padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    Modifier.size(72.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (header.avatarUrl.isNotBlank()) {
+                        SubcomposeAsyncImage(
+                            model = header.avatarUrl,
+                            contentDescription = header.title,
+                            modifier = Modifier.fillMaxSize().clip(CircleShape),
+                            contentScale = ContentScale.Crop,
+                            loading = { Text(header.title.firstOrNull()?.uppercaseChar()?.toString().orEmpty()) },
+                            error = { Text(header.title.firstOrNull()?.uppercaseChar()?.toString().orEmpty()) },
+                            success = { SubcomposeAsyncImageContent() },
+                        )
+                    } else {
+                        Text(header.title.firstOrNull()?.uppercaseChar()?.toString().orEmpty())
+                    }
+                }
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text(header.title, style = MaterialTheme.typography.titleLarge, maxLines = 2)
+                    if (header.subscriberCountText.isNotBlank()) {
+                        Text(header.subscriberCountText, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+                if (header.channelId.isNotBlank()) {
+                    Button(onClick = onToggleFollow) {
+                        Text(stringResource(if (isFollowing) R.string.followed else R.string.follow))
+                    }
+                }
+            }
+            if (header.description.isNotBlank()) {
+                Text(
+                    header.description,
+                    modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
     }
 }
 
@@ -918,3 +1008,4 @@ internal object FeedAutoPaginationPolicy {
 }
 
 internal const val SEARCH_RESULTS_LIST_TEST_TAG = "lowtube-search-results"
+internal const val CHANNEL_HEADER_TEST_TAG = "lowtube-channel-header"
