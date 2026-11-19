@@ -374,3 +374,5 @@
 19.11.2026 14:25:08 UTC, підключений Android13/API33, Home feed після history refresh build, без playback; 10 s sample: CPU 0% одного ядра, PSS 112,8 MiB, RSS 199,8 MiB, peak RSS 228,5 MiB, RAM 3 713 MiB / доступно 1 459 MiB. Система визначається як TrebleDroid vanilla. Це одиничний foreground sample, не benchmark.
 
 19.11.2026 14:33:53 UTC, підключений Android13/API33, Home feed після profile diagnostic-copy build, без playback; 10 s sample: CPU 0,1% одного ядра, PSS 138,4 MiB, RSS 224,8 MiB, peak RSS 227 MiB, RAM 3 713 MiB / доступно 1 469 MiB. Система визначається як TrebleDroid vanilla. Це одиничний foreground sample; різницю PSS не приписувати кнопці копіювання без повторюваних порівняльних вимірювань.
+
+19.11.2026 14:42:53 UTC, підключений Android13/API33, Home після оновлення локального збереження account diagnostics, без playback; 10 s sample: CPU 0,1% одного ядра, PSS 137 MiB, RSS 223,3 MiB, peak RSS 225,6 MiB, RAM 3 713 MiB / доступно 1 473 MiB. Система визначається як TrebleDroid vanilla. Це одиничний foreground sample, не benchmark.

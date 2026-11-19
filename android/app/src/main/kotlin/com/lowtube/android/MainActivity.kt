@@ -23,6 +23,7 @@ import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.CommonStatusCodes
 import com.google.android.gms.common.api.Scope
 import com.lowtube.android.data.GoogleAccountProfile
+import com.lowtube.android.data.GoogleAccountMessageStore
 import com.lowtube.android.data.GoogleAuthorizationDiagnostics
 import com.lowtube.android.data.GoogleProfileAvatarPolicy
 import com.lowtube.android.data.YouTubeDataApiRepository
@@ -62,6 +63,7 @@ class MainActivity : ComponentActivity() {
   private var googleAccountEmail by mutableStateOf("")
   private var googleAccountAvatarUrl by mutableStateOf("")
   private var googleAccountMessage by mutableStateOf("")
+  private var googleAccountMessageStore: GoogleAccountMessageStore? = null
   private var googleSignInBusy by mutableStateOf(false)
   private var youtubeSyncBusy by mutableStateOf(false)
   private var pictureInPictureEligible = false
@@ -76,13 +78,13 @@ class MainActivity : ComponentActivity() {
   private val googleAccountSelectionLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
     if (result.resultCode != RESULT_OK) {
       googleSignInBusy = false
-      googleAccountMessage = googleAccountSelectionCancelledMessage(result.resultCode)
+      updateGoogleAccountMessage(googleAccountSelectionCancelledMessage(result.resultCode))
       return@registerForActivityResult
     }
     val email = result.data?.getStringExtra(AccountManager.KEY_ACCOUNT_NAME).orEmpty().trim()
     if (email.isBlank() || email.length > 320 || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
       googleSignInBusy = false
-      googleAccountMessage = getString(R.string.account_sign_in_failed)
+      updateGoogleAccountMessage(getString(R.string.account_sign_in_failed))
       return@registerForActivityResult
     }
     requestGoogleProfileAuthorization(email)
@@ -101,9 +103,9 @@ class MainActivity : ComponentActivity() {
         }
         googleSignInBusy = false
         val failure = authorizationFailure?.exceptionOrNull()
-        googleAccountMessage = if (failure != null &&
+        updateGoogleAccountMessage(if (failure != null &&
           (failure !is ApiException || failure.statusCode != CommonStatusCodes.CANCELED)
-        ) accountAuthorizationError(failure) else googleAuthorizationCancelledMessage(failure)
+        ) accountAuthorizationError(failure) else googleAuthorizationCancelledMessage(failure))
         return@registerForActivityResult
       }
       try {
@@ -112,7 +114,7 @@ class MainActivity : ComponentActivity() {
         useGoogleProfileAuthorization(authorization)
       } catch (failure: Exception) {
         googleSignInBusy = false
-        googleAccountMessage = accountAuthorizationError(failure)
+        updateGoogleAccountMessage(accountAuthorizationError(failure))
       }
       return@registerForActivityResult
     }
@@ -175,6 +177,8 @@ class MainActivity : ComponentActivity() {
     super.onCreate(savedInstanceState)
     acceptExternalYoutubeIntent(intent)
     val preferences = getSharedPreferences("lowtube_settings", MODE_PRIVATE)
+    googleAccountMessageStore = GoogleAccountMessageStore(this)
+    googleAccountMessage = googleAccountMessageStore?.load().orEmpty()
     darkTheme = preferences.getBoolean("dark_theme", true)
     googleAccountName = preferences.getString("google_account_name", "").orEmpty()
     googleAccountEmail = preferences.getString("google_account_email", "").orEmpty()
@@ -325,7 +329,7 @@ class MainActivity : ComponentActivity() {
     if (googleSignInBusy) return
 
     googleSignInBusy = true
-    googleAccountMessage = ""
+    updateGoogleAccountMessage("")
     val chooser = AccountManager.newChooseAccountIntent(
       null,
       null,
@@ -340,7 +344,7 @@ class MainActivity : ComponentActivity() {
       googleAccountSelectionLauncher.launch(chooser)
     } catch (failure: Exception) {
       googleSignInBusy = false
-      googleAccountMessage = accountAuthorizationError(failure)
+      updateGoogleAccountMessage(accountAuthorizationError(failure))
     }
   }
 
@@ -353,7 +357,7 @@ class MainActivity : ComponentActivity() {
       .addOnSuccessListener(::useGoogleProfileAuthorization)
       .addOnFailureListener { failure ->
         googleSignInBusy = false
-        googleAccountMessage = accountAuthorizationError(failure)
+        updateGoogleAccountMessage(accountAuthorizationError(failure))
       }
   }
 
@@ -362,7 +366,7 @@ class MainActivity : ComponentActivity() {
       val pendingIntent = authorization.pendingIntent
       if (pendingIntent == null) {
         googleSignInBusy = false
-        googleAccountMessage = getString(R.string.account_sign_in_failed)
+        updateGoogleAccountMessage(getString(R.string.account_sign_in_failed))
         return
       }
       pendingGoogleProfileSignIn = true
@@ -371,14 +375,14 @@ class MainActivity : ComponentActivity() {
       } catch (failure: Exception) {
         pendingGoogleProfileSignIn = false
         googleSignInBusy = false
-        googleAccountMessage = accountAuthorizationError(failure)
+        updateGoogleAccountMessage(accountAuthorizationError(failure))
       }
       return
     }
     val accessToken = authorization.accessToken.orEmpty()
     if (accessToken.isBlank()) {
       googleSignInBusy = false
-      googleAccountMessage = getString(R.string.account_sign_in_failed)
+      updateGoogleAccountMessage(getString(R.string.account_sign_in_failed))
       return
     }
     lifecycleScope.launch {
@@ -386,7 +390,7 @@ class MainActivity : ComponentActivity() {
         val profile = withContext(Dispatchers.IO) { youtubeDataApi.userProfile(accessToken) }
         applyGoogleProfile(profile)
       } catch (failure: Exception) {
-        googleAccountMessage = accountAuthorizationError(failure)
+        updateGoogleAccountMessage(accountAuthorizationError(failure))
       } finally {
         googleSignInBusy = false
       }
@@ -409,7 +413,12 @@ class MainActivity : ComponentActivity() {
       .putString("google_account_email", googleAccountEmail)
       .putString("google_account_avatar_url", googleAccountAvatarUrl)
       .apply()
-    googleAccountMessage = getString(R.string.account_profile_local_note)
+    updateGoogleAccountMessage(getString(R.string.account_profile_local_note))
+  }
+
+  private fun updateGoogleAccountMessage(message: String) {
+    googleAccountMessage = message
+    googleAccountMessageStore?.save(message)
   }
 
   private fun accountAuthorizationError(failure: Throwable): String {
@@ -456,7 +465,7 @@ class MainActivity : ComponentActivity() {
     googleAccountName = ""
     googleAccountEmail = ""
     googleAccountAvatarUrl = ""
-    googleAccountMessage = ""
+    updateGoogleAccountMessage("")
     youtubeSyncBusy = false
     youtubeSyncGeneration++
     pendingYoutubeSync = null
