@@ -65,6 +65,9 @@ fun DecoderBenchmarkScreen(onBack: () -> Unit) {
     var progressTotalMs by remember { mutableLongStateOf(0L) }
     var failureMessage by remember { mutableStateOf("") }
     var hasHardwareCodecForSource by remember { mutableStateOf<Boolean?>(null) }
+    var comparisonIndex by remember { mutableStateOf(0) }
+    var comparisonCount by remember { mutableStateOf(0) }
+    var activeBenchmarkProfile by remember { mutableStateOf(AndroidDecoderProfile.DEFAULT) }
     val results = remember { mutableStateListOf<AndroidDecoderBenchmarkResult>() }
 
     LaunchedEffect(source) {
@@ -158,6 +161,9 @@ fun DecoderBenchmarkScreen(onBack: () -> Unit) {
                     failureMessage = ""
                     progressMs = 0L
                     progressTotalMs = durationSeconds * 1_000L
+                    activeBenchmarkProfile = profile
+                    comparisonIndex = 0
+                    comparisonCount = 0
                     val player = runCatching { DecoderBenchmarkEngine.createPlayer(context, profile) }
                         .getOrElse {
                             failureMessage = context.getString(R.string.decoder_benchmark_profile_unavailable)
@@ -194,10 +200,83 @@ fun DecoderBenchmarkScreen(onBack: () -> Unit) {
                 },
                 enabled = source != null && runJob == null && (profile != AndroidDecoderProfile.HARDWARE_ONLY || (DecoderBenchmarkEngine.isHardwareProfileAvailable() && hasHardwareCodecForSource == true)),
             ) { Text(stringResource(R.string.decoder_benchmark_run)) }
+            OutlinedButton(
+                onClick = {
+                    val selectedSource = source ?: return@OutlinedButton
+                    val profiles = buildList {
+                        add(AndroidDecoderProfile.DEFAULT)
+                        add(AndroidDecoderProfile.SOFTWARE_PREFERRED)
+                        if (DecoderBenchmarkEngine.isHardwareProfileAvailable() && hasHardwareCodecForSource == true) {
+                            add(AndroidDecoderProfile.HARDWARE_ONLY)
+                        }
+                    }
+                    val selectedDuration = durationSeconds.toInt().coerceIn(15, 120)
+                    failureMessage = ""
+                    comparisonIndex = 0
+                    comparisonCount = profiles.size
+                    runJob = scope.launch {
+                        try {
+                            profiles.forEachIndexed { index, candidate ->
+                                comparisonIndex = index + 1
+                                activeBenchmarkProfile = candidate
+                                progressMs = 0L
+                                progressTotalMs = selectedDuration * 1_000L
+                                val player = try {
+                                    DecoderBenchmarkEngine.createPlayer(context, candidate)
+                                } catch (_: Exception) {
+                                    failureMessage = context.getString(R.string.decoder_benchmark_profile_unavailable)
+                                    return@forEachIndexed
+                                }
+                                activePlayer = player
+                                try {
+                                    val result = DecoderBenchmarkEngine.run(
+                                        context = context,
+                                        player = player,
+                                        uri = selectedSource,
+                                        profile = candidate,
+                                        requestedSeconds = selectedDuration,
+                                    ) { current, total ->
+                                        progressMs = current
+                                        progressTotalMs = total
+                                    }
+                                    if (results.size >= 10) results.removeAt(0)
+                                    results.add(result)
+                                } catch (cancelled: CancellationException) {
+                                    throw cancelled
+                                } catch (_: Exception) {
+                                    failureMessage = context.getString(R.string.decoder_benchmark_run_failed)
+                                } finally {
+                                    player.release()
+                                    if (activePlayer === player) activePlayer = null
+                                }
+                            }
+                        } finally {
+                            comparisonIndex = 0
+                            comparisonCount = 0
+                            activePlayer?.release()
+                            activePlayer = null
+                            runJob = null
+                        }
+                    }
+                },
+                enabled = source != null && runJob == null &&
+                    (!DecoderBenchmarkEngine.isHardwareProfileAvailable() || hasHardwareCodecForSource != null),
+            ) { Text(stringResource(R.string.decoder_benchmark_compare)) }
             if (runJob != null) {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     CircularProgressIndicator()
                     Text(stringResource(R.string.decoder_benchmark_running, progressMs / 1000, progressTotalMs / 1000))
+                }
+                if (comparisonCount > 0) {
+                    Text(
+                        stringResource(
+                            R.string.decoder_benchmark_comparison_step,
+                            comparisonIndex,
+                            comparisonCount,
+                            profileLabel(activeBenchmarkProfile),
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
                 }
                 TextButton(onClick = { runJob?.cancel() }) { Text(stringResource(R.string.cancel)) }
                 activePlayer?.let { player ->

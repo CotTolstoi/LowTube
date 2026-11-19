@@ -325,6 +325,8 @@
     <string name="decoder_benchmark_duration">Measurement duration</string>
     <string name="decoder_benchmark_two_minute_cap">Every run starts at media time 0 and is clipped at 2 minutes maximum.</string>
     <string name="decoder_benchmark_run">Run profile</string>
+    <string name="decoder_benchmark_compare">Compare available profiles</string>
+    <string name="decoder_benchmark_comparison_step">Comparison %1$d of %2$d · %3$s</string>
     <string name="decoder_benchmark_running">Measuring %1$d / %2$d media seconds</string>
     <string name="decoder_benchmark_results">Results</string>
     <string name="decoder_benchmark_export">Export</string>

@@ -325,6 +325,8 @@
     <string name="decoder_benchmark_duration">Длительность замера</string>
     <string name="decoder_benchmark_two_minute_cap">Каждый запуск начинается с медиапозиции 0 и обрезается максимум на 2 минутах.</string>
     <string name="decoder_benchmark_run">Запустить профиль</string>
+    <string name="decoder_benchmark_compare">Сравнить доступные профили</string>
+    <string name="decoder_benchmark_comparison_step">Сравнение %1$d из %2$d · %3$s</string>
     <string name="decoder_benchmark_running">Замер: %1$d / %2$d медиас</string>
     <string name="decoder_benchmark_results">Результаты</string>
     <string name="decoder_benchmark_export">Экспорт</string>
