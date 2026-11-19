@@ -103,7 +103,7 @@ class MainActivity : ComponentActivity() {
         val failure = authorizationFailure?.exceptionOrNull()
         googleAccountMessage = if (failure != null &&
           (failure !is ApiException || failure.statusCode != CommonStatusCodes.CANCELED)
-        ) accountAuthorizationError(failure) else googleAuthorizationCancelledMessage()
+        ) accountAuthorizationError(failure) else googleAuthorizationCancelledMessage(failure)
         return@registerForActivityResult
       }
       try {
@@ -421,12 +421,15 @@ class MainActivity : ComponentActivity() {
     }
   }
 
-  private fun googleAuthorizationCancelledMessage(): String {
+  private fun googleAuthorizationCancelledMessage(failure: Throwable?): String {
     val details = GoogleAuthorizationDiagnostics.collect(this)
+    val result = (failure as? ApiException)?.let { "ApiException ${it.statusCode}" } ?: "RESULT_CANCELED"
     return getString(
       R.string.account_authorization_cancelled_diagnostic,
+      result,
       details.provider,
       details.providerVersion.ifBlank { "unknown" },
+      getString(if (details.authorizationApiAvailable) R.string.account_authorization_api_available else R.string.account_authorization_api_not_detected),
       details.packageName,
       details.signingSha1,
     )

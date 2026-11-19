@@ -24,7 +24,9 @@
     <string name="account_sign_in_cancelled">Вход через Google отменён.</string>
     <string name="account_picker_cancelled">Выбор аккаунта Google закрыт до выбора аккаунта.</string>
     <string name="account_authorization_cancelled">Окно авторизации Google закрыто. Если вы его не закрывали, проверьте Android OAuth client для пакета com.lowtube.android и SHA-1 сертификата подписи этого APK.</string>
-    <string name="account_authorization_cancelled_diagnostic">Авторизация Google не завершена. Служба авторизации: %1$s %2$s. Для настройки OAuth зарегистрируйте пакет %3$s с SHA‑1 сертификата подписи %4$s. Если вы закрыли окно Google, попробуйте ещё раз.</string>
+    <string name="account_authorization_cancelled_diagnostic">Авторизация Google не завершена (%1$s). Служба: %2$s %3$s; API авторизации: %4$s. Для OAuth зарегистрируйте пакет %5$s с SHA‑1 сертификата подписи %6$s. Повторите попытку, если вы закрыли окно Google.</string>
+    <string name="account_authorization_api_available">доступен</string>
+    <string name="account_authorization_api_not_detected">не обнаружен</string>
     <string name="account_profile_local_note">Данные аккаунта Google хранятся только на этом устройстве. Доступ к данным YouTube требует отдельного разрешения.</string>
     <string name="sync_youtube_subscriptions">Синхронизировать подписки</string>
     <string name="youtube_account_required">Войдите через Google, чтобы читать подписки YouTube. Сначала LowTube запросит доступ только для чтения.</string>

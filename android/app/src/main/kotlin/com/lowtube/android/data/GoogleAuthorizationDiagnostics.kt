@@ -1,6 +1,7 @@
 package com.lowtube.android.data
 
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import java.security.MessageDigest
@@ -11,6 +12,7 @@ object GoogleAuthorizationDiagnostics {
     data class Details(
         val provider: String,
         val providerVersion: String,
+        val authorizationApiAvailable: Boolean,
         val packageName: String,
         val signingSha1: String,
     )
@@ -37,6 +39,12 @@ object GoogleAuthorizationDiagnostics {
         return Details(
             provider = providerName,
             providerVersion = providerVersion,
+            authorizationApiAvailable = runCatching {
+                appContext.packageManager.resolveService(
+                    Intent(AUTHORIZATION_SERVICE_ACTION).setPackage(GOOGLE_SERVICES_PACKAGE),
+                    0,
+                ) != null
+            }.getOrDefault(false),
             packageName = appContext.packageName,
             signingSha1 = appSigningSha1(appContext),
         )
@@ -66,5 +74,6 @@ object GoogleAuthorizationDiagnostics {
     }
 
     private const val GOOGLE_SERVICES_PACKAGE = "com.google.android.gms"
+    private const val AUTHORIZATION_SERVICE_ACTION = "com.google.android.gms.auth.api.identity.service.authorization.START"
     private const val MAX_LABEL_LENGTH = 64
 }

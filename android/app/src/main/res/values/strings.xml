@@ -24,7 +24,9 @@
     <string name="account_sign_in_cancelled">Google sign-in was cancelled.</string>
     <string name="account_picker_cancelled">Google account selection was closed before an account was selected.</string>
     <string name="account_authorization_cancelled">Google authorization was closed. If you did not close it, check the Android OAuth client for package com.lowtube.android and this APK signing certificate’s SHA-1.</string>
-    <string name="account_authorization_cancelled_diagnostic">Google authorization did not complete. Provider: %1$s %2$s. For OAuth setup, register package %3$s with signing SHA-1 %4$s. If you cancelled the Google prompt, you can retry.</string>
+    <string name="account_authorization_cancelled_diagnostic">Google authorization did not complete (%1$s). Provider: %2$s %3$s; Authorization API: %4$s. For OAuth setup, register package %5$s with signing SHA-1 %6$s. Retry if you closed the Google prompt.</string>
+    <string name="account_authorization_api_available">available</string>
+    <string name="account_authorization_api_not_detected">not detected</string>
     <string name="account_profile_local_note">Google account details are stored only on this device. YouTube data access is a separate permission.</string>
     <string name="sync_youtube_subscriptions">Sync subscriptions</string>
     <string name="youtube_account_required">Sign in with Google to read your YouTube subscriptions. LowTube will ask for read-only permission first.</string>
