@@ -35,6 +35,7 @@ import com.lowtube.android.ui.settings.SettingsScreen
 import com.lowtube.android.data.LocalLibraryRepository
 import com.lowtube.android.data.PlaybackStreamPreferences
 import com.lowtube.android.data.PlaybackBufferPreferences
+import com.lowtube.android.data.PlaybackSessionStore
 import com.lowtube.android.data.DownloadStreamPreferences
 import com.lowtube.android.data.DownloadRepository
 import com.lowtube.android.data.InnerTubeSearchRepository
@@ -80,6 +81,7 @@ fun MainNavigation(
     val library = remember(context) { LocalLibraryRepository(context.applicationContext) }
     val catalogue = remember(context) { InnerTubeSearchRepository(context.applicationContext) }
     val downloads = remember(context) { DownloadRepository(context) }
+    val playbackSessionStore = remember(context) { PlaybackSessionStore(context.applicationContext) }
     val scope = rememberCoroutineScope()
     val preferences = remember(context) { context.getSharedPreferences("lowtube_settings", android.content.Context.MODE_PRIVATE) }
     val currentGoogleAccountEmail by rememberUpdatedState(googleAccountEmail)
@@ -160,11 +162,17 @@ fun MainNavigation(
         youtubePlaylistsMessage = ""
         youtubePlaylistsBusy = false
     }
-    var selectedVideo by rememberSaveable(stateSaver = videoItemSaver) { mutableStateOf<VideoItem?>(null) }
+    val restoredPlaybackSession = remember(library, playbackSessionStore) {
+        playbackSessionStore.load()?.let { session ->
+            val stillQueued = session.queueRowId?.let { rowId -> library.queue().any { it.rowId == rowId } } == true
+            session.copy(queueRowId = session.queueRowId.takeIf { stillQueued })
+        }
+    }
+    var selectedVideo by rememberSaveable(stateSaver = videoItemSaver) { mutableStateOf(restoredPlaybackSession?.video) }
     var shortsSession by remember { mutableStateOf(emptyList<VideoItem>()) }
     var shortsSessionIndex by remember { mutableIntStateOf(-1) }
     var selectedLocalAudio by rememberSaveable(stateSaver = localAudioTrackSaver) { mutableStateOf<LocalAudioTrack?>(null) }
-    var selectedQueueRowId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var selectedQueueRowId by rememberSaveable { mutableStateOf(restoredPlaybackSession?.queueRowId) }
     var playbackRequestId by rememberSaveable { mutableLongStateOf(0L) }
     var advancingQueue by remember { mutableStateOf(false) }
     var pendingDownload by remember { mutableStateOf<VideoItem?>(null) }
@@ -215,6 +223,11 @@ fun MainNavigation(
     var preloadNext by remember(context) { mutableStateOf(preferences.getBoolean("playback_preload_next", true)) }
     var feedRefreshPreset by remember(context) { mutableIntStateOf(preferences.getInt("feed_refresh_preset", 1).coerceIn(0, 2)) }
     var pageSize by remember(context) { mutableIntStateOf(preferences.getInt("page_size", 25).coerceIn(1, 250)) }
+    LaunchedEffect(selectedVideo, selectedQueueRowId) {
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            playbackSessionStore.save(selectedVideo, selectedQueueRowId)
+        }
+    }
     LaunchedEffect(library, libraryRevision, feedRefreshPreset) {
         val hasLocalChannels = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
             library.localChannels().isNotEmpty()
@@ -832,6 +845,7 @@ private val videoItemSaver = mapSaver<VideoItem?>(
             "thumbnailUrl" to video.thumbnailUrl,
             "url" to video.url,
             "publishedAtMs" to video.publishedAtMs,
+            "channelAvatarUrl" to video.channelAvatarUrl,
         )
     },
     restore = { saved ->
@@ -848,6 +862,7 @@ private val videoItemSaver = mapSaver<VideoItem?>(
             thumbnailUrl = saved["thumbnailUrl"] as String,
             url = saved["url"] as String,
             publishedAtMs = saved["publishedAtMs"] as Long,
+            channelAvatarUrl = saved["channelAvatarUrl"] as? String ?: "",
         )
     },
 )
