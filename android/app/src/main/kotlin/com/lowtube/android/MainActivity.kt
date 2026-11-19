@@ -75,7 +75,7 @@ class MainActivity : ComponentActivity() {
   private val googleAccountSelectionLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
     if (result.resultCode != RESULT_OK) {
       googleSignInBusy = false
-      googleAccountMessage = getString(R.string.account_sign_in_cancelled)
+      googleAccountMessage = getString(R.string.account_picker_cancelled)
       return@registerForActivityResult
     }
     val email = result.data?.getStringExtra(AccountManager.KEY_ACCOUNT_NAME).orEmpty().trim()
@@ -91,7 +91,7 @@ class MainActivity : ComponentActivity() {
       pendingGoogleProfileSignIn = false
       if (result.resultCode != RESULT_OK) {
         googleSignInBusy = false
-        googleAccountMessage = getString(R.string.account_sign_in_cancelled)
+        googleAccountMessage = getString(R.string.account_authorization_cancelled)
         return@registerForActivityResult
       }
       try {
