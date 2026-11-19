@@ -2,13 +2,12 @@ package com.lowtube.android.ui.playback
 
 import android.content.ComponentName
 import android.content.Context
+import android.net.Uri
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
@@ -48,6 +47,7 @@ class MiniPlayerPlaybackAcceptanceTest {
             title = "Big Buck Bunny",
             channel = "Blender Foundation",
             duration = "9:56",
+            thumbnailUrl = "https://i.ytimg.com/vi/aqz-KE-bpKQ/hqdefault.jpg",
             url = "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
         )
         val stream = InnerTubeSearchRepository(context).resolvePlayback(video)
@@ -66,14 +66,16 @@ class MiniPlayerPlaybackAcceptanceTest {
         }
         try {
             withContext(Dispatchers.Main.immediate) {
-                val metadata = MediaMetadata.Builder().setTitle(video.title).setArtist(video.channel).build()
-                controller.setMediaItem(
-                    MediaItem.Builder().setMediaId(video.id).setUri(stream.uri).setMediaMetadata(metadata).build(),
-                )
+                controller.setMediaItem(remoteMediaItem(stream))
                 controller.prepare()
                 withTimeout(45_000) {
                     while (controller.playbackState != Player.STATE_READY) delay(100)
                 }
+                assertTrue(
+                    "The MediaSession item should expose the validated YouTube thumbnail to system media controls",
+                    controller.currentMediaItem?.mediaMetadata?.artworkUri ==
+                        Uri.parse("https://i.ytimg.com/vi/aqz-KE-bpKQ/hqdefault.jpg"),
+                )
                 controller.play()
             }
             withTimeout(20_000) {

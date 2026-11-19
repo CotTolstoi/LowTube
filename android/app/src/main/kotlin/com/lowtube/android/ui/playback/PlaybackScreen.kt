@@ -77,6 +77,7 @@ import com.lowtube.android.model.ResolvedVideoStream
 import com.lowtube.android.model.VideoItem
 import com.lowtube.android.playback.PlaybackService
 import com.lowtube.android.playback.PlaybackDecoderDiagnostics
+import com.lowtube.android.playback.PlaybackArtworkPolicy
 import com.lowtube.android.playback.EXTERNAL_AUDIO_LABEL
 import com.lowtube.android.playback.EXTERNAL_AUDIO_MIME_TYPE
 import com.lowtube.android.playback.EXTERNAL_AUDIO_URI
@@ -561,9 +562,10 @@ fun PlaybackScreen(
                 MediaItem.Builder().setUri(localAudioTrack.uri).setMimeType(localAudioTrack.mimeType)
                     .setMediaMetadata(metadata).build()
             } else if (localVideoSource != null) {
-                val metadata = MediaMetadata.Builder().setTitle(video.title)
-                    .setArtist(video.channel)
-                    .setExtras(Bundle().apply { putLong(PLAYBACK_REQUEST_ID_EXTRA, playbackRequestId) }).build()
+                val metadataBuilder = MediaMetadata.Builder().setTitle(video.title).setArtist(video.channel)
+                    .setExtras(Bundle().apply { putLong(PLAYBACK_REQUEST_ID_EXTRA, playbackRequestId) })
+                PlaybackArtworkPolicy.resolve(video)?.let { metadataBuilder.setArtworkUri(Uri.parse(it)) }
+                val metadata = metadataBuilder.build()
                 MediaItem.Builder().setMediaId(video.id)
                     .setUri(localVideoSource.uri)
                     .setMimeType(localVideoSource.mimeType)
@@ -1064,15 +1066,16 @@ private data class TrackOption(
     val label: String,
 )
 
-private fun remoteMediaItem(
+internal fun remoteMediaItem(
     stream: ResolvedVideoStream,
     externalAudio: ExternalAudioConfiguration? = null,
     playbackRequestId: Long? = null,
 ): MediaItem {
-    val metadata = MediaMetadata.Builder()
+    val metadataBuilder = MediaMetadata.Builder()
         .setTitle(stream.video.title)
         .setArtist(stream.video.channel)
-        .build()
+    PlaybackArtworkPolicy.resolve(stream.video)?.let { metadataBuilder.setArtworkUri(Uri.parse(it)) }
+    val metadata = metadataBuilder.build()
     val withExternalAudio = if (externalAudio == null) metadata else metadataWithExternalAudio(metadata, externalAudio)
     val itemMetadata = playbackRequestId?.let { metadataWithPlaybackRequestId(withExternalAudio, it) } ?: withExternalAudio
     val builder = MediaItem.Builder()
