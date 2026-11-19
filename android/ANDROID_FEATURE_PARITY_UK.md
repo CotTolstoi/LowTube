@@ -221,3 +221,5 @@ Playback acceptance test opt-in і за замовчуванням пропус�
 - [ ] Shorts у пошуку/стрічці визначаються як `kind=shorts` і відкривають окремий вертикальний immersive player з поверненням, підпискою, Watch later і системним Share. На підключеному Android13 immersive screen та відеорендер перевірені з паузою приблизно на 41-й секунді; дії Save/Share/Subscribe ще не натискалися, API23 UI acceptance не виконаний. Плеєр звичайних відео збережено.
 
 19.11.2026 10:02 UTC, фінальний API33 Shorts UI acceptance на підключеному Android: потік відтворювався до 13,7 s і поставлений на паузу; вертикальне відео, підписка, локалізоване збереження та Share відображені, action rail не перекриває центральні контролери. Пристрій звітує `TrebleDroid vanilla`; API23 перевірку UI та натискання дій ще не виконано.
+
+19.11.2026 10:04 UTC: latest APK installed and MainActivity resumed on Android6/API23 AVD. No playback; this confirms package install/start only, not Shorts screen compatibility.
