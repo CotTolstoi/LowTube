@@ -315,7 +315,7 @@ fun LibraryScreen(
                         )
                     }
                 }
-                items(visibleSubscriptionVideos.take(30), key = { "subscription-feed:${it.id}" }) { video ->
+                items(visibleSubscriptionVideos, key = { "subscription-feed:${it.id}" }) { video ->
                     Card(Modifier.fillMaxWidth()) {
                         Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
