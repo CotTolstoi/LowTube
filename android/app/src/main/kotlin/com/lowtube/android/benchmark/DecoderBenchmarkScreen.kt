@@ -336,7 +336,7 @@ private fun statusLabel(status: String): String = stringResource(when (status) {
     else -> R.string.decoder_benchmark_status_insufficient
 })
 
-private fun benchmarkReport(results: List<AndroidDecoderBenchmarkResult>): String = buildString {
+internal fun benchmarkReport(results: List<AndroidDecoderBenchmarkResult>): String = buildString {
     appendLine("LowTube Android decoder benchmark")
     appendLine("Methodology: same user-selected local video URI, playback from media time 0, maximum clip endpoint 120 s, default 2 s warm-up, separate profile runs.")
     appendLine("Privacy: source URI, path, filename, video title and account data are excluded.")
