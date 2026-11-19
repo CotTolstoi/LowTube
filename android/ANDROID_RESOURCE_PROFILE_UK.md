@@ -310,3 +310,5 @@
 19.11.2026 03:52 UTC, після UI-приймання paused download row і повернення до MainActivity на API33 знято 10 s idle sample: CPU 0%, PSS 134,5 MiB, RSS 221,5 MiB, peak RSS 221,9 MiB, RAM 3 713 / доступно 1 484 MiB. Система повернула модель `TrebleDroid vanilla`. Короткий point sample, не benchmark.
 
 19.11.2026 03:59 UTC, після зовнішнього force-stop/recovery acceptance на API33 скрипт повернув LowTube MainActivity у foreground; settled 10 s sample: CPU 0%, PSS 138,4 MiB, RSS 222,6 MiB, peak RSS 223,1 MiB, RAM 3 713 / доступно 1 507 MiB. Система повернула модель `TrebleDroid vanilla`. Короткий point sample після instrumentation, не benchmark.
+
+19.11.2026 04:06 UTC, після full DownloadsScreen UI acceptance на API33 і повернення до MainActivity знято 10 s idle sample: CPU 0%, PSS 136,6 MiB, RSS 224,5 MiB, peak RSS 225,1 MiB, RAM 3 713 / доступно 1 490 MiB. Система повернула модель `TrebleDroid vanilla`. Короткий point sample, не benchmark.

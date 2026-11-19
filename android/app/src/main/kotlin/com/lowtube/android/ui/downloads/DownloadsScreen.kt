@@ -141,7 +141,7 @@ internal fun DownloadRow(record: DownloadRecord, retrying: Boolean, onOpen: () -
                     TextButton(onClick = onRetry, enabled = !retrying) { Text(stringResource(R.string.retry)) }
                 }
                 TextButton(onClick = onRemove) {
-                    Text(stringResource(if (record.status == DownloadStatus.SUCCESSFUL || record.status == DownloadStatus.FAILED || record.status == DownloadStatus.CANCELLED) R.string.remove else R.string.cancel_download))
+                    Text(stringResource(if (record.status == DownloadStatus.SUCCESSFUL || record.status == DownloadStatus.FAILED || record.status == DownloadStatus.CANCELLED || record.status == DownloadStatus.PAUSED) R.string.remove else R.string.cancel_download))
                 }
             }
         }

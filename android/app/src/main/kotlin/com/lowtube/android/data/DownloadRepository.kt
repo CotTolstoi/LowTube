@@ -20,12 +20,28 @@ import java.io.IOException
 import java.util.UUID
 
 /** LowTube-managed foreground transfer queue; pre-existing system downloads remain visible. */
-class DownloadRepository(context: Context) {
+class DownloadRepository private constructor(
+    context: Context,
+    private val jobs: DownloadJobStore,
+    preferencesName: String,
+) : AutoCloseable {
+    constructor(context: Context) : this(
+        context.applicationContext,
+        DownloadJobStore(context.applicationContext),
+        DEFAULT_PREFERENCES_NAME,
+    )
+
+    internal constructor(context: Context, databaseName: String) :
+        this(
+            context.applicationContext,
+            DownloadJobStore(context.applicationContext, databaseName),
+            "${DEFAULT_PREFERENCES_NAME}_$databaseName",
+        )
+
     private val appContext = context.applicationContext
     private val manager = appContext.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-    private val preferences = appContext.getSharedPreferences("lowtube_downloads", Context.MODE_PRIVATE)
+    private val preferences = appContext.getSharedPreferences(preferencesName, Context.MODE_PRIVATE)
     private val resolver = InnerTubeSearchRepository(appContext)
-    private val jobs = DownloadJobStore(appContext)
 
     suspend fun options(video: VideoItem, streamPreferences: DownloadStreamPreferences, audioOnly: Boolean): List<DownloadFormatOption> =
         resolver.resolveDownloadOptions(video, streamPreferences, audioOnly)
@@ -105,6 +121,8 @@ class DownloadRepository(context: Context) {
     fun resumePending() {
         if (jobs.pending() != null) startService()
     }
+
+    override fun close() = jobs.close()
 
     fun remove(id: Long) {
         if (id >= OWN_ID_BASE) {
@@ -186,6 +204,7 @@ class DownloadRepository(context: Context) {
 
     companion object {
         private const val KEY_IDS = "download_manager_ids"
+        private const val DEFAULT_PREFERENCES_NAME = "lowtube_downloads"
         private const val OWN_ID_BASE = 1_000_000_000_000L
         private const val MAX_DIAGNOSTIC_LEGACY_IDS = 500
         private val SUPPORTED_MIME_TYPES = setOf("video/mp4", "video/webm", "audio/mp4", "audio/webm", "audio/mpeg")
