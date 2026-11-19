@@ -47,6 +47,7 @@ class DownloadService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var store: DownloadJobStore? = null
     private var testStreamUrl: String? = null
+    private var testAudioStreamUrl: String? = null
     private var allowLoopbackDebugTest = false
     private lateinit var repository: InnerTubeSearchRepository
     private lateinit var files: DownloadFileStore
@@ -70,6 +71,10 @@ class DownloadService : Service() {
             val requestedDb = intent?.getStringExtra(EXTRA_TEST_DATABASE)
             val testDb = requestedDb?.takeIf { applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0 }
             testStreamUrl = testDb?.let { intent?.getStringExtra(EXTRA_TEST_STREAM_URL) }?.takeIf { value ->
+                val uri = Uri.parse(value)
+                uri.scheme == "http" && uri.host in setOf("127.0.0.1", "localhost", "[::1]")
+            }
+            testAudioStreamUrl = testDb?.let { intent?.getStringExtra(EXTRA_TEST_AUDIO_STREAM_URL) }?.takeIf { value ->
                 val uri = Uri.parse(value)
                 uri.scheme == "http" && uri.host in setOf("127.0.0.1", "localhost", "[::1]")
             }
@@ -145,10 +150,30 @@ class DownloadService : Service() {
             val video = VideoItem(root.getString("id"), root.getString("title"), root.optString("channel"), root.optString("channelId"), root.optString("published"), root.optString("duration", "—"), root.optString("kind", "video"), root.optString("liveStatus"), root.optString("thumbnailUrl"), root.getString("url"))
             // Re-resolve a fresh signed URL for each run; retain the user's selected itag.
             val option = testStreamUrl?.let { uri ->
+                val testVideoStream = ResolvedVideoStream(
+                    uri = uri,
+                    mimeType = job.mimeType,
+                    video = video,
+                    userAgent = job.userAgent,
+                    durationMs = 0L,
+                    isAudioOnly = job.audioOnly,
+                    isMuxed = !job.audioOnly && testAudioStreamUrl == null,
+                )
                 DownloadFormatOption(
                     key = job.formatKey,
-                    stream = ResolvedVideoStream(uri, job.mimeType, video, job.userAgent, 0L, isAudioOnly = job.audioOnly, isMuxed = !job.audioOnly),
+                    stream = testVideoStream,
                     container = job.mimeType.substringAfter('/', "test"),
+                    audioStream = testAudioStreamUrl?.let { audioUri ->
+                        ResolvedVideoStream(
+                            uri = audioUri,
+                            mimeType = "audio/mp4",
+                            video = video,
+                            userAgent = job.userAgent,
+                            durationMs = 0L,
+                            audioCodec = "mp4a",
+                            isAudioOnly = true,
+                        )
+                    },
                 )
             } ?: repository.resolveDownloadOption(video, DownloadStreamPreferences(maxHeight = 2160, h264Only = false, fps30Only = false), job.audioOnly, job.formatKey)
             requiresMuxing = option.requiresMuxing
@@ -371,6 +396,7 @@ class DownloadService : Service() {
         const val EXTRA_ID = "download_id"
         const val EXTRA_TEST_DATABASE = "test_database_name"
         const val EXTRA_TEST_STREAM_URL = "test_stream_url"
+        const val EXTRA_TEST_AUDIO_STREAM_URL = "test_audio_stream_url"
         private const val NOTIFICATION_ID = 4207
         private const val CHANNEL_ID = "lowtube_downloads"
     }

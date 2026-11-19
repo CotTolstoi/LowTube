@@ -7,6 +7,8 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.MediaExtractor
+import android.media.MediaFormat
 import android.net.Uri
 import android.os.Build
 import android.util.Log
@@ -76,6 +78,102 @@ class DownloadServiceAcceptanceTest {
             } finally {
                 server.close()
                 partial.delete()
+            }
+        }
+    }
+
+    @Test
+    fun muxedDownloadResumesSeparateVideoAndAudioRangesThenPublishesMp4() {
+        runBlocking {
+            assumeTrue(
+                "Muxed track service acceptance is opt-in; pass -e runMuxedDownloadPairAcceptance true",
+                InstrumentationRegistry.getArguments().getString("runMuxedDownloadPairAcceptance") == "true",
+            )
+            val context = ApplicationProvider.getApplicationContext<Context>()
+            val storagePermissionAvailable = Build.VERSION.SDK_INT > 28 ||
+                (context.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
+                    context.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
+            assumeTrue("Android 6 publication acceptance requires already-granted READ/WRITE storage permission", storagePermissionAvailable)
+
+            val instrumentation = InstrumentationRegistry.getInstrumentation()
+            val videoBytes = instrumentation.context.assets.open("com/lowtube/android/downloads/mux_video_track.mp4").use { it.readBytes() }
+            val audioBytes = instrumentation.context.assets.open("com/lowtube/android/downloads/mux_audio_track.mp4").use { it.readBytes() }
+            val videoServer = RangeResumeLoopbackServer(videoBytes.size.toLong(), MAX_TRACK_RANGE_REQUESTS, videoBytes)
+            val audioServer = RangeResumeLoopbackServer(audioBytes.size.toLong(), MAX_TRACK_RANGE_REQUESTS, audioBytes)
+            val dbName = "lowtube-mux-download-${System.currentTimeMillis()}.db"
+            val partial = File(context.cacheDir, "$dbName.part")
+            val remuxed = File(context.cacheDir, "$dbName-output.mp4")
+            val store = DownloadJobStore(context, dbName)
+            var id = 0L
+            var publishedUri: Uri? = null
+            val video = VideoItem("fixture", "Muxed track fixture", duration = "1", url = "https://www.youtube.com/watch?v=fixture")
+            val videoJson = JSONObject().put("id", video.id).put("title", video.title).put("url", video.url).toString()
+            try {
+                id = store.insert(
+                    videoJson,
+                    "bounded-mux-pair-test",
+                    false,
+                    "lowtube-mux-${System.currentTimeMillis()}.mp4",
+                    "video/mp4",
+                    "LowTube muxed track acceptance",
+                    partial.absolutePath,
+                    maxBytesPerAttempt = TRACK_RANGE_CHUNK_BYTES,
+                )
+                videoServer.start()
+                audioServer.start()
+
+                var result = store.get(id) ?: error("Muxed test job disappeared before it started.")
+                for (attempt in 0 until MAX_TRACK_RANGE_REQUESTS) {
+                    val bytesBeforeAttempt = File(partial.absolutePath + ".video").length() + File(partial.absolutePath + ".audio").length()
+                    startService(context, dbName, videoServer.url, audioServer.url)
+                    result = waitForTerminalAttempt(store, id)
+                    if (result.status == DownloadStatus.SUCCESSFUL) break
+                    assertEquals("Muxed track transfer failed: ${result.reason}", DownloadStatus.PAUSED, result.status)
+                    waitForServiceStopped(context)
+                    val videoPartialBytes = File(partial.absolutePath + ".video").length()
+                    val audioPartialBytes = File(partial.absolutePath + ".audio").length()
+                    assertEquals(videoPartialBytes + audioPartialBytes, result.downloadedBytes)
+                    assertTrue("One attempt exceeded the bounded two-track cap", result.downloadedBytes - bytesBeforeAttempt <= TRACK_RANGE_CHUNK_BYTES)
+                    if (result.status != DownloadStatus.SUCCESSFUL) store.update(id, DownloadStatus.PENDING)
+                }
+
+                assertEquals("Two-track service did not finish within the bounded retry budget: ${result.reason}", DownloadStatus.SUCCESSFUL, result.status)
+                val resultUri = Uri.parse(result.localUri)
+                publishedUri = resultUri
+                context.contentResolver.openInputStream(resultUri)?.use { input -> remuxed.outputStream().use(input::copyTo) }
+                    ?: error("Published muxed MP4 could not be opened.")
+                val extractor = MediaExtractor()
+                try {
+                    extractor.setDataSource(remuxed.absolutePath)
+                    assertEquals(2, extractor.trackCount)
+                    val mimes = (0 until extractor.trackCount).map { extractor.getTrackFormat(it).getString(MediaFormat.KEY_MIME) }.toSet()
+                    assertEquals(setOf("video/avc", "audio/mp4a-latm"), mimes)
+                } finally {
+                    extractor.release()
+                }
+                assertTrue("Video Range requests did not resume from the saved offset: ${videoServer.rangeHeaders}", rangeHeadersAreSequential(videoServer.rangeHeaders, videoBytes.size.toLong()))
+                assertTrue("Audio Range requests did not resume from the saved offset: ${audioServer.rangeHeaders}", rangeHeadersAreSequential(audioServer.rangeHeaders, audioBytes.size.toLong()))
+                assertFalse("Private video track partial remained after success", File(partial.absolutePath + ".video").exists())
+                assertFalse("Private audio track partial remained after success", File(partial.absolutePath + ".audio").exists())
+                waitForServiceStopped(context)
+                DownloadFileStore(context).deletePublished(resultUri)
+                publishedUri = null
+                Log.i(TAG, "muxedTrackDownloadStatus=${result.status}, videoBytes=${videoBytes.size}, audioBytes=${audioBytes.size}, rangeRequests=${videoServer.rangeHeaders.size}/${audioServer.rangeHeaders.size}")
+            } finally {
+                context.stopService(Intent(context, DownloadService::class.java))
+                videoServer.close()
+                audioServer.close()
+                partial.delete()
+                File(partial.absolutePath + ".video").delete()
+                File(partial.absolutePath + ".audio").delete()
+                File(partial.absolutePath + ".video.total").delete()
+                File(partial.absolutePath + ".audio.total").delete()
+                remuxed.delete()
+                publishedUri?.let { runCatching { DownloadFileStore(context).deletePublished(it) } }
+                if (id > 0L) store.remove(id)
+                store.close()
+                context.deleteDatabase(dbName)
+                (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(NOTIFICATION_ID)
             }
         }
     }
@@ -521,11 +619,12 @@ class DownloadServiceAcceptanceTest {
         return cancelAction?.actionIntent
     }
 
-    private fun startService(context: Context, dbName: String, testStreamUrl: String? = null) {
+    private fun startService(context: Context, dbName: String, testStreamUrl: String? = null, testAudioStreamUrl: String? = null) {
         val intent = Intent(context, DownloadService::class.java)
             .setAction(DownloadService.ACTION_START)
             .putExtra(DownloadService.EXTRA_TEST_DATABASE, dbName)
         testStreamUrl?.let { intent.putExtra(DownloadService.EXTRA_TEST_STREAM_URL, it) }
+        testAudioStreamUrl?.let { intent.putExtra(DownloadService.EXTRA_TEST_AUDIO_STREAM_URL, it) }
         if (Build.VERSION.SDK_INT >= 26) ContextCompat.startForegroundService(context, intent) else context.startService(intent)
     }
 
@@ -544,6 +643,18 @@ class DownloadServiceAcceptanceTest {
             delay(POLL_MS)
         }
         error("Timed out waiting for bounded download service state.")
+    }
+
+    private fun rangeHeadersAreSequential(headers: List<String>, totalBytes: Long): Boolean {
+        var nextOffset = 0L
+        for (header in headers) {
+            val range = Regex("(?i)^bytes=(\\d+)-(\\d+)$").matchEntire(header) ?: return false
+            val start = range.groupValues[1].toLongOrNull() ?: return false
+            val end = range.groupValues[2].toLongOrNull() ?: return false
+            if (start != nextOffset || end < start || start >= totalBytes) return false
+            nextOffset = minOf(end, totalBytes - 1L) + 1L
+        }
+        return nextOffset == totalBytes
     }
 
     private class SlowLoopbackServer : AutoCloseable {
@@ -588,6 +699,7 @@ class DownloadServiceAcceptanceTest {
     private class RangeResumeLoopbackServer(
         private val resourceBytes: Long = TOTAL_BYTES,
         private val expectedRequests: Int = 1,
+        private val bodyBytes: ByteArray? = null,
     ) : AutoCloseable {
         private val server = ServerSocket(0, expectedRequests, InetAddress.getByName("127.0.0.1"))
         private val clientClosed = CountDownLatch(1)
@@ -600,7 +712,7 @@ class DownloadServiceAcceptanceTest {
         fun start() {
             thread = Thread({
                 try {
-                    repeat(expectedRequests) {
+                    for (requestIndex in 0 until expectedRequests) {
                         server.accept().use { socket ->
                             socket.soTimeout = 10_000
                             val input = BufferedReader(InputStreamReader(socket.getInputStream()))
@@ -615,14 +727,17 @@ class DownloadServiceAcceptanceTest {
                             val range = Regex("(?i)^bytes=(\\d+)-(\\d+)$").matchEntire(requestRange)
                                 ?: throw IllegalStateException("Resume request did not include a bounded Range header.")
                             val start = range.groupValues[1].toLong()
-                            val end = range.groupValues[2].toLong()
-                            require(start <= end && end < resourceBytes) { "Resume request range was outside the test resource." }
-                            val body = ByteArray((end - start + 1).toInt()) { (start + it).toByte() }
+                            val requestedEnd = range.groupValues[2].toLong()
+                            require(start <= requestedEnd && start < resourceBytes) { "Resume request range was outside the test resource." }
+                            val end = minOf(requestedEnd, resourceBytes - 1L)
+                            val body = bodyBytes?.copyOfRange(start.toInt(), (end + 1L).toInt())
+                                ?: ByteArray((end - start + 1L).toInt()) { (start + it).toByte() }
                             val output = socket.getOutputStream()
                             output.write("HTTP/1.1 206 Partial Content\r\nContent-Type: video/mp4\r\nContent-Range: bytes $start-$end/$resourceBytes\r\nContent-Length: ${body.size}\r\nConnection: close\r\n\r\n".toByteArray())
                             output.write(body)
                             output.flush()
                             while (input.read() >= 0) { }
+                            if (end + 1L == resourceBytes) break
                         }
                     }
                 } catch (_: Exception) {
@@ -649,6 +764,8 @@ class DownloadServiceAcceptanceTest {
         const val PREFIX_BYTES = 8
         const val RESUME_CHUNK_BYTES = 16L
         const val RATE_LIMIT_CHUNK_BYTES = 4_096L
+        const val TRACK_RANGE_CHUNK_BYTES = 8_192L
+        const val MAX_TRACK_RANGE_REQUESTS = 16
         const val RATE_LIMIT_MIN_EXPECTED_MS = 3_500L
         const val PROCESS_DEATH_PREFIX_BYTES = 8
         const val PROCESS_DEATH_RESUME_BYTES = 16L
