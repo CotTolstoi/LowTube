@@ -4,9 +4,9 @@ This branch publishes the latest available Android development build.
 
 ## Current artifact (2026-11-19)
 
-- Built from local Android branch `feat/android-first-run-setup` at `236a979`, with uncommitted resolver changes in the build input. The Kotlin source tree remains on the development branch.
-- `:app:assembleDebug --offline --no-configuration-cache` completed successfully. This publication run did not rerun test suites or live YouTube playback checks.
-- The in-progress resolver update recognizes a path-based YouTube `n` transform. Runtime path-transform and playback acceptance are still pending.
+- Built from Android development branch `feat/android-first-run-setup` at `2df96f1`. The Kotlin source tree remains on the development branch.
+- `:app:assembleDebug --offline --no-configuration-cache` completed successfully. Unit/build verification and API23 playback acceptance were run separately; see the validation notes below.
+- A live player-bundle diagnostic rewrote only the `/n/{segment}` path challenge in a synthetic URL; trusted origin, unchanged query, and the production safety gate all passed. `YoutubeResolverPlaybackAcceptanceTest#resolvedStreamStartsAndAdvancesWithoutReachingTwoMinutes` passed 1/1 on the API23 AVD using public video `aqz-KE-bpKQ`; the first item was clipped at 12 seconds, the next item advanced 1,042 ms, and the test ended after 18.88 seconds. Decoder: `OMX.google.h264.decoder`; hardware status is unknown on API23. This confirms one resolver fixture, not broad YouTube compatibility, and no playback was run on the physical device.
 - This is an installable debug APK signed with the debug certificate, not a production/release-signed package.
 
 - File: `LowTube-Android-debug-0.1.0.apk`
