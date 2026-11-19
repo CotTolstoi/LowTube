@@ -248,6 +248,9 @@
     <string name="maximum_download_quality">Максимальна роздільність завантаження</string>
     <string name="download_h264_only">Перевага H.264 для завантажень</string>
     <string name="download_fps_30_only">Обмежити завантаження до 30 FPS</string>
+    <string name="preferred_download_audio_bitrate">Бажаний бітрейт джерела аудіо</string>
+    <string name="preferred_download_audio_bitrate_hint">Аудіо завантажується в оригінальному форматі YouTube. Варіанти впорядковано за найближчим доступним бітрейтом джерела; перекодування немає.</string>
+    <string name="audio_bitrate_value">%1$d кбіт/с</string>
     <string name="audio_only_playback">Відтворення лише аудіо</string>
     <string name="settings_transfer">Перенесення налаштувань</string>
     <string name="import_settings">Імпортувати налаштування</string>

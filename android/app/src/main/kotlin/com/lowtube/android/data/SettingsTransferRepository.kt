@@ -28,6 +28,7 @@ internal object SettingsTransferRepository {
         val preloadNext: Boolean = true,
         val feedPreset: Int = 1,
         val pageSize: Int = 25,
+        val downloadAudioBitrateKbps: Int = DownloadStreamPreferences.DEFAULT_AUDIO_BITRATE_KBPS,
     )
 
     fun encode(snapshot: Snapshot): String {
@@ -46,6 +47,7 @@ internal object SettingsTransferRepository {
             .put("DownloadH264", snapshot.downloadH264Only)
             .put("DownloadFps30", snapshot.downloadFps30Only)
             .put("DownloadLimitKiB", snapshot.downloadLimitKiB)
+            .put("AudioBitrate", snapshot.downloadAudioBitrateKbps)
             .put("ResumePlayback", snapshot.resumePlayback)
             .put("BufferSeconds", snapshot.bufferSeconds)
             .put("BufferMiB", snapshot.bufferMiB)
@@ -86,6 +88,7 @@ internal object SettingsTransferRepository {
             downloadH264Only = bool(root, "DownloadH264", "downloadH264Only", fallback.downloadH264Only),
             downloadFps30Only = bool(root, "DownloadFps30", "downloadFps30Only", fallback.downloadFps30Only),
             downloadLimitKiB = int(root, "DownloadLimitKiB", "downloadLimitKiB", fallback.downloadLimitKiB),
+            downloadAudioBitrateKbps = int(root, "AudioBitrate", "downloadAudioBitrateKbps", fallback.downloadAudioBitrateKbps),
             resumePlayback = bool(root, "ResumePlayback", "resumePlayback", fallback.resumePlayback),
             bufferSeconds = bufferSeconds,
             bufferMiB = if (importedBufferMiB == 0) PlaybackBufferPreferences.memoryLimitForPcDefault(bufferSeconds) else importedBufferMiB,
@@ -141,6 +144,7 @@ internal object SettingsTransferRepository {
         require(snapshot.maxHeight in PlaybackStreamPreferences.SUPPORTED_HEIGHTS) { "Unsupported playback quality cap." }
         require(snapshot.downloadMaxHeight in PlaybackStreamPreferences.SUPPORTED_HEIGHTS) { "Unsupported download quality cap." }
         require(snapshot.downloadLimitKiB in 0..1_048_576) { "Unsupported download speed limit." }
+        require(snapshot.downloadAudioBitrateKbps in DownloadStreamPreferences.SUPPORTED_AUDIO_BITRATES_KBPS) { "Unsupported audio bitrate." }
         require(snapshot.feedPreset in 0..2) { "Unsupported subscription feed refresh preset." }
         require(snapshot.pageSize in 1..250) { "Unsupported page size." }
         PlaybackBufferPreferences(

@@ -353,3 +353,5 @@
 
 
 19.11.2026 10:47:54 UTC, підключений Android13, LowTube на передньому плані після встановлення Google authorization error handling build; 10 s sample: CPU 0% одного ядра, PSS 116,8 MiB, RSS 200,6 MiB, peak RSS 229,6 MiB, загальна RAM 3 713 MiB / доступно 1 416 MiB. Система повідомляє модель TrebleDroid vanilla, не підтверджений Redmi Note 8. Відео й завантаження не запускалися. Це одиничний idle point sample, не benchmark.
+
+19.11.2026 10:53:07 UTC, підключений Android13, LowTube MainActivity foreground після встановлення APK із налаштуванням audio-source bitrate; 10 s sample: CPU 0,2% одного ядра, PSS 141,4 MiB, RSS 224,8 MiB, peak RSS 227,2 MiB, RAM 3 713 MiB / доступно 1 418 MiB. Система визначає модель як TrebleDroid vanilla, не підтверджений Redmi Note 8. Відео й завантаження не запускалися. Це одиничний idle point sample, не benchmark.

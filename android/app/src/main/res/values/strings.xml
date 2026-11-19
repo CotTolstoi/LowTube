@@ -248,6 +248,9 @@
     <string name="maximum_download_quality">Maximum download resolution</string>
     <string name="download_h264_only">Prefer H.264 for downloads</string>
     <string name="download_fps_30_only">Limit downloads to 30 FPS</string>
+    <string name="preferred_download_audio_bitrate">Preferred audio source bitrate</string>
+    <string name="preferred_download_audio_bitrate_hint">Audio downloads keep YouTube’s original format. Options are sorted by the closest available source bitrate; no re-encoding is done.</string>
+    <string name="audio_bitrate_value">%1$d kbps</string>
     <string name="audio_only_playback">Audio-only playback</string>
     <string name="settings_transfer">Settings transfer</string>
     <string name="import_settings">Import settings</string>

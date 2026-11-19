@@ -212,6 +212,7 @@ fun MainNavigation(
                 h264Only = preferences.getBoolean("download_h264", true),
                 fps30Only = preferences.getBoolean("download_fps30", false),
                 limitKiB = preferences.getInt("download_limit_kib", 0),
+                audioBitrateKbps = preferences.getInt("download_audio_bitrate", DownloadStreamPreferences.DEFAULT_AUDIO_BITRATE_KBPS),
             ),
         )
     }
@@ -569,6 +570,7 @@ fun MainNavigation(
                             .putBoolean("download_h264", updated.h264Only)
                             .putBoolean("download_fps30", updated.fps30Only)
                             .putInt("download_limit_kib", updated.limitKiB)
+                            .putInt("download_audio_bitrate", updated.audioBitrateKbps)
                             .apply()
                     },
                     resumePlayback = resumePlayback,

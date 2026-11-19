@@ -96,6 +96,7 @@ fun SettingsScreen(
     }
     var qualityMenuExpanded by remember { mutableStateOf(false) }
     var downloadQualityMenuExpanded by remember { mutableStateOf(false) }
+    var downloadAudioBitrateMenuExpanded by remember { mutableStateOf(false) }
     var discoveryLanguageMenuExpanded by remember { mutableStateOf(false) }
     var feedPresetMenuExpanded by remember { mutableStateOf(false) }
     var selectedFeedPreset by remember(feedRefreshPreset) { mutableIntStateOf(feedRefreshPreset.coerceIn(0, 2)) }
@@ -142,7 +143,7 @@ fun SettingsScreen(
     }
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         if (uri != null) transferScope.launch {
-            val snapshot = SettingsTransferRepository.Snapshot(language, darkTheme, discoveryTopic, discoveryLanguage, playbackPreferences.maxHeight, playbackPreferences.h264Only, playbackPreferences.fps30Only, playbackPreferences.audioOnly, downloadPreferences.maxHeight, downloadPreferences.h264Only, downloadPreferences.fps30Only, downloadPreferences.limitKiB, resumePlayback, playbackBufferPreferences.maximumSeconds, playbackBufferPreferences.memoryLimitMiB, playbackBufferPreferences.backBufferMiB, playbackBufferPreferences.startupSeconds, autoRecover, autoNext, preloadNext, feedRefreshPreset, pageSize)
+            val snapshot = SettingsTransferRepository.Snapshot(language, darkTheme, discoveryTopic, discoveryLanguage, playbackPreferences.maxHeight, playbackPreferences.h264Only, playbackPreferences.fps30Only, playbackPreferences.audioOnly, downloadPreferences.maxHeight, downloadPreferences.h264Only, downloadPreferences.fps30Only, downloadPreferences.limitKiB, resumePlayback, playbackBufferPreferences.maximumSeconds, playbackBufferPreferences.memoryLimitMiB, playbackBufferPreferences.backBufferMiB, playbackBufferPreferences.startupSeconds, autoRecover, autoNext, preloadNext, feedRefreshPreset, pageSize, downloadPreferences.audioBitrateKbps)
             val result = runCatching {
                 val json = SettingsTransferRepository.encode(snapshot)
                 withContext(Dispatchers.IO) {
@@ -155,7 +156,7 @@ fun SettingsScreen(
     }
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) transferScope.launch {
-            val fallback = SettingsTransferRepository.Snapshot(language, darkTheme, discoveryTopic, discoveryLanguage, playbackPreferences.maxHeight, playbackPreferences.h264Only, playbackPreferences.fps30Only, playbackPreferences.audioOnly, downloadPreferences.maxHeight, downloadPreferences.h264Only, downloadPreferences.fps30Only, downloadPreferences.limitKiB, resumePlayback, playbackBufferPreferences.maximumSeconds, playbackBufferPreferences.memoryLimitMiB, playbackBufferPreferences.backBufferMiB, playbackBufferPreferences.startupSeconds, autoRecover, autoNext, preloadNext, feedRefreshPreset, pageSize)
+            val fallback = SettingsTransferRepository.Snapshot(language, darkTheme, discoveryTopic, discoveryLanguage, playbackPreferences.maxHeight, playbackPreferences.h264Only, playbackPreferences.fps30Only, playbackPreferences.audioOnly, downloadPreferences.maxHeight, downloadPreferences.h264Only, downloadPreferences.fps30Only, downloadPreferences.limitKiB, resumePlayback, playbackBufferPreferences.maximumSeconds, playbackBufferPreferences.memoryLimitMiB, playbackBufferPreferences.backBufferMiB, playbackBufferPreferences.startupSeconds, autoRecover, autoNext, preloadNext, feedRefreshPreset, pageSize, downloadPreferences.audioBitrateKbps)
             val result = runCatching {
                 val json = withContext(Dispatchers.IO) {
                     context.contentResolver.openInputStream(uri)?.use(::readSettingsTransfer)
@@ -169,7 +170,7 @@ fun SettingsScreen(
                 onDiscoveryPreferencesChanged(imported.discoveryTopic, imported.discoveryLanguage)
                 onPlaybackPreferencesChanged(PlaybackStreamPreferences(imported.maxHeight, imported.h264Only, imported.fps30Only, imported.audioOnly))
                 onPlaybackBufferPreferencesChanged(PlaybackBufferPreferences(imported.bufferSeconds, imported.bufferMiB, imported.backBufferMiB, imported.bufferStartSeconds))
-                onDownloadPreferencesChanged(DownloadStreamPreferences(imported.downloadMaxHeight, imported.downloadH264Only, imported.downloadFps30Only, imported.downloadLimitKiB))
+                onDownloadPreferencesChanged(DownloadStreamPreferences(imported.downloadMaxHeight, imported.downloadH264Only, imported.downloadFps30Only, imported.downloadLimitKiB, imported.downloadAudioBitrateKbps))
                 onResumePlaybackChanged(imported.resumePlayback)
                 onAutoRecoverChanged(imported.autoRecover)
                 onAutoNextChanged(imported.autoNext)
@@ -353,6 +354,25 @@ fun SettingsScreen(
             PreferenceSwitch(stringResource(R.string.download_fps_30_only), downloadPreferences.fps30Only) {
                 onDownloadPreferencesChanged(downloadPreferences.copy(fps30Only = it))
             }
+            Text(stringResource(R.string.preferred_download_audio_bitrate), style = MaterialTheme.typography.bodyMedium)
+            TextButton(onClick = { downloadAudioBitrateMenuExpanded = true }) {
+                Text(stringResource(R.string.audio_bitrate_value, downloadPreferences.audioBitrateKbps))
+            }
+            DropdownMenu(
+                expanded = downloadAudioBitrateMenuExpanded,
+                onDismissRequest = { downloadAudioBitrateMenuExpanded = false },
+            ) {
+                DownloadStreamPreferences.SUPPORTED_AUDIO_BITRATES_KBPS.forEach { bitrate ->
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.audio_bitrate_value, bitrate)) },
+                        onClick = {
+                            downloadAudioBitrateMenuExpanded = false
+                            onDownloadPreferencesChanged(downloadPreferences.copy(audioBitrateKbps = bitrate))
+                        },
+                    )
+                }
+            }
+            Text(stringResource(R.string.preferred_download_audio_bitrate_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             var downloadLimitText by remember(downloadPreferences.limitKiB) { mutableStateOf(if (downloadPreferences.limitKiB == 0) "" else downloadPreferences.limitKiB.toString()) }
             OutlinedTextField(
                 value = downloadLimitText,
