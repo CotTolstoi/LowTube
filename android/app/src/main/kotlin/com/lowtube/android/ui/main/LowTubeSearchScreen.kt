@@ -36,6 +36,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -54,6 +55,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -273,6 +275,10 @@ fun LowTubeSearchScreen(
         viewModel.loadMore(language, requestFailedMessage, pageSize, visibleItems.size)
     }
 
+    val navigationItemColors = NavigationBarItemDefaults.colors(
+        indicatorColor = Color.Transparent,
+    )
+
     Scaffold(
         modifier = modifier,
         topBar = {
@@ -312,6 +318,7 @@ fun LowTubeSearchScreen(
                         onClick = { onSelectedTabChanged("search"); viewModel.showSearch() },
                         icon = { Icon(painterResource(R.drawable.ic_nav_search), contentDescription = null) },
                         label = { Text(stringResource(R.string.search_tab)) },
+                        colors = navigationItemColors,
                     )
                     NavigationBarItem(
                         selected = selectedTab == "home",
@@ -322,18 +329,21 @@ fun LowTubeSearchScreen(
                         },
                         icon = { Icon(painterResource(R.drawable.ic_nav_home), contentDescription = null) },
                         label = { Text(stringResource(R.string.recommendations_tab)) },
+                        colors = navigationItemColors,
                     )
                     NavigationBarItem(
                         selected = selectedTab == "subscriptions",
                         onClick = { onSelectedTabChanged("subscriptions") },
                         icon = { Icon(painterResource(R.drawable.ic_nav_subscriptions), contentDescription = null) },
                         label = { Text(stringResource(R.string.subscriptions_tab)) },
+                        colors = navigationItemColors,
                     )
                     NavigationBarItem(
                         selected = selectedTab == "profile",
                         onClick = { onSelectedTabChanged("profile") },
                         icon = { Icon(painterResource(R.drawable.ic_nav_profile), contentDescription = null) },
                         label = { Text(stringResource(R.string.profile)) },
+                        colors = navigationItemColors,
                     )
                 }
             }

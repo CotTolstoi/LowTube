@@ -4,6 +4,8 @@
 
 ## Каталог і навігація
 
+19.11.2026, Android UI: темна тема отримала майже чорні YouTube-подібні поверхні й червоний акцент LowTube; індикатор вибраної вкладки прибрано з нижньої панелі. Оновлену стрічку For you візуально переглянуто на підключеному Android після встановлення debug APK. Відео не запускалося; система визначає пристрій як TrebleDroid vanilla, не підтверджений Redmi Note 8.
+
 - [ ] Публічний YouTube playlist URL має metadata acceptance на Android6/API23 та Android13/API33; окремий Compose test передав incoming `ACTION_VIEW` у MainActivity та підтвердив внутрішній Search із тим самим URL. 18.11.2026 `YoutubePlaylistQueueAcceptanceTest` пройшов на API23 та API33: обидва пристрої отримали дві сторінки uploads-плейлиста NASA Video по 100 відео; після кожної сторінки SQLite зберіг continuation marker, порядок усіх 200 відео збігся з порядком сторінок. 19.11.2026 на API23 вручну пройдено URL-пошук → Add playlist to queue → More → Queue; рядок показав отриману назву `Uploads from NASA Video`. Media3 та playback не запускалися, fixture прибрано. Повний ACTION_VIEW→Queue UI acceptance на API33 і системний вибір LowTube на фізичному Android лишаються відкритими.
 - [x] Системні налаштування YouTube links доступні через дію Profile на Android6 та Android13: Compose instrumentation підтвердив API23 `ACTION_APPLICATION_DETAILS_SETTINGS` та API33 `ACTION_APP_OPEN_BY_DEFAULT_SETTINGS`, обидва з `package:com.lowtube.android`; на API23 фактичний запуск відкрив `com.android.settings/.applications.InstalledAppDetails`, після чого емулятор повернули в LowTube. На фізичному Redmi Android13 target Settings Activity раніше відкривалась окремою ручною перевіркою. Налаштування ОС не змінювалися; вибір LowTube як default handler окремо не прийнятий.
 
