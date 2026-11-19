@@ -346,3 +346,5 @@
 19.11.2026 07:35 UTC, Redmi Note 8 serial 8LZ5ZPO7J7QOEMMZ, API33, LowTube `MainActivity` confirmed foreground after installing the per-core CPU metric correction; 5 s idle sample CPU 2% of one core, PSS 138,4 MiB, RSS 222,6 MiB, peak RSS 224,1 MiB, RAM 3 713 / available 1 514 MiB. System model string: `TrebleDroid vanilla`; playback did not run. Single point sample, not a benchmark.
 
 19.11.2026 07:41 UTC, Redmi Note 8 serial 8LZ5ZPO7J7QOEMMZ, API33, LowTube `MainActivity` foreground after channel-avatar UI update; 5 s idle sample CPU 0%, PSS 115,7 MiB, RSS 199 MiB, peak RSS 228,3 MiB, RAM 3 713 / available 1 500 MiB. System model string: `TrebleDroid vanilla`; playback did not run. Single point sample, not a benchmark.
+
+19.11.2026 07:45 UTC, Redmi Note 8 serial 8LZ5ZPO7J7QOEMMZ, API33, LowTube `MainActivity` foreground after SQLite v8→v9 channel-avatar cache migration; 5 s idle sample CPU 4,6% of one core, PSS 116,9 MiB, RSS 201 MiB, peak RSS 228,9 MiB, RAM 3 713 / available 1 495 MiB. System model string: `TrebleDroid vanilla`; playback did not run. Single point sample, not a benchmark.

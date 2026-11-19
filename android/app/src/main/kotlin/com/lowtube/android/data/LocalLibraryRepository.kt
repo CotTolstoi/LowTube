@@ -60,6 +60,7 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
             db.execSQL("ALTER TABLE subscriptions ADD COLUMN category TEXT NOT NULL DEFAULT ''")
             if (oldVersion >= 7) db.execSQL("ALTER TABLE youtube_account_subscriptions ADD COLUMN category TEXT NOT NULL DEFAULT ''")
         }
+        if (oldVersion in 5..8) db.execSQL("ALTER TABLE channel_feed_items ADD COLUMN channel_avatar_url TEXT NOT NULL DEFAULT ''")
     }
 
     fun localAudioTracks(): List<LocalAudioTrack> = readableDatabase.rawQuery(
@@ -299,6 +300,7 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
             videos.forEach { video ->
                 val values = videoValues(video).apply {
                     put("channel_id", channelId)
+                    put("channel_avatar_url", video.channelAvatarUrl.take(2_000))
                     put("published_at_ms", video.publishedAtMs)
                     put("updated_at", updatedAt)
                 }
@@ -317,14 +319,14 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
     }
 
     fun subscriptionFeed(): List<VideoItem> = readableDatabase.rawQuery(
-        "SELECT video_id, title, channel, channel_id, published, duration, kind, thumbnail_url, url, published_at_ms FROM channel_feed_items ORDER BY published_at_ms DESC, video_id LIMIT ?",
+        "SELECT video_id, title, channel, channel_id, published, duration, kind, thumbnail_url, url, published_at_ms, channel_avatar_url FROM channel_feed_items ORDER BY published_at_ms DESC, video_id LIMIT ?",
         arrayOf(MAX_SUBSCRIPTION_FEED_ITEMS.toString()),
     ).use { cursor ->
         buildList {
             while (cursor.moveToNext()) add(VideoItem(
                 id = cursor.getString(0), title = cursor.getString(1), channel = cursor.getString(2), channelId = cursor.getString(3),
                 published = cursor.getString(4), duration = cursor.getString(5), kind = cursor.getString(6),
-                thumbnailUrl = cursor.getString(7), url = cursor.getString(8), publishedAtMs = cursor.getLong(9),
+                thumbnailUrl = cursor.getString(7), url = cursor.getString(8), publishedAtMs = cursor.getLong(9), channelAvatarUrl = cursor.getString(10),
             ))
         }
     }
@@ -341,6 +343,7 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
             kind TEXT NOT NULL,
             thumbnail_url TEXT NOT NULL,
             url TEXT NOT NULL,
+            channel_avatar_url TEXT NOT NULL DEFAULT '',
             published_at_ms INTEGER NOT NULL,
             updated_at INTEGER NOT NULL,
             UNIQUE(channel_id, video_id)
@@ -755,7 +758,7 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
         private const val MAX_PAGE_ITEMS = 100
         private const val MAX_QUEUE_CONTINUATION_LENGTH = 16 * 1024
         private const val DATABASE_NAME = "lowtube-library.db"
-        private const val DATABASE_VERSION = 8
+        private const val DATABASE_VERSION = 9
         private const val YOUTUBE_SUBSCRIPTION_TTL_MS = 30L * 24 * 60 * 60 * 1000
         private const val WATCH_LATER_ID = "__lowtube_watch_later__"
         private const val RESUME_THRESHOLD_MS = 5000L
