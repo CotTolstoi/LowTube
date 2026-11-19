@@ -88,6 +88,7 @@
     <string name="remove_audio">Remove</string>
     <string name="audio_import_result">Added %1$d audio files · skipped %2$d</string>
     <string name="audio_remove_not_found">This audio file is no longer in the library.</string>
+    <string name="local_audio_unavailable">This audio file can no longer be opened. Remove it and add it again.</string>
     <string name="playlist_empty">This playlist is empty.</string>
     <string name="local_subscriptions">Local subscriptions</string>
     <string name="subscription_feed">Subscription videos</string>

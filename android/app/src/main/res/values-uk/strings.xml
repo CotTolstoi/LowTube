@@ -88,6 +88,7 @@
     <string name="remove_audio">Вилучити</string>
     <string name="audio_import_result">Додано аудіофайлів: %1$d · пропущено: %2$d</string>
     <string name="audio_remove_not_found">Цього аудіофайлу вже немає в бібліотеці.</string>
+    <string name="local_audio_unavailable">Не вдалося відкрити аудіофайл. Вилучіть його з бібліотеки та додайте знову.</string>
     <string name="playlist_empty">Цей плейлист порожній.</string>
     <string name="local_subscriptions">Локальні підписки</string>
     <string name="subscription_feed">Відео підписок</string>

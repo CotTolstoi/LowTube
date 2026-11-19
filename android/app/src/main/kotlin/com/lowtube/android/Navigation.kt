@@ -33,6 +33,7 @@ import androidx.navigation3.ui.NavDisplay
 import com.lowtube.android.ui.main.LowTubeSearchScreen
 import com.lowtube.android.ui.settings.SettingsScreen
 import com.lowtube.android.data.LocalLibraryRepository
+import com.lowtube.android.data.LocalAudioAvailability
 import com.lowtube.android.data.PlaybackStreamPreferences
 import com.lowtube.android.data.PlaybackBufferPreferences
 import com.lowtube.android.data.PlaybackSessionStore
@@ -53,7 +54,9 @@ import com.lowtube.android.ui.queue.QueueScreen
 import com.lowtube.android.ui.downloads.DownloadsScreen
 import com.lowtube.android.ui.playback.PlaybackScreen
 import com.lowtube.android.benchmark.DecoderBenchmarkScreen
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun MainNavigation(
@@ -671,19 +674,28 @@ fun MainNavigation(
                     },
                     onPickAudio = { localAudioPicker.launch(arrayOf("audio/*")) },
                     onPlayLocalAudio = { track ->
-                        shortsSession = emptyList()
-                        shortsSessionIndex = -1
-                        selectedQueueRowId = null
-                        selectedLocalAudio = track
-                        selectedLocalVideoSource = null
-                        selectedVideo = VideoItem(
-                            id = "local:${track.uri}",
-                            title = track.title,
-                            kind = "local-audio",
-                            url = track.uri,
-                        )
-                        playbackRequestId++
-                        backStack.add(Player)
+                        scope.launch {
+                            val readable = withContext(Dispatchers.IO) {
+                                LocalAudioAvailability.canRead(context, track.uri)
+                            }
+                            if (!readable) {
+                                Toast.makeText(context, R.string.local_audio_unavailable, Toast.LENGTH_LONG).show()
+                                return@launch
+                            }
+                            shortsSession = emptyList()
+                            shortsSessionIndex = -1
+                            selectedQueueRowId = null
+                            selectedLocalAudio = track
+                            selectedLocalVideoSource = null
+                            selectedVideo = VideoItem(
+                                id = "local:${track.uri}",
+                                title = track.title,
+                                kind = "local-audio",
+                                url = track.uri,
+                            )
+                            playbackRequestId++
+                            backStack.add(Player)
+                        }
                     },
                     onRemoveLocalAudio = { track ->
                         val removed = library.removeLocalAudioTrack(track.uri)
