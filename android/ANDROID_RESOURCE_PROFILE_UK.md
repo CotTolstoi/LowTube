@@ -336,3 +336,5 @@
 19.11.2026 06:32 UTC, Redmi serial 8LZ5ZPO7J7QOEMMZ, API33, LowTube MainActivity foreground after navigation-icon update; 5 s sample: CPU 0%, PSS 138,5 MiB, RSS 222,5 MiB, peak RSS 222,9 MiB, RAM 3 713 / доступно 1 533 MiB. TrebleDroid vanilla; відео не запускалося. Одиничний point sample, не benchmark.
 
 19.11.2026 06:36 UTC, Redmi serial 8LZ5ZPO7J7QOEMMZ, API33, Home with fallback Shorts thumbnail rendered and MainActivity foreground; 5 s sample: CPU 0%, PSS 116,3 MiB, RSS 200,4 MiB, peak RSS 228,7 MiB, RAM 3 713 / доступно 1 527 MiB. TrebleDroid vanilla; відео не запускалося. Одиничний point sample, не benchmark.
+
+19.11.2026 06:45 UTC, після оновлення AGP/Gradle та встановлення нової debug збірки, Redmi serial 8LZ5ZPO7J7QOEMMZ, API33, `MainActivity` підтверджена як topResumedActivity; короткий idle snapshot: CPU 0%, PSS 142,3 MiB, RSS 241,0 MiB, RAM 3 803 / доступно 1 570 MiB. Система повідомляє модель `TrebleDroid vanilla`; відео не запускалося. Це одиничний point sample, не benchmark.
