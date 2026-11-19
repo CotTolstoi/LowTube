@@ -117,6 +117,7 @@ class DownloadService : Service() {
             } finally {
                 wakeLock?.takeIf { it.isHeld }?.release()
                 stopForeground(false)
+                (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).cancel(NOTIFICATION_ID)
                 stopSelf()
             }
         }

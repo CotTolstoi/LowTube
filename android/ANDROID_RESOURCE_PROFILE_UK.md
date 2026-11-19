@@ -378,3 +378,5 @@
 19.11.2026 14:42:53 UTC, підключений Android13/API33, Home після оновлення локального збереження account diagnostics, без playback; 10 s sample: CPU 0,1% одного ядра, PSS 137 MiB, RSS 223,3 MiB, peak RSS 225,6 MiB, RAM 3 713 MiB / доступно 1 473 MiB. Система визначається як TrebleDroid vanilla. Це одиничний foreground sample, не benchmark.
 
 19.11.2026 14:49:39 UTC, підключений Android13/API33, LowTube MainActivity підтверджено у foreground; 5 s idle sample: CPU 0% одного ядра, PSS 116,8 MiB, RSS 217,7 MiB, peak RSS 228,1 MiB, RAM 3 713 MiB / доступно 1 454 MiB. Система визначається як TrebleDroid vanilla. Окремий неактивний процес com.lowtube.android.test був присутній, його PSS/RSS не включені в метрики LowTube. Playback і downloads не запускалися. Це одиничний snapshot, не benchmark.
+
+19.11.2026 14:58:32 UTC, connected Android13/API33, LowTube MainActivity foreground after download notification acceptance; 5 s idle sample CPU 0% one core, PSS 116.7 MiB, RSS 213.6 MiB, peak RSS 228.6 MiB, RAM 3,713 MiB / available 1,471 MiB. System model remains TrebleDroid vanilla. No playback or download active during sample; single point sample, not benchmark.

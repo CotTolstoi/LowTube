@@ -854,11 +854,16 @@ class DownloadServiceAcceptanceTest {
             Log.i(TAG, "terminalNotificationCheck=skipped; POST_NOTIFICATIONS is not granted")
             return
         }
-        val notification = (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
+        val activeNotifications = (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
             .activeNotifications
+        val notification = activeNotifications
             .firstOrNull { it.id == DownloadService.TERMINAL_NOTIFICATION_ID }
             ?.notification
         assertTrue("Terminal download notification was not retained", notification != null)
+        assertFalse(
+            "The foreground notification remained beside the terminal notification",
+            activeNotifications.any { it.id == NOTIFICATION_ID },
+        )
         assertEquals(
             context.getString(expectedText),
             notification?.extras?.getCharSequence(Notification.EXTRA_TEXT)?.toString(),
