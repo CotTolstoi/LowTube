@@ -255,7 +255,9 @@ class InnerTubeSearchRepository(context: Context? = null) {
         audioOnly: Boolean = false,
     ): List<DownloadFormatOption> = withContext(Dispatchers.IO) {
         operationMutex.withLock {
-            val resolved = resolvePlayerData(video, preferWebClient = true, allowVrFallback = true) { streaming ->
+            // Prefer the Android client because it usually supplies direct CDN URLs and
+            // avoids a player-JS signature challenge. Keep WEB/IOS/MWEB/VR as fallbacks.
+            val resolved = resolvePlayerData(video, preferWebClient = false, allowVrFallback = true) { streaming ->
                 hasDownloadableFormat(streaming, preferences, audioOnly) ||
                     (playerJavaScriptRuntime != null && hasResolvableSignatureDownloadFormat(streaming, preferences, audioOnly))
             }

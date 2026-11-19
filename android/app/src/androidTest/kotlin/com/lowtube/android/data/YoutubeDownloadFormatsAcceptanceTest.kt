@@ -41,15 +41,19 @@ class YoutubeDownloadFormatsAcceptanceTest {
             val audioOptions = repository.resolveDownloadOptions(video, DownloadStreamPreferences(), audioOnly = true)
 
             assertFalse("Expected at least one directly downloadable video format", videoOptions.isEmpty())
-            assertTrue(videoOptions.all { it.stream.isMuxed && !it.audioOnly && it.stream.videoHeight <= 720 })
+            assertTrue(videoOptions.all {
+                !it.audioOnly && it.stream.videoHeight <= 720 && (it.stream.isMuxed || it.audioStream != null)
+            })
             assertTrue(videoOptions.all { option ->
                 val uri = Uri.parse(option.stream.uri)
                 val host = uri.host?.lowercase().orEmpty()
                 uri.scheme == "https" && (host == "googlevideo.com" || host.endsWith(".googlevideo.com"))
             })
-            val selected = videoOptions.first().stream
+            val selectedOption = videoOptions.first()
+            val selected = selectedOption.stream
             val client = OkHttpClient.Builder().connectTimeout(10, TimeUnit.SECONDS).readTimeout(10, TimeUnit.SECONDS).build()
             val tempFile = File(context.cacheDir, "lowtube-bounded-range-${System.currentTimeMillis()}.part")
+            val tempAudioFile = File(context.cacheDir, "lowtube-bounded-audio-range-${System.currentTimeMillis()}.part")
             try {
                 val progress = OkHttpDownloadTransport(client).download(
                     selected, video, tempFile, rateLimitKiB = 0, shouldCancel = { false },
@@ -66,8 +70,19 @@ class YoutubeDownloadFormatsAcceptanceTest {
                 assertEquals((MAX_PROBE_BYTES * 2).toLong(), tempFile.length())
                 assertTrue("Transport wrote beyond two bounded ranges", tempFile.length() <= MAX_PROBE_BYTES * 2L)
                 assertTrue("The bounded transfer must leave a partial file for retry", resumed.total > resumed.downloaded)
+                val separateAudioProbe = selectedOption.audioStream?.let { audio ->
+                    val audioProgress = OkHttpDownloadTransport(client).download(
+                        audio, video, tempAudioFile, rateLimitKiB = 0, shouldCancel = { false },
+                        maxBytesThisAttempt = MAX_PROBE_BYTES.toLong(), requirePartialResponse = true,
+                    )
+                    assertEquals(MAX_PROBE_BYTES.toLong(), audioProgress.downloaded)
+                    assertEquals(MAX_PROBE_BYTES.toLong(), tempAudioFile.length())
+                    "${audio.itag}:${audioProgress.downloaded}"
+                } ?: "none"
+                Log.i("LowTubeDownloadFormats", "videoOptions=${videoOptions.size}, audioOptions=${audioOptions.size}, topVideoItag=${selected.itag}, separateAudio=$separateAudioProbe, resumedBytes=${resumed.downloaded}, totalBytes=${resumed.total}")
             } finally {
                 tempFile.delete()
+                tempAudioFile.delete()
             }
         }
     }

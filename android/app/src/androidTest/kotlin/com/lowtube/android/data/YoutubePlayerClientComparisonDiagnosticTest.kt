@@ -148,7 +148,7 @@ class YoutubePlayerClientComparisonDiagnosticTest {
             url = "https://www.youtube.com/watch?v=$videoId",
         )
         val option = repository.resolveDownloadOptions(video, DownloadStreamPreferences(), audioOnly = true).first()
-        assertEquals(listOf("WEB", "ANDROID", "IOS", "ANDROID_VR"), attemptedClients)
+        assertEquals(listOf("ANDROID", "WEB", "IOS", "ANDROID_VR"), attemptedClients)
         assertTrue("VR fallback did not return audio MIME: ${option.stream.mimeType}", option.stream.mimeType.startsWith("audio/"))
         assertTrue("VR audio download did not retain its client User-Agent", option.stream.userAgent.contains("youtube.vr.oculus"))
         val range = boundedRange(option.stream.uri, option.stream.userAgent)
@@ -216,7 +216,7 @@ class YoutubePlayerClientComparisonDiagnosticTest {
             video,
             DownloadStreamPreferences(maxHeight = 2160, h264Only = true, fps30Only = false),
         )
-        assertEquals(listOf("WEB", "ANDROID", "IOS", "ANDROID_VR"), attemptedClients)
+        assertEquals(listOf("ANDROID", "WEB", "IOS", "ANDROID_VR"), attemptedClients)
         assertTrue("Android VR returned no downloadable video format", options.isNotEmpty())
         assertTrue("Android VR option has neither muxed audio nor a separate audio track", options.any {
             it.stream.isMuxed || it.audioStream != null
@@ -291,7 +291,7 @@ class YoutubePlayerClientComparisonDiagnosticTest {
         val wallStarted = SystemClock.elapsedRealtime()
         val pssStarted = Debug.getPss()
         val options = repository.resolveDownloadOptions(video, DownloadStreamPreferences(), audioOnly = false)
-        assertEquals(listOf("WEB", "ANDROID", "IOS", "MWEB"), attemptedClients)
+        assertEquals(listOf("ANDROID", "WEB", "IOS", "MWEB"), attemptedClients)
         assertTrue("The transformed MWEB signature produced no video download options", options.isNotEmpty())
         val rangeProbes = options.take(3).map { option ->
             assertTrue("The resolved video download MIME is not video/*: ${option.stream.mimeType}", option.stream.mimeType.startsWith("video/"))
@@ -566,7 +566,7 @@ class YoutubePlayerClientComparisonDiagnosticTest {
 
         val option = repository.resolveDownloadOptions(video, DownloadStreamPreferences(), audioOnly = false).first()
 
-        assertEquals(listOf("WEB", "ANDROID", "IOS", "MWEB"), attemptedClients)
+        assertEquals(listOf("ANDROID", "WEB", "IOS", "MWEB"), attemptedClients)
         assertTrue("Download resolver returned a manifest instead of a direct format", !option.stream.isHlsManifest && !option.stream.isDashManifest)
         assertTrue("The download resolver did not retain the MWEB User-Agent", option.stream.userAgent.contains("iPad"))
         val range = boundedRange(option.stream.uri, option.stream.userAgent)
