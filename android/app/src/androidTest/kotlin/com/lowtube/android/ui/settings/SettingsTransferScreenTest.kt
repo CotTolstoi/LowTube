@@ -9,6 +9,8 @@ import androidx.compose.ui.test.performScrollTo
 import com.lowtube.android.R
 import com.lowtube.android.data.PlaybackStreamPreferences
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import java.util.concurrent.atomic.AtomicInteger
 import org.junit.Rule
 import org.junit.Test
@@ -38,7 +40,26 @@ class SettingsTransferScreenTest {
         composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.playback_start_buffer_seconds)).assertExists()
         composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.resource_usage_title)).assertExists()
         composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.resource_usage_measure)).assertExists()
+        composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.copy_diagnostic_report)).assertExists()
         composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.subscription_feed_pace)).assertExists()
+    }
+
+    @Test
+    fun copiesOnlySanitizedDiagnosticFieldsToClipboard() {
+        showSettings()
+
+        composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.copy_diagnostic_report))
+            .performScrollTo()
+            .performClick()
+
+        val clipboard = composeTestRule.activity.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+        val report = clipboard.primaryClip?.getItemAt(0)?.coerceToText(composeTestRule.activity)?.toString().orEmpty()
+        assertTrue(report.contains("LowTube Android diagnostics"))
+        assertTrue(report.contains("Android:"))
+        assertTrue(report.contains("Playback buffer:"))
+        assertTrue(report.contains("excludes account details"))
+        assertFalse(report.contains("https://"))
+        assertFalse(report.contains("@"))
     }
 
     @Test

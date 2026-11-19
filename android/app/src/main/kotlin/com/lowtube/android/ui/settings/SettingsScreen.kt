@@ -1,5 +1,8 @@
 package com.lowtube.android.ui.settings
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Intent
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.rememberCoroutineScope
@@ -46,10 +49,13 @@ import com.lowtube.android.R
 import com.lowtube.android.data.PlaybackStreamPreferences
 import com.lowtube.android.data.PlaybackBufferPreferences
 import com.lowtube.android.data.DownloadStreamPreferences
+import com.lowtube.android.data.DiagnosticReportFormatter
+import com.lowtube.android.data.DiagnosticReportSnapshot
 import com.lowtube.android.data.ResourceUsageSample
 import com.lowtube.android.data.ResourceUsageSampler
 import com.lowtube.android.data.SettingsTransferRepository
 import com.lowtube.android.downloads.DownloadDestination
+import com.lowtube.android.playback.PlaybackDecoderDiagnostics
 import kotlinx.coroutines.CancellationException
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -92,6 +98,8 @@ fun SettingsScreen(
     var resourceSample by remember { mutableStateOf<ResourceUsageSample?>(null) }
     var resourceSampling by remember { mutableStateOf(false) }
     var resourceSampleFailed by remember { mutableStateOf(false) }
+    var diagnosticReportCopied by remember { mutableStateOf(false) }
+    var diagnosticReportFailed by remember { mutableStateOf(false) }
     var downloadTreeUri by remember(context) { mutableStateOf(DownloadDestination.selectedTreeUri(context)) }
     var downloadFolderError by remember { mutableStateOf(false) }
     val transferScope = rememberCoroutineScope()
@@ -394,6 +402,34 @@ fun SettingsScreen(
                 Text(stringResource(if (resourceSampling) R.string.resource_usage_sampling else R.string.resource_usage_measure))
             }
             if (resourceSampleFailed) Text(stringResource(R.string.resource_usage_error), color = MaterialTheme.colorScheme.error)
+            TextButton(onClick = {
+                diagnosticReportCopied = false
+                diagnosticReportFailed = false
+                runCatching {
+                    val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+                    val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) packageInfo.longVersionCode else packageInfo.versionCode.toLong()
+                    val decoderPreferences = context.getSharedPreferences(PlaybackDecoderDiagnostics.PREFERENCES_NAME, android.content.Context.MODE_PRIVATE)
+                    val report = DiagnosticReportFormatter.format(
+                        DiagnosticReportSnapshot(
+                            appVersion = "${packageInfo.versionName.orEmpty()} ($versionCode)",
+                            androidRelease = Build.VERSION.RELEASE.orEmpty(),
+                            androidApi = Build.VERSION.SDK_INT,
+                            deviceModel = "${Build.MANUFACTURER.orEmpty()} ${Build.MODEL.orEmpty()}".trim(),
+                            decoder = PlaybackDecoderDiagnostics.read(decoderPreferences),
+                            buffer = playbackBufferPreferences,
+                            resourceSample = resourceSample,
+                        ),
+                    )
+                    val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    clipboard.setPrimaryClip(ClipData.newPlainText("LowTube diagnostics", report))
+                }.onSuccess {
+                    diagnosticReportCopied = true
+                }.onFailure {
+                    diagnosticReportFailed = true
+                }
+            }) { Text(stringResource(R.string.copy_diagnostic_report)) }
+            if (diagnosticReportCopied) Text(stringResource(R.string.diagnostic_report_copied), style = MaterialTheme.typography.bodySmall)
+            if (diagnosticReportFailed) Text(stringResource(R.string.diagnostic_report_error), color = MaterialTheme.colorScheme.error)
             resourceSample?.let { sample ->
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(stringResource(R.string.resource_usage_last_sample, sample.durationMs / 1000.0), style = MaterialTheme.typography.labelMedium)
