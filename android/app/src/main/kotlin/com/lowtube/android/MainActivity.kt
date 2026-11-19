@@ -23,6 +23,7 @@ import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.CommonStatusCodes
 import com.google.android.gms.common.api.Scope
 import com.lowtube.android.data.GoogleAccountProfile
+import com.lowtube.android.data.GoogleAuthorizationDiagnostics
 import com.lowtube.android.data.GoogleProfileAvatarPolicy
 import com.lowtube.android.data.YouTubeDataApiRepository
 import com.lowtube.android.model.YouTubeSubscription
@@ -102,7 +103,7 @@ class MainActivity : ComponentActivity() {
         val failure = authorizationFailure?.exceptionOrNull()
         googleAccountMessage = if (failure != null &&
           (failure !is ApiException || failure.statusCode != CommonStatusCodes.CANCELED)
-        ) accountAuthorizationError(failure) else getString(R.string.account_authorization_cancelled)
+        ) accountAuthorizationError(failure) else googleAuthorizationCancelledMessage()
         return@registerForActivityResult
       }
       try {
@@ -418,6 +419,17 @@ class MainActivity : ComponentActivity() {
     } else {
       getString(R.string.account_sign_in_failed)
     }
+  }
+
+  private fun googleAuthorizationCancelledMessage(): String {
+    val details = GoogleAuthorizationDiagnostics.collect(this)
+    return getString(
+      R.string.account_authorization_cancelled_diagnostic,
+      details.provider,
+      details.providerVersion.ifBlank { "unknown" },
+      details.packageName,
+      details.signingSha1,
+    )
   }
 
   private fun signOutGoogle() {
