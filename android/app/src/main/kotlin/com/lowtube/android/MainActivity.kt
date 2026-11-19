@@ -330,6 +330,11 @@ class MainActivity : ComponentActivity() {
 
     googleSignInBusy = true
     updateGoogleAccountMessage("")
+    if (googleAccountEmail.isBlank()) {
+      requestGoogleProfileAuthorization()
+      return
+    }
+
     val chooser = AccountManager.newChooseAccountIntent(
       null,
       null,
@@ -348,11 +353,11 @@ class MainActivity : ComponentActivity() {
     }
   }
 
-  private fun requestGoogleProfileAuthorization(email: String) {
-    val request = AuthorizationRequest.builder()
-      .setAccount(Account(email, GOOGLE_ACCOUNT_TYPE))
+  private fun requestGoogleProfileAuthorization(email: String? = null) {
+    val requestBuilder = AuthorizationRequest.builder()
       .setRequestedScopes(listOf(Scope(OPENID_SCOPE), Scope(EMAIL_SCOPE), Scope(PROFILE_SCOPE)))
-      .build()
+    if (!email.isNullOrBlank()) requestBuilder.setAccount(Account(email, GOOGLE_ACCOUNT_TYPE))
+    val request = requestBuilder.build()
     Identity.getAuthorizationClient(this).authorize(request)
       .addOnSuccessListener(::useGoogleProfileAuthorization)
       .addOnFailureListener { failure ->
