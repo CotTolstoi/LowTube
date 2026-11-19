@@ -2,6 +2,8 @@ package com.lowtube.android.ui.onboarding
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -58,5 +60,28 @@ class FirstRunSetupScreenTest {
         }
         compose.onNodeWithTag(FIRST_RUN_SKIP_TAG).performScrollTo().performClick()
         compose.runOnIdle { assertTrue(skipped) }
+    }
+
+    @Test fun downloadFolderChoiceIsAvailableDuringFirstRun() {
+        compose.setContent {
+            FirstRunSetupScreen(
+                language = "en",
+                uiScale = 1.0f,
+                darkTheme = true,
+                playbackMaxHeight = 720,
+                downloadAudioBitrateKbps = 192,
+                onPreviewUiScale = {},
+                onApply = { _, _, _, _, _ -> },
+                onSkip = {},
+            )
+        }
+
+        compose.onNodeWithText(compose.activity.getString(R.string.download_location_title))
+            .performScrollTo()
+            .assertIsDisplayed()
+        compose.onNodeWithText(compose.activity.getString(R.string.choose_download_folder))
+            .performScrollTo()
+            .assertIsDisplayed()
+            .assertIsEnabled()
     }
 }

@@ -1,6 +1,7 @@
 package com.lowtube.android.downloads
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.provider.DocumentsContract
 
@@ -16,19 +17,39 @@ internal object DownloadDestination {
             ?.takeIf(DocumentsContract::isTreeUri)
     }.getOrNull()
 
-    fun saveTreeUri(context: Context, uri: Uri) {
+    fun takeAndSaveTreeUri(context: Context, uri: Uri) {
         require(DocumentsContract.isTreeUri(uri)) { "Select a folder from the Android document picker." }
-        context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+        val preferences = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+        val previous = preferences.getString(TREE_URI_KEY, null)
+        val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+        context.contentResolver.takePersistableUriPermission(uri, flags)
+        val saved = preferences
             .edit()
             .putString(TREE_URI_KEY, uri.toString())
-            .apply()
+            .commit()
+        if (!saved) {
+            if (previous != uri.toString()) releaseTreePermission(context, uri)
+            throw IllegalStateException("Could not save the selected download folder.")
+        }
+        if (previous != null && previous != uri.toString()) {
+            runCatching { releaseTreePermission(context, Uri.parse(previous)) }
+        }
     }
 
     fun clearTreeUri(context: Context) {
-        context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+        val preferences = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+        val previous = preferences.getString(TREE_URI_KEY, null)
+        val cleared = preferences
             .edit()
             .remove(TREE_URI_KEY)
-            .apply()
+            .commit()
+        if (!cleared) throw IllegalStateException("Could not clear the selected download folder.")
+        previous?.let { raw -> runCatching { releaseTreePermission(context, Uri.parse(raw)) } }
+    }
+
+    private fun releaseTreePermission(context: Context, uri: Uri) {
+        val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+        context.contentResolver.releasePersistableUriPermission(uri, flags)
     }
 
     fun displayName(context: Context, treeUri: Uri): String? = runCatching {

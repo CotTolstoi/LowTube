@@ -2,7 +2,6 @@ package com.lowtube.android.ui.settings
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.content.Intent
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -142,10 +141,8 @@ fun SettingsScreen(
     }
     val downloadFolderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri != null) {
-            val grantFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
             val saved = runCatching {
-                context.contentResolver.takePersistableUriPermission(uri, grantFlags)
-                DownloadDestination.saveTreeUri(context, uri)
+                DownloadDestination.takeAndSaveTreeUri(context, uri)
             }.isSuccess
             if (saved) {
                 downloadTreeUri = uri
@@ -436,15 +433,11 @@ fun SettingsScreen(
                 }
                 if (downloadTreeUri != null) {
                     TextButton(onClick = {
-                        runCatching {
-                            context.contentResolver.releasePersistableUriPermission(
-                                downloadTreeUri!!,
-                                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
-                            )
-                        }
-                        DownloadDestination.clearTreeUri(context)
-                        downloadTreeUri = null
-                        downloadFolderError = false
+                        val cleared = runCatching { DownloadDestination.clearTreeUri(context) }.isSuccess
+                        if (cleared) {
+                            downloadTreeUri = null
+                            downloadFolderError = false
+                        } else downloadFolderError = true
                     }) {
                         Text(stringResource(R.string.use_default_download_folder))
                     }

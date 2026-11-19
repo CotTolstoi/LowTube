@@ -1,5 +1,7 @@
 package com.lowtube.android.ui.onboarding
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -29,11 +31,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.lowtube.android.R
 import com.lowtube.android.data.PlaybackStreamPreferences
 import com.lowtube.android.data.DownloadStreamPreferences
 import com.lowtube.android.data.UiScaleOptions
+import com.lowtube.android.downloads.DownloadDestination
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,6 +51,7 @@ internal fun FirstRunSetupScreen(
     onApply: (language: String, uiScale: Float, darkTheme: Boolean, playbackHeight: Int, audioBitrateKbps: Int) -> Unit,
     onSkip: () -> Unit,
 ) {
+    val context = LocalContext.current
     var selectedLanguage by remember(language) { mutableStateOf(language) }
     var selectedScale by remember(uiScale) { mutableStateOf(UiScaleOptions.normalize(uiScale)) }
     var selectedDarkTheme by remember(darkTheme) { mutableStateOf(darkTheme) }
@@ -54,6 +59,17 @@ internal fun FirstRunSetupScreen(
     var selectedBitrate by remember(downloadAudioBitrateKbps) { mutableStateOf(downloadAudioBitrateKbps) }
     var qualityExpanded by remember { mutableStateOf(false) }
     var bitrateExpanded by remember { mutableStateOf(false) }
+    var downloadTreeUri by remember(context) { mutableStateOf(DownloadDestination.selectedTreeUri(context)) }
+    var downloadFolderError by remember { mutableStateOf(false) }
+    val downloadFolderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri != null) {
+            val saved = runCatching { DownloadDestination.takeAndSaveTreeUri(context, uri) }.isSuccess
+            if (saved) {
+                downloadTreeUri = uri
+                downloadFolderError = false
+            } else downloadFolderError = true
+        }
+    }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text(stringResource(R.string.onboarding_title)) }) },
@@ -121,6 +137,32 @@ internal fun FirstRunSetupScreen(
                     )
                 }
             }
+
+            Text(stringResource(R.string.download_location_title), style = MaterialTheme.typography.titleMedium)
+            val selectedFolderName = downloadTreeUri?.let { DownloadDestination.displayName(context, it) }
+            Text(
+                if (downloadTreeUri == null) stringResource(R.string.download_location_default)
+                else stringResource(R.string.download_location_selected, selectedFolderName ?: stringResource(R.string.download_location_custom)),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                TextButton(onClick = { downloadFolderPicker.launch(null) }) {
+                    Text(stringResource(R.string.choose_download_folder))
+                }
+                if (downloadTreeUri != null) {
+                    TextButton(onClick = {
+                        val cleared = runCatching { DownloadDestination.clearTreeUri(context) }.isSuccess
+                        if (cleared) {
+                            downloadTreeUri = null
+                            downloadFolderError = false
+                        } else downloadFolderError = true
+                    }) {
+                        Text(stringResource(R.string.use_default_download_folder))
+                    }
+                }
+            }
+            if (downloadFolderError) Text(stringResource(R.string.download_location_error), color = MaterialTheme.colorScheme.error)
 
             TextButton(onClick = onSkip, modifier = Modifier.fillMaxWidth().testTag(FIRST_RUN_SKIP_TAG)) {
                 Text(stringResource(R.string.onboarding_skip))
