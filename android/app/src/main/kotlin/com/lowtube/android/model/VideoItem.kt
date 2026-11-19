@@ -12,6 +12,7 @@ data class VideoItem(
     val thumbnailUrl: String = "",
     val url: String,
     val publishedAtMs: Long = 0L,
+    val channelAvatarUrl: String = "",
 )
 
 data class SearchPage(

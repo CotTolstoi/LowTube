@@ -1223,7 +1223,11 @@ class InnerTubeSearchRepository(context: Context? = null) {
         }
         if (liveStatus.isNotEmpty()) kind = "live"
         val duration = text(renderer.opt("lengthText")).ifBlank { formatDuration(renderer.optString("lengthSeconds")) }
-        return VideoItem(id, title, channel, channelId, date, duration, kind, liveStatus, thumbnail(renderer), "https://www.youtube.com/watch?v=$id")
+        return VideoItem(
+            id, title, channel, channelId, date, duration, kind, liveStatus,
+            thumbnail(renderer), "https://www.youtube.com/watch?v=$id",
+            channelAvatarUrl = channelAvatar(renderer),
+        )
     }
 
     private fun playlist(renderer: JSONObject?): VideoItem? {
@@ -1265,6 +1269,7 @@ class InnerTubeSearchRepository(context: Context? = null) {
             liveStatus = if (kind == "live") "was_live" else "",
             thumbnailUrl = thumbnail(renderer),
             url = url,
+            channelAvatarUrl = channelAvatar(renderer),
         )
     }
 
@@ -1278,6 +1283,7 @@ class InnerTubeSearchRepository(context: Context? = null) {
             kind = "shorts",
             thumbnailUrl = thumbnail(renderer),
             url = "https://www.youtube.com/shorts/$id",
+            channelAvatarUrl = channelAvatar(renderer),
         )
     }
 
@@ -1318,6 +1324,25 @@ class InnerTubeSearchRepository(context: Context? = null) {
         visit(value.opt("thumbnail"), 0)
         if (found.isEmpty()) visit(value.opt("contentImage"), 0)
         return found.lastOrNull().orEmpty()
+    }
+
+    private fun channelAvatar(renderer: JSONObject?): String {
+        val thumbnail = renderer
+            ?.optJSONObject("channelThumbnailSupportedRenderers")
+            ?.optJSONObject("channelThumbnailWithLinkRenderer")
+            ?.optJSONObject("thumbnail")
+            ?: return ""
+        val candidate = thumbnail.optJSONArray("thumbnails")
+            ?.let { thumbnails ->
+                (0 until thumbnails.length()).mapNotNull { thumbnails.optJSONObject(it)?.optString("url") }
+                    .lastOrNull(String::isNotBlank)
+            }
+            ?: return ""
+        val uri = Uri.parse(candidate)
+        val host = uri.host?.lowercase().orEmpty()
+        return candidate.takeIf {
+            uri.scheme == "https" && host in setOf("yt3.ggpht.com", "yt3.googleusercontent.com") && candidate.length <= 2_000
+        }.orEmpty()
     }
 
     private fun text(value: Any?): String = when (value) {

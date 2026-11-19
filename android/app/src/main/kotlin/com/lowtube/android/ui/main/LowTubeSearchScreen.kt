@@ -72,6 +72,8 @@ import android.widget.Toast
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
+import coil3.compose.SubcomposeAsyncImage
+import coil3.compose.SubcomposeAsyncImageContent
 import com.lowtube.android.R
 import com.lowtube.android.model.VideoItem
 import com.lowtube.android.model.LocalPlaylist
@@ -688,7 +690,19 @@ internal fun VideoCard(
                             .clickable(enabled = item.channelId.isNotBlank(), onClick = onChannelClick),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text(item.channel.trim().firstOrNull()?.uppercaseChar()?.toString().orEmpty(), style = MaterialTheme.typography.titleSmall)
+                        if (item.channelAvatarUrl.isNotBlank()) {
+                            SubcomposeAsyncImage(
+                                model = item.channelAvatarUrl,
+                                contentDescription = item.channel,
+                                modifier = Modifier.fillMaxSize().clip(CircleShape),
+                                contentScale = ContentScale.Crop,
+                                loading = { Text(item.channel.trim().firstOrNull()?.uppercaseChar()?.toString().orEmpty(), style = MaterialTheme.typography.titleSmall) },
+                                error = { Text(item.channel.trim().firstOrNull()?.uppercaseChar()?.toString().orEmpty(), style = MaterialTheme.typography.titleSmall) },
+                                success = { SubcomposeAsyncImageContent() },
+                            )
+                        } else {
+                            Text(item.channel.trim().firstOrNull()?.uppercaseChar()?.toString().orEmpty(), style = MaterialTheme.typography.titleSmall)
+                        }
                     }
                 }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
