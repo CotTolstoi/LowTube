@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -42,6 +43,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -65,6 +68,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
@@ -293,8 +298,24 @@ fun LowTubeSearchScreen(
         indicatorColor = Color.Transparent,
     )
 
+    val selectMainTab: (String) -> Unit = { tab ->
+        onSelectedTabChanged(tab)
+        when (tab) {
+            "search" -> viewModel.showSearch()
+            "home" -> {
+                recommendationKind = "all"
+                viewModel.loadHome(language, discoveryTopic, discoveryLanguage, force = true, requestFailedMessage = requestFailedMessage, pageSize = pageSize)
+            }
+        }
+    }
+
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+    val windowConfiguration = LocalConfiguration.current
+    val density = LocalDensity.current
+    val availableWidthDp = maxWidth.value * density.density / (windowConfiguration.densityDpi / 160f)
+    val useNavigationRail = availableWidthDp >= 600f
     Scaffold(
-        modifier = modifier,
+        modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
                 title = {
@@ -326,43 +347,36 @@ fun LowTubeSearchScreen(
                 miniPlayerVideo?.let { video ->
                     MiniPlayerBar(video = video, onOpenPlayer = onOpenMiniPlayer)
                 }
-                NavigationBar {
-                    NavigationBarItem(
-                        selected = selectedTab == "search",
-                        onClick = { onSelectedTabChanged("search"); viewModel.showSearch() },
-                        icon = { Icon(painterResource(R.drawable.ic_nav_search), contentDescription = null) },
-                        label = { Text(stringResource(R.string.search_tab)) },
-                        colors = navigationItemColors,
-                    )
-                    NavigationBarItem(
-                        selected = selectedTab == "home",
-                        onClick = {
-                            onSelectedTabChanged("home")
-                            recommendationKind = "all"
-                            viewModel.loadHome(language, discoveryTopic, discoveryLanguage, force = true, requestFailedMessage = requestFailedMessage, pageSize = pageSize)
-                        },
-                        icon = { Icon(painterResource(R.drawable.ic_nav_home), contentDescription = null) },
-                        label = { Text(stringResource(R.string.recommendations_tab)) },
-                        colors = navigationItemColors,
-                    )
-                    NavigationBarItem(
-                        selected = selectedTab == "subscriptions",
-                        onClick = { onSelectedTabChanged("subscriptions") },
-                        icon = { Icon(painterResource(R.drawable.ic_nav_subscriptions), contentDescription = null) },
-                        label = { Text(stringResource(R.string.subscriptions_tab)) },
-                        colors = navigationItemColors,
-                    )
-                    NavigationBarItem(
-                        selected = selectedTab == "profile",
-                        onClick = { onSelectedTabChanged("profile") },
-                        icon = { Icon(painterResource(R.drawable.ic_nav_profile), contentDescription = null) },
-                        label = { Text(stringResource(R.string.profile)) },
-                        colors = navigationItemColors,
-                    )
+                if (!useNavigationRail) {
+                    NavigationBar(modifier = Modifier.testTag(MAIN_TAB_BOTTOM_BAR_TEST_TAG)) {
+                        MainTabDestinations.forEach { destination ->
+                            NavigationBarItem(
+                                selected = selectedTab == destination.key,
+                                onClick = { selectMainTab(destination.key) },
+                                icon = { Icon(painterResource(destination.icon), contentDescription = null) },
+                                label = { Text(stringResource(destination.label)) },
+                                colors = navigationItemColors,
+                            )
+                        }
+                    }
                 }
             }
         },
     ) { innerPadding ->
+        Row(Modifier.fillMaxSize().padding(innerPadding)) {
+            if (useNavigationRail) {
+                NavigationRail(modifier = Modifier.testTag(MAIN_TAB_RAIL_TEST_TAG)) {
+                    MainTabDestinations.forEach { destination ->
+                        NavigationRailItem(
+                            selected = selectedTab == destination.key,
+                            onClick = { selectMainTab(destination.key) },
+                            icon = { Icon(painterResource(destination.icon), contentDescription = null) },
+                            label = { Text(stringResource(destination.label)) },
+                            alwaysShowLabel = true,
+                        )
+                    }
+                }
+            }
             when (selectedTab) {
                 "subscriptions" -> SubscriptionsTab(
                     repository = libraryRepository,
@@ -375,7 +389,7 @@ fun LowTubeSearchScreen(
                     onAddChannel = onAddChannel,
                     onBrowseChannel = onBrowseChannel,
                     onPlay = onPlay,
-                    modifier = Modifier.padding(innerPadding),
+                    modifier = Modifier.weight(1f),
                 )
                 "profile" -> ProfileTab(
                     accountName = googleAccountName,
@@ -385,9 +399,9 @@ fun LowTubeSearchScreen(
                     signInBusy = googleSignInBusy,
                     onSignIn = onGoogleSignIn,
                     onSignOut = onGoogleSignOut,
-                    modifier = Modifier.padding(innerPadding),
+                    modifier = Modifier.weight(1f),
                 )
-                else -> Column(Modifier.fillMaxSize().padding(innerPadding)) {
+                else -> Column(Modifier.weight(1f).fillMaxSize()) {
             if (selectedTab == "search") {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
@@ -588,6 +602,8 @@ fun LowTubeSearchScreen(
                 }
         }
     }
+    }
+    }
 
     saveTarget?.let { video ->
         AlertDialog(
@@ -653,6 +669,18 @@ fun LowTubeSearchScreen(
         )
     }
 }
+
+private data class MainTabDestination(val key: String, val icon: Int, val label: Int)
+
+private val MainTabDestinations = listOf(
+    MainTabDestination("search", R.drawable.ic_nav_search, R.string.search_tab),
+    MainTabDestination("home", R.drawable.ic_nav_home, R.string.recommendations_tab),
+    MainTabDestination("subscriptions", R.drawable.ic_nav_subscriptions, R.string.subscriptions_tab),
+    MainTabDestination("profile", R.drawable.ic_nav_profile, R.string.profile),
+)
+
+internal const val MAIN_TAB_RAIL_TEST_TAG = "lowtube-main-tab-navigation-rail"
+internal const val MAIN_TAB_BOTTOM_BAR_TEST_TAG = "lowtube-main-tab-navigation-bottom-bar"
 
 @Composable
 internal fun ChannelHeaderCard(
