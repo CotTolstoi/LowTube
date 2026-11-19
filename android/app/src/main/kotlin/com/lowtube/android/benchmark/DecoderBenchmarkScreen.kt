@@ -222,7 +222,7 @@ fun DecoderBenchmarkScreen(onBack: () -> Unit) {
                         Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text("${profileLabel(result.profile)} · ${statusLabel(result.status)}", style = MaterialTheme.typography.titleSmall)
                             Text(stringResource(R.string.decoder_benchmark_decoder, result.decoderName.ifBlank { "—" }, hardwareLabel(result.hardwareStatus)), style = MaterialTheme.typography.bodySmall)
-                            Text(stringResource(R.string.decoder_benchmark_summary, result.cpuMeanPercent, result.pssPeakMiB, result.processedFrames, result.droppedFrames, result.mediaAdvanceSeconds, result.wallSeconds), style = MaterialTheme.typography.bodySmall)
+                            Text(stringResource(R.string.decoder_benchmark_summary, result.cpuMeanPercentOneCore, result.pssPeakMiB, result.processedFrames, result.droppedFrames, result.mediaAdvanceSeconds, result.wallSeconds), style = MaterialTheme.typography.bodySmall)
                             Text(stringResource(R.string.decoder_benchmark_av_sync, stringResource(R.string.decoder_benchmark_av_sync_unavailable)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }

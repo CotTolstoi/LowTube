@@ -342,3 +342,5 @@
 19.11.2026 07:04 UTC, Redmi Note 8 serial 8LZ5ZPO7J7QOEMMZ, API33, LowTube `MainActivity` verified as topResumedActivity after the subscription UI build was installed; short idle sample CPU 0%, PSS 121,9 MiB, RSS 219,6 MiB, RAM 3 803 / available 1 527 MiB. System model string: `TrebleDroid vanilla`; no video playback. Single point sample, not a benchmark.
 
 19.11.2026 07:26 UTC, Redmi Note 8 serial 8LZ5ZPO7J7QOEMMZ, API33, LowTube `MainActivity` foreground after installing the decoder benchmark screen build; 5 s idle sample CPU 0%, PSS 121,9 MiB, RSS 207 MiB, peak RSS 227 MiB, RAM 3 713 / available 1 503 MiB. System model string: `TrebleDroid vanilla`; playback did not run. Single point sample, not a benchmark.
+
+19.11.2026 07:35 UTC, Redmi Note 8 serial 8LZ5ZPO7J7QOEMMZ, API33, LowTube `MainActivity` confirmed foreground after installing the per-core CPU metric correction; 5 s idle sample CPU 2% of one core, PSS 138,4 MiB, RSS 222,6 MiB, peak RSS 224,1 MiB, RAM 3 713 / available 1 514 MiB. System model string: `TrebleDroid vanilla`; playback did not run. Single point sample, not a benchmark.

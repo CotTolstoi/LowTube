@@ -290,7 +290,7 @@
     <string name="decoder_benchmark_profile_unavailable">Цей профіль декодера недоступний у цій версії Android.</string>
     <string name="decoder_benchmark_run_failed">Не вдалося завершити бенчмарк. Перевірте, що вибране локальне відео доступне та містить відеодоріжку.</string>
     <string name="decoder_benchmark_decoder">Декодер: %1$s · %2$s</string>
-    <string name="decoder_benchmark_summary">Середній CPU %1$.1f%% · піковий PSS %2$.1f MiB · кадри %3$d · пропуски %4$d · медіа/час %5$.1f/%6$.1f с</string>
+    <string name="decoder_benchmark_summary">Середній CPU %1$.1f%% одного ядра · піковий PSS %2$.1f MiB · кадри %3$d · пропуски %4$d · медіа/час %5$.1f/%6$.1f с</string>
     <string name="decoder_benchmark_av_sync">A/V sync: %1$s</string>
     <string name="decoder_benchmark_av_sync_unavailable">Media3 не відкриває сирий зсув; дивіться пропуски аудіо та зсув обробки кадрів</string>
     <string name="decoder_benchmark_status_ok">OK</string>

@@ -44,8 +44,8 @@ data class AndroidDecoderBenchmarkResult(
     val inputFormat: String,
     val frameRate: Double,
     val sampleCount: Int,
-    val cpuMeanPercent: Double,
-    val cpuPeakPercent: Double,
+    val cpuMeanPercentOneCore: Double,
+    val cpuPeakPercentOneCore: Double,
     val pssPeakMiB: Double,
     val rssPeakMiB: Double?,
     val availableRamMiB: Double?,
@@ -66,8 +66,8 @@ data class AndroidDecoderBenchmarkResult(
         "input_format=${inputFormat.ifBlank { "unknown" }}",
         "fps=${if (frameRate > 0.0) "%.3f".format(java.util.Locale.ROOT, frameRate) else "unknown"}",
         "samples=$sampleCount",
-        "cpu_mean_percent=${"%.2f".format(java.util.Locale.ROOT, cpuMeanPercent)}",
-        "cpu_peak_percent=${"%.2f".format(java.util.Locale.ROOT, cpuPeakPercent)}",
+        "cpu_mean_percent_one_core=${"%.2f".format(java.util.Locale.ROOT, cpuMeanPercentOneCore)}",
+        "cpu_peak_percent_one_core=${"%.2f".format(java.util.Locale.ROOT, cpuPeakPercentOneCore)}",
         "pss_peak_mib=${"%.1f".format(java.util.Locale.ROOT, pssPeakMiB)}",
         "rss_peak_mib=${rssPeakMiB?.let { "%.1f".format(java.util.Locale.ROOT, it) } ?: "unavailable"}",
         "available_ram_mib=${availableRamMiB?.let { "%.1f".format(java.util.Locale.ROOT, it) } ?: "unavailable"}",
@@ -90,7 +90,7 @@ data class AndroidDecoderBenchmarkResult(
     }
 }
 
-@OptIn(UnstableApi::class)
+@androidx.annotation.OptIn(UnstableApi::class)
 object DecoderBenchmarkEngine {
     private const val MAX_MEDIA_DURATION_MS = 120_000L
     private const val FIRST_FRAME_TIMEOUT_MS = 30_000L
@@ -270,8 +270,9 @@ object DecoderBenchmarkEngine {
                 val intervalWall = nowWall - previousWall
                 val intervalCpu = nowCpu - previousCpu
                 if (intervalWall > 0L) {
-                    val percent = (intervalCpu.toDouble() / intervalWall / Runtime.getRuntime().availableProcessors().coerceAtLeast(1)) * 100.0
-                    val boundedCpu = percent.coerceIn(0.0, 100.0)
+                    val percent = (intervalCpu.toDouble() / intervalWall) * 100.0
+                    val maximumProcessPercent = Runtime.getRuntime().availableProcessors().coerceAtLeast(1) * 100.0
+                    val boundedCpu = percent.coerceIn(0.0, maximumProcessPercent)
                     cpuWeighted += boundedCpu * intervalWall
                     cpuWeightMs += intervalWall
                     cpuPeak = max(cpuPeak, boundedCpu)
@@ -314,8 +315,8 @@ object DecoderBenchmarkEngine {
                 inputFormat = inputFormat.get(),
                 frameRate = fps,
                 sampleCount = sampleCount,
-                cpuMeanPercent = if (cpuWeightMs > 0L) cpuWeighted / cpuWeightMs else 0.0,
-                cpuPeakPercent = cpuPeak,
+                cpuMeanPercentOneCore = if (cpuWeightMs > 0L) cpuWeighted / cpuWeightMs else 0.0,
+                cpuPeakPercentOneCore = cpuPeak,
                 pssPeakMiB = peakPssMiB,
                 rssPeakMiB = peakRssMiB,
                 availableRamMiB = availableRamMiB,
