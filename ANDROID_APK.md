@@ -2,16 +2,16 @@
 
 This branch publishes the latest available Android development build.
 
-## Current artifact (2026-11-19, source revision 1876981)
+## Current artifact (2026-11-20, source revision 45e4fdf)
 
 - File: `LowTube-Android-debug-0.1.0.apk`; version `0.1.0-android-dev` (version code 1); minimum Android 6.0 (API 23).
 - Build type: installable debug APK, signed with the Android debug certificate; not a production-signed release.
-- Source revision: `1876981` (`feat/android-first-run-setup`).
-- APK size: 25758903 bytes.
-- SHA-256: `7859DC4064A1E4DAB48425E8334B5C8DEF76FFDFE006EEB0963F366E488745FF`.
-- Offline `:app:assembleDebug :app:assembleDebugAndroidTest --offline --no-configuration-cache` succeeded for armeabi-v7a, arm64-v8a, and x86_64. The artwork allowlist unit suite passed 3/3 in the preceding source revision; this build adds a tablet-adaptive first-run setup with separately scrollable language/appearance and playback/download columns.
+- Source revision: `45e4fdf` (`feat/android-first-run-setup`).
+- APK size: 25759871 bytes.
+- SHA-256: `8BAA6A7D2CF8EF4B274B7DAFCE5CAB8881C0682089CD190014E078960DD81293`.
+- Offline `:app:assembleDebug --offline --no-configuration-cache` succeeded for armeabi-v7a, arm64-v8a, and x86_64. `Verify-LocaleResourceParity.ps1` reports 358 resources each for EN/UK/RU with no missing or extra keys. This build localizes decoder benchmark durations and the diagnostic clipboard label; instrumentation tests were not rerun for these resource-only UI changes.
 - `MiniPlayerPlaybackAcceptanceTest#miniPlayerPausesAndResumesTheCurrentMediaSessionItem` passed on Android 6/API 23 and Android 13/API 33 AVDs: Play on an empty MediaSession invoked `onPlaybackResumption`, the saved YouTube item was resolved, Media3 reached READY, and artwork metadata plus pause/resume were verified. Each playback run stayed below 120 s. A separate process-death acceptance passed on API23 and API33: after force-stop of both app and test processes, a fresh LowTube process resolved and briefly played the saved video. Reboot recovery and visible notification/lock-screen rendering remain unverified.
-- `FirstRunSetupScreenTest` passed 3/3 compact scenarios on API23 and 1/1 wide-layout scenario at 960 dp on API23. APK installed on the connected Android13/API33 system; `MainActivity` remained top-resumed. After 8 s idle: `dumpsys cpuinfo` emitted no LowTube row, PSS 139.2 MiB, RSS 239.5 MiB, swap PSS 468 KiB, available RAM 1,571 MiB. No playback ran during this sample. Point sample, not a benchmark. The system identifies as `TrebleDroid vanilla`, so Redmi Note 8 hardware remains unverified.
+- `FirstRunSetupScreenTest` passed 3/3 compact scenarios on API23 and 1/1 wide-layout scenario at 960 dp on API23 in the preceding source revision. This APK was installed on the connected Android13/API33 system; `MainActivity` remains top-resumed. Idle sample after update: PSS 119.0 MiB, RSS 217.5 MiB, swap PSS 0.45 MiB, available RAM 1,493 MiB; `dumpsys cpuinfo` reported 0% in that sample. No playback ran. Point sample, not a benchmark. The system identifies as `TrebleDroid_vanilla`, so Redmi Note 8 hardware remains unverified.
 ## Previous artifact details (source revision 52c984e; historical)
 
 - Built from Android development branch `feat/android-first-run-setup` at source commit `52c984e`; the APK includes the SAF download-folder option in first-run setup and centralized persistable-grant cleanup. Unit and instrumentation test sources are not packaged in the APK.
