@@ -657,6 +657,7 @@ internal fun VideoCard(
     onClick: (() -> Unit)?,
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
+    val thumbnailUrl = VideoThumbnailPolicy.resolve(item)
     var followed by remember(item.channelId) { mutableStateOf(isFollowing) }
     var moreActionsExpanded by remember(item.id) { mutableStateOf(false) }
     LaunchedEffect(isFollowing) { followed = isFollowing }
@@ -665,9 +666,9 @@ internal fun VideoCard(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
     ) {
         Column {
-            if (item.thumbnailUrl.isNotBlank()) {
+            if (thumbnailUrl.isNotBlank()) {
                 AsyncImage(
-                    model = item.thumbnailUrl,
+                    model = thumbnailUrl,
                     contentDescription = item.title,
                     modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f).clip(RoundedCornerShape(12.dp)),
                     contentScale = ContentScale.Crop,
