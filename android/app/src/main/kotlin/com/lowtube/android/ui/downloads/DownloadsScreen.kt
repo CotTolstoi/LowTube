@@ -149,7 +149,7 @@ internal fun DownloadRow(
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                 if (record.status == DownloadStatus.SUCCESSFUL) {
-                    if (record.mimeType.startsWith("video/")) {
+                    if (record.mimeType.startsWith("video/") || record.mimeType.startsWith("audio/")) {
                         TextButton(onClick = onPlayInLowTube) { Text(stringResource(R.string.play_download_in_lowtube)) }
                     }
                     TextButton(onClick = onOpen) { Text(stringResource(R.string.open_download)) }

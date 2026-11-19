@@ -50,4 +50,37 @@ class DownloadRowTest {
 
         assertTrue("Paused download retry action was not forwarded", retryRequested)
     }
+
+    @Test
+    fun completedAudioDownloadOffersLowTubePlayback() {
+        val record = DownloadRecord(
+            id = 43L,
+            title = "Downloaded audio fixture",
+            status = DownloadStatus.SUCCESSFUL,
+            reason = "",
+            downloadedBytes = 4_096L,
+            totalBytes = 4_096L,
+            localUri = "content://media/external/downloads/43",
+            mimeType = "audio/mpeg",
+        )
+        var playbackRequested = false
+
+        composeTestRule.setContent {
+            LowTubeTheme {
+                DownloadRow(
+                    record = record,
+                    retrying = false,
+                    onPlayInLowTube = { playbackRequested = true },
+                    onOpen = {},
+                    onRemove = {},
+                    onRetry = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.play_download_in_lowtube))
+            .assertIsDisplayed()
+            .performClick()
+        assertTrue("Completed audio download should offer LowTube playback", playbackRequested)
+    }
 }

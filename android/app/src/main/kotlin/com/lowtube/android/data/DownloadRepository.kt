@@ -15,6 +15,7 @@ import com.lowtube.android.model.DownloadRecord
 import com.lowtube.android.model.DownloadStatus
 import com.lowtube.android.model.DownloadedVideo
 import com.lowtube.android.model.LocalVideoSource
+import com.lowtube.android.model.LocalAudioTrack
 import com.lowtube.android.model.VideoItem
 import org.json.JSONObject
 import java.io.File
@@ -208,6 +209,39 @@ class DownloadRepository private constructor(
             ?: throw IllegalStateException("This downloaded file is no longer available.")
         val mimeType = preferences.getString(mimeKey(id), "application/octet-stream").orEmpty()
         return DownloadedVideo(video, localVideoSource(uri, mimeType))
+    }
+
+    fun playableAudio(id: Long): LocalAudioTrack {
+        if (id >= OWN_ID_BASE) {
+            val job = jobs.get(id) ?: throw IllegalStateException("This LowTube download no longer exists.")
+            if (job.status != DownloadStatus.SUCCESSFUL || !job.audioOnly || job.localUri.isBlank()) {
+                throw IllegalStateException("Only completed audio downloads can play in LowTube.")
+            }
+            return localAudioTrack(job.localUri, videoTitle(job.videoJson), job.mimeType)
+        }
+
+        if (!preferences.getBoolean(audioOnlyKey(id), false)) {
+            throw IllegalStateException("Only completed audio downloads can play in LowTube.")
+        }
+        val cursor = manager.query(DownloadManager.Query().setFilterById(id))
+            ?: throw IllegalStateException("This download could not be opened.")
+        val successful = cursor.use {
+            it.moveToFirst() && it.getInt(it.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS)) == DownloadManager.STATUS_SUCCESSFUL
+        }
+        if (!successful) throw IllegalStateException("Only completed audio downloads can play in LowTube.")
+        val uri = manager.getUriForDownloadedFile(id)?.toString()
+            ?: throw IllegalStateException("This downloaded file is no longer available.")
+        val mimeType = preferences.getString(mimeKey(id), "application/octet-stream").orEmpty()
+        return localAudioTrack(uri, storedLegacyVideo(id)?.title.orEmpty(), mimeType)
+    }
+
+    private fun localAudioTrack(rawUri: String, title: String, mimeType: String): LocalAudioTrack {
+        require(mimeType.startsWith("audio/", ignoreCase = true)) { "This download is not an audio file." }
+        val uri = Uri.parse(rawUri)
+        require(uri.scheme == "content" && !uri.authority.isNullOrBlank()) { "This downloaded audio has an unsupported location." }
+        val readable = runCatching { appContext.contentResolver.openFileDescriptor(uri, "r")?.use { true } == true }.getOrDefault(false)
+        require(readable) { "This downloaded audio file is no longer available." }
+        return LocalAudioTrack(uri.toString(), title.ifBlank { "Downloaded audio" }.take(512), mimeType.take(128), System.currentTimeMillis())
     }
 
     private fun localVideoSource(rawUri: String, mimeType: String): LocalVideoSource {

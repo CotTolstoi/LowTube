@@ -34,7 +34,7 @@ class PlaybackSessionStore(context: Context) {
                 publishedAtMs = json.optLong("publishedAtMs"),
                 channelAvatarUrl = json.optString("channelAvatarUrl"),
             )
-            val localAudio = if (video.kind == "local-audio") {
+            val localAudio = if (video.kind == "local-audio" || video.kind == "downloaded-audio") {
                 LocalAudioTrack(
                     uri = json.getString("audioUri"),
                     title = json.getString("audioTitle"),
@@ -109,13 +109,17 @@ class PlaybackSessionStore(context: Context) {
     }
 
     private fun isSafeLocalAudio(video: VideoItem, track: LocalAudioTrack): Boolean {
-        if (video.kind != "local-audio" || track.uri.length > MAX_AUDIO_URI_LENGTH ||
+        if (video.kind !in setOf("local-audio", "downloaded-audio") || track.uri.length > MAX_AUDIO_URI_LENGTH ||
             video.id != "local:${track.uri}" || video.url != track.uri || !track.mimeType.startsWith("audio/")
         ) return false
         val uri = runCatching { Uri.parse(track.uri) }.getOrNull() ?: return false
         if (uri.scheme != "content" || uri.authority.isNullOrBlank()) return false
         return runCatching {
-            appContext.contentResolver.persistedUriPermissions.any { it.uri == uri && it.isReadPermission }
+            if (video.kind == "local-audio") {
+                appContext.contentResolver.persistedUriPermissions.any { it.uri == uri && it.isReadPermission }
+            } else {
+                appContext.contentResolver.openFileDescriptor(uri, "r")?.use { true } == true
+            }
         }.getOrDefault(false)
     }
 

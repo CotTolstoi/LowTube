@@ -13,6 +13,11 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.lowtube.android.data.DownloadJobStore
+import com.lowtube.android.data.DownloadRepository
+import com.lowtube.android.data.PlaybackSessionStore
+import com.lowtube.android.model.DownloadStatus
+import com.lowtube.android.model.VideoItem
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -26,6 +31,7 @@ import java.io.BufferedOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStream
+import org.json.JSONObject
 import kotlin.math.PI
 import kotlin.math.sin
 
@@ -87,6 +93,76 @@ class LocalAudioPlaybackAcceptanceTest {
             )
         } finally {
             withContext(kotlinx.coroutines.Dispatchers.Main.immediate) { player.release() }
+            audioFile.delete()
+        }
+    }
+
+    @Test
+    fun downloadedAudioRestoresReadableSessionAndPlaysBriefly() = runBlocking {
+        assumeTrue(
+            "Pass -e runDownloadedAudioPlaybackAcceptance true after downloaded-audio player changes",
+            InstrumentationRegistry.getArguments().getString("runDownloadedAudioPlaybackAcceptance") == "true",
+        )
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val audioFile = File(context.cacheDir, "lowtube-downloaded-audio-${System.currentTimeMillis()}.wav")
+        val databaseName = "lowtube-downloaded-audio-${System.currentTimeMillis()}.db"
+        writeWaveFile(audioFile, durationSeconds = 6)
+        val contentUri = FileProvider.getUriForFile(context, context.packageName + ".fileprovider", audioFile)
+        val sourceVideo = VideoItem("fixture", "Downloaded audio fixture", url = "https://www.youtube.com/watch?v=fixture")
+        val sourceJson = JSONObject().put("id", sourceVideo.id).put("title", sourceVideo.title).put("url", sourceVideo.url).toString()
+        val jobs = DownloadJobStore(context, databaseName)
+        val id = jobs.insert(sourceJson, "audio-fixture", true, audioFile.name, "audio/wav", "acceptance", File(context.cacheDir, "$databaseName.part").absolutePath)
+        jobs.update(id, DownloadStatus.SUCCESSFUL, downloaded = audioFile.length(), total = audioFile.length(), uri = contentUri.toString())
+        val downloads = DownloadRepository(context, databaseName)
+        val sessionStore = PlaybackSessionStore(context)
+        var failure: PlaybackException? = null
+        val player = withContext(kotlinx.coroutines.Dispatchers.Main.immediate) {
+            ExoPlayer.Builder(context)
+                .setMediaSourceFactory(DefaultMediaSourceFactory(createPlaybackDataSourceFactory(context)))
+                .build().apply { addListener(object : Player.Listener { override fun onPlayerError(error: PlaybackException) { failure = error } }) }
+        }
+        try {
+            val track = downloads.playableAudio(id)
+            val video = VideoItem(
+                id = "local:${track.uri}",
+                title = track.title,
+                kind = "downloaded-audio",
+                url = track.uri,
+            )
+            sessionStore.save(video, null, track, null)
+            val restored = sessionStore.load()
+            val restoredTrack = restored?.localAudioTrack
+                ?: throw AssertionError("Readable downloaded-audio session did not restore")
+            assertTrue("Restored download does not match the completed audio row", restoredTrack.uri == track.uri)
+
+            var mediaPosition = 0L
+            withContext(kotlinx.coroutines.Dispatchers.Main.immediate) {
+                player.setMediaItem(MediaItem.Builder().setUri(restoredTrack.uri).setMimeType(restoredTrack.mimeType).build())
+                player.prepare()
+                withTimeout(15_000) {
+                    while (player.playbackState != Player.STATE_READY && failure == null) delay(50)
+                }
+                assertNull(failure)
+                player.play()
+                withTimeout(10_000) {
+                    while (player.currentPosition < 500 && failure == null) {
+                        assertTrue("Downloaded-audio acceptance must stop before two minutes", player.currentPosition < 120_000)
+                        delay(50)
+                    }
+                }
+                player.pause()
+                mediaPosition = player.currentPosition
+                assertNull(failure)
+                assertTrue("Downloaded audio media time did not advance", mediaPosition >= 500)
+                assertTrue("Downloaded-audio acceptance exceeded two minutes", mediaPosition < 120_000)
+            }
+            System.out.println("downloadedAudioPlaybackAcceptance=restored=true; mediaMs=$mediaPosition")
+        } finally {
+            sessionStore.clear()
+            withContext(kotlinx.coroutines.Dispatchers.Main.immediate) { player.release() }
+            downloads.close()
+            jobs.close()
+            context.deleteDatabase(databaseName)
             audioFile.delete()
         }
     }

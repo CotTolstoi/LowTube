@@ -793,7 +793,22 @@ fun MainNavigation(
                         }
                     },
                     onPlayInLowTube = { id ->
-                        runCatching { downloads.playableVideo(id) }
+                        val audio = runCatching { downloads.playableAudio(id) }.getOrNull()
+                        if (audio != null) {
+                            shortsSession = emptyList()
+                            shortsSessionIndex = -1
+                            selectedQueueRowId = null
+                            selectedLocalAudio = audio
+                            selectedLocalVideoSource = null
+                            selectedVideo = VideoItem(
+                                id = "local:${audio.uri}",
+                                title = audio.title,
+                                kind = "downloaded-audio",
+                                url = audio.uri,
+                            )
+                            playbackRequestId++
+                            backStack.add(Player)
+                        } else runCatching { downloads.playableVideo(id) }
                             .onSuccess { downloaded ->
                                 shortsSession = emptyList()
                                 shortsSessionIndex = -1
