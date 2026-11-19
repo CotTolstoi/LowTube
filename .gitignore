@@ -52,6 +52,8 @@ Downloads/
 !android/app/src/androidTest/kotlin/com/lowtube/android/downloads/**
 !android/app/src/main/kotlin/com/lowtube/android/ui/downloads/
 !android/app/src/main/kotlin/com/lowtube/android/ui/downloads/**
+!android/app/src/androidTest/kotlin/com/lowtube/android/ui/downloads/
+!android/app/src/androidTest/kotlin/com/lowtube/android/ui/downloads/**
 BrowserProfiles/
 # Local diagnostics can contain environment or playback details
 setup-diagnostics.txt

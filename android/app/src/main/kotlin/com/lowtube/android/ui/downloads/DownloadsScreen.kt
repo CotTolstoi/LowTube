@@ -97,7 +97,7 @@ fun DownloadsScreen(repository: DownloadRepository, onBack: () -> Unit, onRetry:
 }
 
 @Composable
-private fun DownloadRow(record: DownloadRecord, retrying: Boolean, onOpen: () -> Unit, onRemove: () -> Unit, onRetry: () -> Unit) {
+internal fun DownloadRow(record: DownloadRecord, retrying: Boolean, onOpen: () -> Unit, onRemove: () -> Unit, onRetry: () -> Unit) {
     val status = when (record.status) {
         DownloadStatus.PENDING -> stringResource(R.string.download_pending)
         DownloadStatus.RUNNING -> stringResource(R.string.download_running)
@@ -119,12 +119,16 @@ private fun DownloadRow(record: DownloadRecord, retrying: Boolean, onOpen: () ->
             Text(record.title, style = MaterialTheme.typography.titleMedium, maxLines = 2)
             Text(format, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(status, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            if (record.status == DownloadStatus.RUNNING || record.status == DownloadStatus.PENDING) {
-                if (progress != null) LinearProgressIndicator(progress = { progress.coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth())
-                else LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                if (record.totalBytes > 0) {
-                    Text("${formatBytes(record.downloadedBytes)} / ${formatBytes(record.totalBytes)}", style = MaterialTheme.typography.bodySmall)
-                }
+            if (progress != null && record.status != DownloadStatus.SUCCESSFUL) {
+                val boundedProgress = progress.coerceIn(0f, 1f)
+                val percentage = (boundedProgress * 100).toInt()
+                LinearProgressIndicator(progress = { boundedProgress }, modifier = Modifier.fillMaxWidth())
+                Text(
+                    "$percentage% • ${formatBytes(record.downloadedBytes)} / ${formatBytes(record.totalBytes)}",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            } else if (record.status == DownloadStatus.RUNNING || record.status == DownloadStatus.PENDING) {
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
             }
             if (record.status == DownloadStatus.FAILED) {
                 Text(stringResource(R.string.download_error_code, record.reason), style = MaterialTheme.typography.bodySmall)
@@ -145,7 +149,14 @@ private fun DownloadRow(record: DownloadRecord, retrying: Boolean, onOpen: () ->
 }
 
 private fun formatBytes(bytes: Long): String {
-    val mib = bytes / (1024.0 * 1024.0)
-    return if (mib < 1024.0) String.format(java.util.Locale.ROOT, "%.1f MiB", mib)
-    else String.format(java.util.Locale.ROOT, "%.2f GiB", mib / 1024.0)
+    val safeBytes = bytes.coerceAtLeast(0L)
+    if (safeBytes < 1024L) return "$safeBytes B"
+    val units = arrayOf("KiB", "MiB", "GiB", "TiB", "PiB", "EiB")
+    var scaled = safeBytes.toDouble()
+    var unitIndex = -1
+    do {
+        scaled /= 1024.0
+        unitIndex++
+    } while (scaled >= 1024.0 && unitIndex < units.lastIndex)
+    return String.format(java.util.Locale.ROOT, "%.1f %s", scaled, units[unitIndex])
 }

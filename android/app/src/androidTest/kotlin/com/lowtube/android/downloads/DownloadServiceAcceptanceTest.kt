@@ -187,6 +187,100 @@ class DownloadServiceAcceptanceTest {
     }
 
     @Test
+    fun seedInterruptedJobForExternalProcessDeathAcceptance() {
+        assumeTrue(
+            "Process-death seed is opt-in; pass -e runDownloadProcessDeathSeed true",
+            InstrumentationRegistry.getArguments().getString("runDownloadProcessDeathSeed") == "true",
+        )
+        val dbName = processDeathDatabaseName()
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val store = DownloadJobStore(context, dbName)
+        val partial = File(context.cacheDir, "$dbName.part")
+        try {
+            assertTrue("Process-death fixture database must start empty", store.all().isEmpty())
+            val video = VideoItem("fixture", "Process-death fixture", duration = "—", url = "https://www.youtube.com/watch?v=fixture")
+            val videoJson = JSONObject().put("id", video.id).put("title", video.title).put("url", video.url).toString()
+            val id = store.insert(
+                videoJson,
+                "process-death-loopback-test",
+                false,
+                "process-death-bounded.mp4",
+                "video/mp4",
+                "LowTube process-death acceptance",
+                partial.absolutePath,
+                maxBytesPerAttempt = PROCESS_DEATH_RESUME_BYTES,
+            )
+            partial.writeBytes(processDeathPrefix())
+            store.update(id, DownloadStatus.RUNNING, downloaded = PROCESS_DEATH_PREFIX_BYTES.toLong(), total = RangeResumeLoopbackServer.TOTAL_BYTES)
+            val seeded = store.get(id) ?: error("Persisted process-death fixture disappeared.")
+            assertEquals(DownloadStatus.RUNNING, seeded.status)
+            assertEquals(PROCESS_DEATH_PREFIX_BYTES.toLong(), seeded.downloadedBytes)
+            assertEquals(PROCESS_DEATH_PREFIX_BYTES, partial.length().toInt())
+            Log.i(TAG, "processDeathSeed; db=$dbName; id=$id; prefixBytes=${partial.length()}")
+        } finally {
+            store.close()
+        }
+    }
+
+    @Test
+    fun resumesPersistedPartialAfterExternalProcessDeath() {
+        runBlocking {
+            assumeTrue(
+                "Process-death recovery is opt-in; pass -e runDownloadProcessDeathRecovery true",
+                InstrumentationRegistry.getArguments().getString("runDownloadProcessDeathRecovery") == "true",
+            )
+            val dbName = processDeathDatabaseName()
+            val context = ApplicationProvider.getApplicationContext<Context>()
+            val partial = File(context.cacheDir, "$dbName.part")
+            val store = DownloadJobStore(context, dbName)
+            val server = RangeResumeLoopbackServer()
+            try {
+                val seededJobs = store.all()
+                assertEquals("Expected exactly one durable fixture after force-stop", 1, seededJobs.size)
+                val seeded = seededJobs.single()
+                assertEquals("The fixture must remain RUNNING across process death", DownloadStatus.RUNNING, seeded.status)
+                assertEquals(PROCESS_DEATH_PREFIX_BYTES.toLong(), seeded.downloadedBytes)
+                assertTrue("Partial file was not durable across process death", partial.isFile)
+                assertTrue(processDeathPrefix().contentEquals(partial.readBytes()))
+
+                server.start()
+                startService(context, dbName, testStreamUrl = server.url)
+                val recovered = waitForTerminalAttempt(store, seeded.id)
+                assertEquals("Process-death requeue did not pause the resumed transfer: ${recovered.reason}", DownloadStatus.PAUSED, recovered.status)
+                assertEquals(PROCESS_DEATH_PREFIX_BYTES + PROCESS_DEATH_RESUME_BYTES, recovered.downloadedBytes)
+                assertEquals(PROCESS_DEATH_PREFIX_BYTES + PROCESS_DEATH_RESUME_BYTES, partial.length())
+                assertEquals("bytes=$PROCESS_DEATH_PREFIX_BYTES-${PROCESS_DEATH_PREFIX_BYTES + PROCESS_DEATH_RESUME_BYTES - 1}", server.rangeHeader)
+                val expectedBytes = processDeathPrefix() + ByteArray(PROCESS_DEATH_RESUME_BYTES.toInt()) { (PROCESS_DEATH_PREFIX_BYTES + it).toByte() }
+                assertTrue("Recovered file bytes differ from the persisted prefix and requested range", expectedBytes.contentEquals(partial.readBytes()))
+                assertTrue("Process-death recovery server did not observe client close", server.awaitClientClosed())
+                waitForServiceStopped(context)
+                Log.i(TAG, "processDeathRecovery; bytes=${recovered.downloadedBytes}; range=${server.rangeHeader}")
+            } finally {
+                context.stopService(Intent(context, DownloadService::class.java))
+                server.close()
+                partial.delete()
+                store.close()
+                context.deleteDatabase(dbName)
+                (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(NOTIFICATION_ID)
+            }
+        }
+    }
+
+    @Test
+    fun cleanupExternalProcessDeathAcceptanceFixture() {
+        assumeTrue(
+            "Process-death cleanup is opt-in; pass -e runDownloadProcessDeathCleanup true",
+            InstrumentationRegistry.getArguments().getString("runDownloadProcessDeathCleanup") == "true",
+        )
+        val dbName = processDeathDatabaseName()
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        context.stopService(Intent(context, DownloadService::class.java))
+        File(context.cacheDir, "$dbName.part").delete()
+        context.deleteDatabase(dbName)
+        (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(NOTIFICATION_ID)
+    }
+
+    @Test
     fun configuredDownloadRateLimitIsAppliedToBoundedServiceTransfer() {
         runBlocking {
             assumeTrue(
@@ -397,6 +491,13 @@ class DownloadServiceAcceptanceTest {
         if (job.status == DownloadStatus.RUNNING && partial.length() > 0) job else null
     }
 
+    private fun processDeathDatabaseName(): String =
+        InstrumentationRegistry.getArguments().getString("downloadProcessDeathDatabase")
+            ?.takeIf { it.matches(Regex("lowtube-process-death-[a-f0-9]{32}\\.db")) }
+            ?: error("A valid downloadProcessDeathDatabase argument is required.")
+
+    private fun processDeathPrefix() = ByteArray(PROCESS_DEATH_PREFIX_BYTES) { (0x41 + it).toByte() }
+
     @Suppress("DEPRECATION")
     private fun assertForegroundServiceAndNotification(context: Context): PendingIntent? {
         val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
@@ -549,6 +650,8 @@ class DownloadServiceAcceptanceTest {
         const val RESUME_CHUNK_BYTES = 16L
         const val RATE_LIMIT_CHUNK_BYTES = 4_096L
         const val RATE_LIMIT_MIN_EXPECTED_MS = 3_500L
+        const val PROCESS_DEATH_PREFIX_BYTES = 8
+        const val PROCESS_DEATH_RESUME_BYTES = 16L
         const val SERVICE_TIMEOUT_MS = 60_000L
         const val POLL_MS = 100L
         const val NOTIFICATION_ID = 4207
