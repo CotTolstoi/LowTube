@@ -9,9 +9,11 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.lowtube.android.R
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -83,5 +85,34 @@ class FirstRunSetupScreenTest {
             .performScrollTo()
             .assertIsDisplayed()
             .assertIsEnabled()
+    }
+
+    @Test fun wideLayoutKeepsBothSettingGroupsAndActionsVisible() {
+        assumeTrue(
+            "Run with -e runWideFirstRunSetup true on a window wider than 800 dp",
+            InstrumentationRegistry.getArguments().getString("runWideFirstRunSetup") == "true",
+        )
+        var applied: List<Any>? = null
+        compose.setContent {
+            FirstRunSetupScreen(
+                language = "en",
+                uiScale = 1.0f,
+                darkTheme = true,
+                playbackMaxHeight = 720,
+                downloadAudioBitrateKbps = 192,
+                onPreviewUiScale = {},
+                onApply = { language, scale, dark, height, bitrate -> applied = listOf(language, scale, dark, height, bitrate) },
+                onSkip = {},
+            )
+        }
+
+        compose.onNodeWithText(compose.activity.getString(R.string.language)).assertIsDisplayed()
+        compose.onNodeWithText(compose.activity.getString(R.string.maximum_quality)).assertIsDisplayed()
+        compose.onNodeWithText(compose.activity.getString(R.string.download_location_title)).assertIsDisplayed()
+        compose.onNodeWithTag(FIRST_RUN_SKIP_TAG).assertIsDisplayed()
+        compose.onNodeWithTag(FIRST_RUN_FINISH_TAG).assertIsDisplayed().performClick()
+        compose.runOnIdle {
+            assertEquals(listOf("en", 1.0f, true, 720, 192), applied)
+        }
     }
 }
