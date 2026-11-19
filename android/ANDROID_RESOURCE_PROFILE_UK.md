@@ -328,3 +328,5 @@
 19.11.2026 05:57 UTC, Redmi serial 8LZ5ZPO7J7QOEMMZ, API33, LowTube MainActivity foreground із paused MediaSession: 5 s sample — CPU 0%, PSS 123,9 MiB, RSS 209,2 MiB, peak RSS 230,9 MiB, RAM 3 713 / доступно 1 514 MiB. Це одиничний локальний point sample, не benchmark; системна модель повідомляється як `TrebleDroid vanilla`.
 
 19.11.2026 06:11 UTC, після встановлення Android build із Windows PageSize setting на підключений Android13 пристрій, LowTube MainActivity повернута на передній план: 5 s sample — CPU 0%, PSS 144,2 MiB, RSS 231,4 MiB, peak RSS 243,3 MiB, RAM 3 713 / доступно 1 530 MiB. Системна модель повідомляється як `TrebleDroid vanilla`; відео не запускалося. Це одиничний point sample після оновлення застосунку, не benchmark.
+
+19.11.2026 06:17 UTC, Redmi serial 8LZ5ZPO7J7QOEMMZ, API33, LowTube MainActivity foreground після перевірки налаштування розміру сторінки; 5 s sample: CPU 0%, PSS 148,1 MiB, RSS 235,9 MiB, peak RSS 243,3 MiB, RAM 3 713 / доступно 1 513 MiB. Стан системи — TrebleDroid vanilla; відео не запускалося. Одиничний point sample, не benchmark.
