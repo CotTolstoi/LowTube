@@ -4,6 +4,9 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
 import android.os.Bundle
 import android.os.Debug
 import android.os.Process
@@ -11,10 +14,14 @@ import android.os.SystemClock
 import androidx.core.content.FileProvider
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.text.CueGroup
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.ui.PlayerView
+import androidx.test.core.app.ActivityScenario
+import com.lowtube.android.MainActivity
 import com.lowtube.android.model.VideoItem
 import com.lowtube.android.playback.PlaybackDecoderDiagnostics
 import com.lowtube.android.playback.configurePlaybackPreload
@@ -35,6 +42,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -168,10 +178,22 @@ class YoutubeResolverPlaybackAcceptanceTest {
         val subtitle = externalSubtitleConfiguration(context, subtitleUri)
             ?: throw AssertionError("The test WebVTT fixture was not recognized")
         var failure: PlaybackException? = null
+        val expectedCueReceived = AtomicBoolean(false)
+        val visibleSubtitlePixelsAtCue = AtomicInteger(0)
+        var activityScenario: ActivityScenario<MainActivity>? = null
+        var playerView: PlayerView? = null
         val player = withContext(Dispatchers.Main.immediate) {
             ExoPlayer.Builder(context).setLoadControl(createPlaybackLoadControl(context)).build().apply {
                 addListener(object : Player.Listener {
                     override fun onPlayerError(error: PlaybackException) { failure = error }
+                    override fun onCues(cueGroup: CueGroup) {
+                        if (cueGroup.cues.any { it.text?.toString()?.contains("LowTube external subtitle acceptance") == true }) {
+                            expectedCueReceived.set(true)
+                            playerView?.postDelayed({
+                                visibleSubtitlePixelsAtCue.set(renderedBrightSubtitlePixelCount(playerView?.subtitleView))
+                            }, 100)
+                        }
+                    }
                 })
                 setMediaItem(
                     MediaItem.Builder()
@@ -186,6 +208,15 @@ class YoutubeResolverPlaybackAcceptanceTest {
             }
         }
         try {
+            activityScenario = ActivityScenario.launch(MainActivity::class.java)
+            val acceptancePlayer = player
+            activityScenario.onActivity { activity ->
+                playerView = PlayerView(activity).apply {
+                    useController = false
+                    this.player = acceptancePlayer
+                }
+                activity.setContentView(playerView)
+            }
             withContext(Dispatchers.Main.immediate) {
                 withTimeout(45_000) {
                     while (player.playbackState != Player.STATE_READY && failure == null) delay(100)
@@ -258,9 +289,35 @@ class YoutubeResolverPlaybackAcceptanceTest {
                 player.pause()
                 assertNull(failure)
                 assertTrue("The player did not resume after attaching subtitles", player.currentPosition >= beforeAttach + 1_000)
+                val cueReceived = withTimeoutOrNull(5_000) {
+                    while (!expectedCueReceived.get()) delay(50)
+                    true
+                } == true
+                assertTrue(
+                    "The expected subtitle cue did not reach Media3; current cue count=" + player.currentCues.cues.size,
+                    cueReceived,
+                )
+                withTimeout(5_000) {
+                    while (visibleSubtitlePixelsAtCue.get() < MIN_VISIBLE_SUBTITLE_PIXELS) {
+                        assertTrue("Subtitle rendering exceeded the two-minute media limit", player.currentPosition < 120_000)
+                        delay(50)
+                    }
+                }
+                val visibleSubtitlePixels = visibleSubtitlePixelsAtCue.get()
+                assertTrue(
+                    "PlayerView SubtitleView did not render visible caption pixels: " + visibleSubtitlePixels +
+                        ", size=" + playerView?.subtitleView?.width + "x" + playerView?.subtitleView?.height +
+                        ", cues=" + player.currentCues.cues.size + ", received=" + expectedCueReceived.get(),
+                    visibleSubtitlePixels >= MIN_VISIBLE_SUBTITLE_PIXELS,
+                )
+                println(
+                    "externalSubtitleViewAcceptance; cueReceived=" + expectedCueReceived.get() +
+                        "; visiblePixels=" + visibleSubtitlePixels + "; mediaPositionMs=" + player.currentPosition,
+                )
             }
         } finally {
             withContext(Dispatchers.Main.immediate) { player.pause(); player.release() }
+            activityScenario?.close()
             subtitleFile.delete()
         }
     }
@@ -468,4 +525,27 @@ class YoutubeResolverPlaybackAcceptanceTest {
             lines.firstOrNull { it.startsWith("VmRSS:") }?.trim()?.split(Regex("\\s+"))?.getOrNull(1)?.toLongOrNull()
         }
     }.getOrNull()
+
+    private fun renderedBrightSubtitlePixelCount(view: android.view.View?): Int {
+        val target = view ?: return 0
+        if (target.width <= 0 || target.height <= 0) return 0
+        val bitmap = Bitmap.createBitmap(target.width, target.height, Bitmap.Config.ARGB_8888)
+        return try {
+            target.draw(Canvas(bitmap))
+            val pixels = IntArray(target.width * target.height)
+            bitmap.getPixels(pixels, 0, target.width, 0, 0, target.width, target.height)
+            pixels.count { pixel ->
+                Color.alpha(pixel) > 32 &&
+                    Color.red(pixel) > 160 &&
+                    Color.green(pixel) > 160 &&
+                    Color.blue(pixel) > 160
+            }
+        } finally {
+            bitmap.recycle()
+        }
+    }
+
+    private companion object {
+        const val MIN_VISIBLE_SUBTITLE_PIXELS = 20
+    }
 }
