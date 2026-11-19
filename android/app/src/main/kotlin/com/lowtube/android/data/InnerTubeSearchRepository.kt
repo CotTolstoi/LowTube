@@ -156,7 +156,10 @@ class InnerTubeSearchRepository(context: Context? = null) {
         preferWebClient: Boolean = false,
     ): ResolvedVideoStream = withContext(Dispatchers.IO) {
         operationMutex.withLock {
-            val resolved = resolvePlayerData(video, preferWebClient, acceptsStreaming = ::hasDirectOrDash)
+            val resolved = resolvePlayerData(video, preferWebClient) { streaming ->
+                hasDirectOrDash(streaming) ||
+                    (playerJavaScriptRuntime != null && hasObfuscatedSignaturePlaybackFormat(streaming))
+            }
             resolveStreams(resolved.video, resolved.streaming, preferences, resolved.userAgent)
         }
     }
@@ -459,6 +462,23 @@ class InnerTubeSearchRepository(context: Context? = null) {
             isTrustedStreamUrl(streaming.optString("hlsManifestUrl"))
     }
 
+    private fun hasObfuscatedSignaturePlaybackFormat(streaming: JSONObject): Boolean {
+        for (key in arrayOf("formats", "adaptiveFormats")) {
+            val formats = streaming.optJSONArray(key) ?: continue
+            for (index in 0 until formats.length()) {
+                val format = formats.optJSONObject(index) ?: continue
+                if (!format.optString("mimeType").startsWith("video/")) continue
+                val cipher = format.optString("signatureCipher").ifBlank { format.optString("cipher") }
+                if (cipher.isBlank() || cipher.length > MAX_CIPHER_LENGTH) continue
+                val fields = Uri.parse("https://cipher.invalid/?$cipher")
+                val signature = fields.getQueryParameter("s").orEmpty()
+                val url = fields.getQueryParameter("url").orEmpty()
+                if (signature.isNotBlank() && isTrustedStreamUrl(url)) return true
+            }
+        }
+        return false
+    }
+
     internal fun hlsManifestFallback(video: VideoItem, streaming: JSONObject, userAgent: String = USER_AGENT): ResolvedVideoStream? {
         val hlsUrl = streaming.optString("hlsManifestUrl")
         if (!isTrustedStreamUrl(hlsUrl)) return null
@@ -496,6 +516,7 @@ class InnerTubeSearchRepository(context: Context? = null) {
         val functions = executableFunctions.functions
         var activeExecutableFunctions = executableFunctions
         val transformed = JSONObject(streaming.toString())
+        val pendingSignatureTransforms = mutableListOf<PendingSignatureTransform>()
         val pendingUrlTransforms = mutableListOf<PendingUrlTransform>()
         for (key in arrayOf("formats", "adaptiveFormats")) {
             val formats = transformed.optJSONArray(key) ?: continue
@@ -508,8 +529,12 @@ class InnerTubeSearchRepository(context: Context? = null) {
                     if (obfuscated.isNotBlank()) {
                         val function = functions.signature
                         if (function.isNullOrBlank()) {
-                            format.remove("signatureCipher")
-                            format.remove("cipher")
+                            if (executableFunctions.markerCandidateNames.isNotEmpty()) {
+                                pendingSignatureTransforms.add(PendingSignatureTransform(format, cipher, obfuscated))
+                            } else {
+                                format.remove("signatureCipher")
+                                format.remove("cipher")
+                            }
                             continue
                         }
                         val signatureSource = executableFunctions.signatureProgram
@@ -533,6 +558,40 @@ class InnerTubeSearchRepository(context: Context? = null) {
                 val throttled = runCatching { Uri.parse(directUrl).getQueryParameter("n") }.getOrNull().orEmpty()
                 if (throttled.isNotBlank()) {
                     pendingUrlTransforms.add(PendingUrlTransform(format, directUrl))
+                }
+            }
+        }
+        val signatureCandidates = executableFunctions.markerCandidateNames.take(MAX_MARKER_URL_CANDIDATES)
+        if (pendingSignatureTransforms.isNotEmpty() && signatureCandidates.isNotEmpty()) {
+            pendingSignatureTransforms.chunked(MAX_MARKER_URL_BATCH).forEach { batch ->
+                val results = try {
+                    runtime.executeFullPlayerUrlObjectSignatureTransforms(
+                        playerScript.source,
+                        signatureCandidates,
+                        List(batch.size) { SIGNATURE_PROBE_URL },
+                        batch.map { it.signature },
+                    )
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (_: Exception) {
+                    emptyList()
+                }
+                batch.forEachIndexed { index, item ->
+                    val result = results.getOrNull(index)
+                    val signature = result?.signature?.takeIf {
+                        result.signatureChanged && it.isNotBlank() && it.length <= MAX_CIPHER_LENGTH && it.none(Char::isISOControl)
+                    }
+                    val signedUrl = signature?.let { YoutubePlayerUrlTransformer.applySignatureCipher(item.cipher, it) }
+                    if (signedUrl.isNullOrBlank() || !isTrustedStreamUrl(signedUrl)) {
+                        item.format.remove("signatureCipher")
+                        item.format.remove("cipher")
+                    } else {
+                        item.format.put("url", signedUrl)
+                        item.format.remove("signatureCipher")
+                        item.format.remove("cipher")
+                        val throttled = runCatching { Uri.parse(signedUrl).getQueryParameter("n").orEmpty() }.getOrNull().orEmpty()
+                        if (throttled.isNotBlank()) pendingUrlTransforms.add(PendingUrlTransform(item.format, signedUrl))
+                    }
                 }
             }
         }
@@ -613,6 +672,7 @@ class InnerTubeSearchRepository(context: Context? = null) {
     }
 
     private data class PendingUrlTransform(val format: JSONObject, val url: String)
+    private data class PendingSignatureTransform(val format: JSONObject, val cipher: String, val signature: String)
 
     private suspend fun executeUrlTransformWithRecovery(
         playerScript: YoutubePlayerScriptCache.PlayerScript,
@@ -1435,6 +1495,7 @@ class InnerTubeSearchRepository(context: Context? = null) {
         private const val MAX_URL_N_BATCH_SIZE = 64
         private const val MAX_MARKER_URL_CANDIDATES = 3
         private const val MAX_MARKER_URL_BATCH = 24
+        private const val SIGNATURE_PROBE_URL = "https://youtube.com/watch?v=lowtube-signature"
         private const val USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
         private const val MWEB_USER_AGENT = "Mozilla/5.0 (iPad; CPU OS 16_7_10 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1,gzip(gfe)"
         private const val IOS_CLIENT_VERSION = "21.26.4"

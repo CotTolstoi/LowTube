@@ -12,7 +12,9 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import com.lowtube.android.model.VideoItem
 import com.lowtube.android.playback.PlaybackDecoderDiagnostics
 import kotlinx.coroutines.CancellationException
@@ -232,6 +234,125 @@ class YoutubePlayerClientComparisonDiagnosticTest {
                 "userAgent=iPad; httpStatus=${range.status}; bytes=${range.bytes}; " +
                 "cpuMs=${Process.getElapsedCpuTime() - cpuStarted}; " +
                 "wallMs=${SystemClock.elapsedRealtime() - wallStarted}; pssKiB=$pssStarted->${Debug.getPss()}",
+        )
+    }
+
+    @Test
+    fun resolvesObfuscatedMwebSignatureAndPlaysOnlyFirstTwelveSeconds() = runBlocking {
+        val arguments = InstrumentationRegistry.getArguments()
+        assumeTrue(
+            "Pass -e runMwebSignaturePlaybackAcceptance true to run this bounded player-change acceptance",
+            arguments.getString("runMwebSignaturePlaybackAcceptance") == "true",
+        )
+        val videoId = arguments.getString("playerVariantVideoId")
+            ?.takeIf(VIDEO_ID::matches)
+            ?: "dQw4w9WgXcQ"
+        val configuration = readPublicConfiguration()
+        val mwebConfig = readMwebWatchPlayerConfig(videoId, MWEB_USER_AGENT)
+            ?: error("The MWEB watch page did not provide public player configuration.")
+        val mwebVersion = mwebConfig.clientVersion.ifBlank { configuration.clientVersion }
+        val mwebVariant = PlayerVariant("MWEB", mwebVersion, "2", MWEB_USER_AGENT)
+        val mwebResponse = requestPublicPlayer(videoId, configuration.copy(signatureTimestamp = mwebConfig.signatureTimestamp), mwebVariant)
+        val mwebStreaming = mwebResponse.optJSONObject("streamingData")
+            ?: error("The live MWEB response did not contain streaming data.")
+        assertTrue("The live MWEB fixture has no obfuscated signature challenge", (summarizeFormats(mwebStreaming)["obfuscatedS"] ?: 0) > 0)
+
+        val repository = InnerTubeSearchRepository(ApplicationProvider.getApplicationContext<Context>())
+        val attemptedClients = mutableListOf<String>()
+        repository.playerRequestOverrideForAcceptance = { body, _, clientId, userAgent ->
+            val client = JSONObject(body).getJSONObject("context").getJSONObject("client")
+            val name = client.optString("clientName")
+            attemptedClients.add(name)
+            if (name == "MWEB") {
+                assertEquals("2", clientId)
+                assertEquals(MWEB_USER_AGENT, userAgent)
+                mwebResponse
+            } else {
+                assertTrue("Unexpected player client $name", name in listOf("ANDROID", "WEB", "IOS"))
+                JSONObject().put("playabilityStatus", JSONObject().put("status", "LOGIN_REQUIRED"))
+            }
+        }
+        val video = VideoItem(
+            id = videoId,
+            title = "Public MWEB signature fixture",
+            duration = "3:33",
+            url = "https://www.youtube.com/watch?v=$videoId",
+        )
+        val cpuStarted = Process.getElapsedCpuTime()
+        val wallStarted = SystemClock.elapsedRealtime()
+        val pssStarted = Debug.getPss()
+        val stream = repository.resolvePlayback(video)
+        assertEquals(listOf("ANDROID", "WEB", "IOS", "MWEB"), attemptedClients)
+        assertTrue("The resolver did not retain the MWEB User-Agent", stream.userAgent.contains("iPad"))
+        assertTrue("The resolved format has no signature query parameter", listOf("signature", "sig").any {
+            !Uri.parse(stream.uri).getQueryParameter(it).isNullOrBlank()
+        })
+        val range = boundedRange(stream.uri, stream.userAgent)
+            ?: error("The transformed MWEB stream did not return a bounded CDN range.")
+        assertEquals(HttpURLConnection.HTTP_PARTIAL, range.status)
+        assertEquals(MAX_RANGE_BYTES, range.bytes)
+
+        PlaybackDecoderDiagnostics.clear(ApplicationProvider.getApplicationContext())
+        var playbackFailure: PlaybackException? = null
+        var playbackPositionMs = 0L
+        val player = withContext(Dispatchers.Main.immediate) {
+            ExoPlayer.Builder(ApplicationProvider.getApplicationContext<Context>())
+                .setMediaSourceFactory(
+                    DefaultMediaSourceFactory(
+                        DefaultHttpDataSource.Factory().setUserAgent(stream.userAgent),
+                    ),
+                )
+                .build()
+                .apply {
+                    addAnalyticsListener(PlaybackDecoderDiagnostics.analyticsListener(ApplicationProvider.getApplicationContext()))
+                    addListener(object : Player.Listener {
+                        override fun onPlayerError(error: PlaybackException) {
+                            playbackFailure = error
+                        }
+                    })
+                    setMediaItem(
+                        MediaItem.Builder()
+                            .setUri(stream.uri)
+                            .setClippingConfiguration(
+                                MediaItem.ClippingConfiguration.Builder().setEndPositionMs(12_000).build(),
+                            )
+                            .build(),
+                    )
+                    prepare()
+                }
+        }
+        try {
+            withContext(Dispatchers.Main.immediate) {
+                withTimeout(45_000) {
+                    while (player.playbackState != Player.STATE_READY && playbackFailure == null) delay(100)
+                }
+                assertNull(playbackFailure)
+                player.play()
+                withTimeout(20_000) {
+                    while (player.currentPosition < 2_000 && playbackFailure == null) {
+                        assertTrue("MWEB signature playback must stop within the first 2 minutes", player.currentPosition < 120_000)
+                        delay(50)
+                    }
+                }
+                player.pause()
+                assertNull(playbackFailure)
+                assertTrue("Media3 did not advance the transformed MWEB stream", player.currentPosition >= 1_000)
+                assertTrue("MWEB signature acceptance exceeded 2 minutes", player.currentPosition < 120_000)
+                playbackPositionMs = player.currentPosition
+            }
+        } finally {
+            withContext(Dispatchers.Main.immediate) { player.release() }
+        }
+        val decoderName = PlaybackDecoderDiagnostics.read(
+            ApplicationProvider.getApplicationContext<Context>()
+                .getSharedPreferences(PlaybackDecoderDiagnostics.PREFERENCES_NAME, Context.MODE_PRIVATE),
+        ).name
+        System.out.println(
+            "mwebSignaturePlaybackAcceptance; clients=${attemptedClients.joinToString(",")}; itag=${stream.itag}; " +
+                "height=${stream.videoHeight}; httpStatus=${range.status}; rangeBytes=${range.bytes}; " +
+                "mediaMs=$playbackPositionMs; decoder=${decoderName.ifBlank { "unknown" }}; " +
+                "cpuMs=${Process.getElapsedCpuTime() - cpuStarted}; wallMs=${SystemClock.elapsedRealtime() - wallStarted}; " +
+                "pssKiB=$pssStarted->${Debug.getPss()}",
         )
     }
 
@@ -937,6 +1058,7 @@ class YoutubePlayerClientComparisonDiagnosticTest {
                 val signature = fields.getQueryParameter("s")?.takeIf(String::isNotBlank) ?: return@mapNotNull null
                 SignatureChallengeInput(
                     signature = signature,
+                    cipher = cipher,
                     itag = format.optInt("itag", -1),
                     signatureLength = signature.length,
                 )
@@ -969,9 +1091,10 @@ class YoutubePlayerClientComparisonDiagnosticTest {
         )
         val markerNames = locator.markerCandidateNames.take(MAX_MARKER_URL_CANDIDATES)
         if (markerNames.isNotEmpty()) {
+            val signatureRuntime = YoutubePlayerJavaScriptRuntime()
             val markerResults = runCatching {
                 runBlocking {
-                    YoutubePlayerJavaScriptRuntime().executeFullPlayerUrlObjectSignatureTransforms(
+                    signatureRuntime.executeFullPlayerUrlObjectSignatureTransforms(
                         script.source,
                         markerNames,
                         List(challenges.size) { "https://youtube.com/watch?v=yt-dlp-wins" },
@@ -999,6 +1122,35 @@ class YoutubePlayerClientComparisonDiagnosticTest {
             System.out.println(
                 "playerVariantSignatureObjectProbe; outcome=completed; markers=${markerNames.joinToString(",")}; " +
                     "inputs=${challenges.joinToString(",") { "itag${it.itag}:${it.signatureLength}" }}",
+            )
+            val rangeProbes = runCatching {
+                runBlocking {
+                    markerResults.mapIndexedNotNull { index, result ->
+                        val challenge = challenges.getOrNull(index) ?: return@mapIndexedNotNull null
+                        val signature = result.signature ?: return@mapIndexedNotNull null
+                        val signedUrl = YoutubePlayerUrlTransformer.applySignatureCipher(challenge.cipher, signature)
+                            ?.takeIf { Uri.parse(it).host.orEmpty().endsWith("googlevideo.com") }
+                            ?: return@mapIndexedNotNull null
+                        val throttled = Uri.parse(signedUrl).getQueryParameter("n").orEmpty()
+                        val streamUrl = if (throttled.isBlank()) signedUrl else {
+                            val nResult = signatureRuntime.executeFullPlayerUrlObjectNTransforms(
+                                script.source,
+                                markerNames,
+                                listOf(signedUrl),
+                            ).firstOrNull()?.url
+                            nResult?.let { YoutubePlayerUrlTransformer.acceptUrlNTransform(signedUrl, it) }
+                        }
+                        val range = streamUrl?.let { boundedRange(it, userAgent) }
+                        challenge.itag to range
+                    }
+                }
+            }.getOrElse { failure ->
+                System.out.println("playerVariantSignatureRangeProbe; outcome=execution_failed; failure=${failure.javaClass.simpleName}")
+                emptyList()
+            }
+            System.out.println(
+                "playerVariantSignatureRangeProbe; results=" +
+                    rangeProbes.joinToString(",") { (itag, result) -> "itag$itag:${result?.status ?: "no_url"}:${result?.bytes ?: 0}" },
             )
         } else {
             System.out.println("playerVariantSignatureObjectProbe; outcome=no_marker_candidates")
@@ -1634,7 +1786,7 @@ class YoutubePlayerClientComparisonDiagnosticTest {
         val signatureTimestamp: Int,
         val clientVersion: String,
     )
-    private data class SignatureChallengeInput(val signature: String, val itag: Int, val signatureLength: Int)
+    private data class SignatureChallengeInput(val signature: String, val cipher: String, val itag: Int, val signatureLength: Int)
     private data class NChallengeResult(
         val outcome: String,
         val candidateCount: Int,
