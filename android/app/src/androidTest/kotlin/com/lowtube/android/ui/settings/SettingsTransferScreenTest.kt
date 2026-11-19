@@ -3,6 +3,7 @@ package com.lowtube.android.ui.settings
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -10,6 +11,7 @@ import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import com.lowtube.android.R
 import com.lowtube.android.data.PlaybackStreamPreferences
+import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -20,6 +22,26 @@ import org.junit.Test
 class SettingsTransferScreenTest {
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
+
+    @Test
+    fun settingsUsesTwoColumnsOnlyForWideWindows() {
+        showSettings()
+        composeTestRule.waitForIdle()
+        val wideWindow = InstrumentationRegistry.getArguments().getString("settingsLayout") == "twoColumns"
+        val singleColumnCount = composeTestRule.onAllNodesWithTag(SETTINGS_SINGLE_COLUMN_TEST_TAG).fetchSemanticsNodes().size
+        val leftPaneNodes = composeTestRule.onAllNodesWithTag(SETTINGS_LEFT_PANE_TEST_TAG).fetchSemanticsNodes()
+        val rightPaneNodes = composeTestRule.onAllNodesWithTag(SETTINGS_RIGHT_PANE_TEST_TAG).fetchSemanticsNodes()
+        if (wideWindow) {
+            assertEquals(0, singleColumnCount)
+            assertEquals(1, leftPaneNodes.size)
+            assertEquals(1, rightPaneNodes.size)
+            assertTrue("Settings columns should be side by side", rightPaneNodes.single().boundsInRoot.left >= leftPaneNodes.single().boundsInRoot.right)
+        } else {
+            assertEquals(1, singleColumnCount)
+            assertEquals(0, leftPaneNodes.size)
+            assertEquals(0, rightPaneNodes.size)
+        }
+    }
 
     @Test
     fun showsImportAndExportActions() {

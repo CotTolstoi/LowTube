@@ -14,7 +14,10 @@ import java.io.ByteArrayOutputStream
 import java.io.IOException
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -33,6 +36,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,6 +48,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.lowtube.android.AppLocale
@@ -191,10 +198,14 @@ fun SettingsScreen(
         }
     }
     Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.settings)) }, navigationIcon = { TextButton(onClick = onBack) { Text(stringResource(R.string.back)) } }) }) { padding ->
-        Column(
-            modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
+        BoxWithConstraints(Modifier.fillMaxSize().padding(padding)) {
+        val configuration = LocalConfiguration.current
+        val density = LocalDensity.current
+        val availableWidthDp = maxWidth.value * density.density / (configuration.densityDpi / 160f)
+        SettingsAdaptiveColumns(
+            modifier = Modifier.fillMaxSize(),
+            useTwoColumns = availableWidthDp >= 800f,
+            leftContent = {
             Text(stringResource(R.string.appearance), style = MaterialTheme.typography.titleMedium)
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -349,6 +360,8 @@ fun SettingsScreen(
                 onValueChanged = { onPlaybackBufferPreferencesChanged(playbackBufferPreferences.copy(startupSeconds = it)) },
             )
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            },
+            rightContent = {
             Text(stringResource(R.string.download_settings), style = MaterialTheme.typography.titleMedium)
             Text(stringResource(R.string.maximum_download_quality), style = MaterialTheme.typography.bodyMedium)
             androidx.compose.foundation.layout.Box {
@@ -541,9 +554,49 @@ fun SettingsScreen(
                     Text(stringResource(R.string.resource_usage_system_ram, sample.availableRamStartMiB, sample.availableRamEndMiB, sample.totalRamMiB))
                 }
             }
+            },
+        )
         }
     }
 }
+
+@Composable
+private fun SettingsAdaptiveColumns(
+    modifier: Modifier,
+    useTwoColumns: Boolean,
+    leftContent: @Composable ColumnScope.() -> Unit,
+    rightContent: @Composable ColumnScope.() -> Unit,
+) {
+    if (useTwoColumns) {
+        Row(modifier, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(
+                modifier = Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState()).padding(16.dp)
+                    .testTag(SETTINGS_LEFT_PANE_TEST_TAG),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                content = leftContent,
+            )
+            VerticalDivider(Modifier.fillMaxHeight())
+            Column(
+                modifier = Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState()).padding(16.dp)
+                    .testTag(SETTINGS_RIGHT_PANE_TEST_TAG),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                content = rightContent,
+            )
+        }
+    } else {
+        Column(
+            modifier = modifier.verticalScroll(rememberScrollState()).padding(16.dp).testTag(SETTINGS_SINGLE_COLUMN_TEST_TAG),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            leftContent()
+            rightContent()
+        }
+    }
+}
+
+internal const val SETTINGS_LEFT_PANE_TEST_TAG = "lowtube-settings-left-pane"
+internal const val SETTINGS_RIGHT_PANE_TEST_TAG = "lowtube-settings-right-pane"
+internal const val SETTINGS_SINGLE_COLUMN_TEST_TAG = "lowtube-settings-single-column"
 
 private suspend fun createDiagnosticReport(
     context: Context,
