@@ -171,7 +171,9 @@ fun MainNavigation(
     var selectedVideo by rememberSaveable(stateSaver = videoItemSaver) { mutableStateOf(restoredPlaybackSession?.video) }
     var shortsSession by remember { mutableStateOf(emptyList<VideoItem>()) }
     var shortsSessionIndex by remember { mutableIntStateOf(-1) }
-    var selectedLocalAudio by rememberSaveable(stateSaver = localAudioTrackSaver) { mutableStateOf<LocalAudioTrack?>(null) }
+    var selectedLocalAudio by rememberSaveable(stateSaver = localAudioTrackSaver) {
+        mutableStateOf(restoredPlaybackSession?.localAudioTrack)
+    }
     var selectedQueueRowId by rememberSaveable { mutableStateOf(restoredPlaybackSession?.queueRowId) }
     var playbackRequestId by rememberSaveable { mutableLongStateOf(0L) }
     var advancingQueue by remember { mutableStateOf(false) }
@@ -223,9 +225,9 @@ fun MainNavigation(
     var preloadNext by remember(context) { mutableStateOf(preferences.getBoolean("playback_preload_next", true)) }
     var feedRefreshPreset by remember(context) { mutableIntStateOf(preferences.getInt("feed_refresh_preset", 1).coerceIn(0, 2)) }
     var pageSize by remember(context) { mutableIntStateOf(preferences.getInt("page_size", 25).coerceIn(1, 250)) }
-    LaunchedEffect(selectedVideo, selectedQueueRowId) {
+    LaunchedEffect(selectedVideo, selectedQueueRowId, selectedLocalAudio) {
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-            playbackSessionStore.save(selectedVideo, selectedQueueRowId)
+            playbackSessionStore.save(selectedVideo, selectedQueueRowId, selectedLocalAudio)
         }
     }
     LaunchedEffect(library, libraryRevision, feedRefreshPreset) {
