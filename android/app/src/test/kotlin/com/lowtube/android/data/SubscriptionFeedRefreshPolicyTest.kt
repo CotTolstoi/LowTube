@@ -7,9 +7,9 @@ import org.junit.Test
 class SubscriptionFeedRefreshPolicyTest {
     @Test
     fun mapsPcConnectionPresetsToBoundedAndroidBatches() {
-        assertEquals(SubscriptionFeedRefreshPolicy(2, 1), SubscriptionFeedRefreshPolicy.fromPreset(0))
-        assertEquals(SubscriptionFeedRefreshPolicy(4, 2), SubscriptionFeedRefreshPolicy.fromPreset(1))
-        assertEquals(SubscriptionFeedRefreshPolicy(6, 3), SubscriptionFeedRefreshPolicy.fromPreset(2))
+        assertEquals(SubscriptionFeedRefreshPolicy(2, 1, 30), SubscriptionFeedRefreshPolicy.fromPreset(0))
+        assertEquals(SubscriptionFeedRefreshPolicy(4, 2, 15), SubscriptionFeedRefreshPolicy.fromPreset(1))
+        assertEquals(SubscriptionFeedRefreshPolicy(6, 3, 15), SubscriptionFeedRefreshPolicy.fromPreset(2))
     }
 
     @Test

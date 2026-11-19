@@ -104,6 +104,7 @@ dependencies {
   implementation(libs.quickjs.kt.android)
   implementation(libs.androidx.credentials)
   implementation(libs.androidx.credentials.play.services.auth)
+  implementation(libs.androidx.work.runtime.ktx)
   implementation(libs.googleid)
   implementation(libs.play.services.auth)
 }

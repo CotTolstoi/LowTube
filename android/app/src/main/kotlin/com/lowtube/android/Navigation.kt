@@ -38,6 +38,7 @@ import com.lowtube.android.data.PlaybackBufferPreferences
 import com.lowtube.android.data.DownloadStreamPreferences
 import com.lowtube.android.data.DownloadRepository
 import com.lowtube.android.data.InnerTubeSearchRepository
+import com.lowtube.android.data.SubscriptionFeedRefreshScheduler
 import com.lowtube.android.downloads.DownloadDestination
 import com.lowtube.android.model.VideoItem
 import com.lowtube.android.model.QueueEntry
@@ -169,6 +170,12 @@ fun MainNavigation(
     var autoNext by remember(context) { mutableStateOf(preferences.getBoolean("playback_auto_next", true)) }
     var preloadNext by remember(context) { mutableStateOf(preferences.getBoolean("playback_preload_next", true)) }
     var feedRefreshPreset by remember(context) { mutableIntStateOf(preferences.getInt("feed_refresh_preset", 1).coerceIn(0, 2)) }
+    LaunchedEffect(library, libraryRevision, feedRefreshPreset) {
+        val hasLocalChannels = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            library.localChannels().isNotEmpty()
+        }
+        SubscriptionFeedRefreshScheduler.synchronize(context.applicationContext, feedRefreshPreset, hasLocalChannels)
+    }
     var mainTab by rememberSaveable { mutableStateOf("home") }
     var returnMainTab by rememberSaveable { mutableStateOf("home") }
     val hasQueuedItems = remember(library, queueRevision) { library.queue().isNotEmpty() }
