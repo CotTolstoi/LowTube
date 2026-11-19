@@ -149,7 +149,7 @@ fun DecoderBenchmarkScreen(onBack: () -> Unit) {
                         selected = durationSeconds == seconds,
                         onClick = { durationSeconds = seconds },
                         enabled = runJob == null,
-                        label = { Text("${seconds}s") },
+                        label = { Text(stringResource(R.string.duration_seconds_short, seconds)) },
                     )
                 }
             }

@@ -334,6 +334,8 @@
     <string name="decoder_benchmark_hardware_no_codec">No hardware video decoder is available for this file on this device.</string>
     <string name="decoder_benchmark_software_hint">Software preferred is a selection preference, not a guarantee. The actual decoder is reported after initialization.</string>
     <string name="decoder_benchmark_duration">Measurement duration</string>
+    <string name="duration_seconds_short">%1$ds</string>
+    <string name="diagnostic_report_clip_label">LowTube diagnostics</string>
     <string name="decoder_benchmark_two_minute_cap">Every run starts at media time 0 and is clipped at 2 minutes maximum.</string>
     <string name="decoder_benchmark_run">Run profile</string>
     <string name="decoder_benchmark_compare">Compare available profiles</string>

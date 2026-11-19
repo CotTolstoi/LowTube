@@ -334,6 +334,8 @@
     <string name="decoder_benchmark_hardware_no_codec">Для цього файлу на пристрої немає апаратного відеодекодера.</string>
     <string name="decoder_benchmark_software_hint">Пріоритет програмного декодера — побажання до вибору, а не гарантія. Фактичний декодер буде показано після запуску.</string>
     <string name="decoder_benchmark_duration">Тривалість заміру</string>
+    <string name="duration_seconds_short">%1$d с</string>
+    <string name="diagnostic_report_clip_label">Діагностика LowTube</string>
     <string name="decoder_benchmark_two_minute_cap">Кожен запуск починається з медіапозиції 0 і має жорстке обрізання максимум на 2 хвилинах.</string>
     <string name="decoder_benchmark_run">Запустити профіль</string>
     <string name="decoder_benchmark_compare">Порівняти доступні профілі</string>

@@ -492,7 +492,7 @@ fun SettingsScreen(
                             downloadRepository = downloadRepository,
                         )
                         val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as ClipboardManager
-                        clipboard.setPrimaryClip(ClipData.newPlainText("LowTube diagnostics", report))
+                        clipboard.setPrimaryClip(ClipData.newPlainText(context.getString(R.string.diagnostic_report_clip_label), report))
                         diagnosticReportCopied = true
                     } catch (cancelled: CancellationException) {
                         throw cancelled
