@@ -81,6 +81,49 @@ class YoutubePlayerLiveScriptDiagnosticTest {
         )
         val functions = executable.functions
         val urlProgram = executable.urlThrottlingProgram
+        if (arguments.getString("probeRawUrlCandidates") == "true") {
+            val syntheticUrl = "https://r1.googlevideo.com/videoplayback?expire=2000000000&itag=18&n=LowTube_n_probe_Aa0123456789"
+            val runtime = YoutubePlayerJavaScriptRuntime()
+            val candidates = YoutubePlayerTransformLocator.locateUrlTransformDiagnosticCandidates(script.source)
+            candidates.forEach { candidate ->
+                val requiredDependencies = LinkedHashSet<String>()
+                var activeCandidate = candidate
+                var transformed: String? = null
+                var failure: Throwable? = null
+                for (attempt in 0..MAX_RAW_URL_CANDIDATE_RECOVERIES) {
+                    val execution = runCatching {
+                        runBlocking { runtime.executeFunction(activeCandidate.program, activeCandidate.name, syntheticUrl) }
+                    }
+                    transformed = execution.getOrNull()
+                    failure = execution.exceptionOrNull()
+                    if (transformed != null) break
+                    val unresolved = failure?.let { YoutubePlayerJavaScriptRuntime.unresolvedIdentifier(it) } ?: break
+                    if (!requiredDependencies.add(unresolved) || requiredDependencies.size > MAX_RAW_URL_CANDIDATE_RECOVERIES) break
+                    val rebuilt = runCatching {
+                        YoutubePlayerTransformLocator.locateUrlTransformDiagnosticCandidates(
+                            script.source,
+                            requiredDependencies = requiredDependencies,
+                        ).firstOrNull { it.name == candidate.name }
+                    }.getOrNull() ?: break
+                    activeCandidate = rebuilt
+                }
+                val accepted = transformed?.let {
+                    YoutubePlayerUrlTransformer.acceptUrlNTransform(syntheticUrl, it) != null
+                } == true
+                val reason = failure?.let { error ->
+                    ((error.cause ?: error).message.orEmpty())
+                        .replace(Regex("[^A-Za-z0-9 _-]"), " ").take(96)
+                }.orEmpty()
+                System.out.println(
+                    "liveRawUrlTransformCandidate; name=${candidate.name}; programChars=${activeCandidate.program.length}; " +
+                        "recoveredDependencies=${requiredDependencies.size}; executed=${transformed != null}; " +
+                        "changedNWithSameHostPath=$accepted; outputChars=${transformed?.length ?: 0}; " +
+                        "failure=${failure?.javaClass?.simpleName.orEmpty()}; reason=$reason",
+                )
+            }
+            System.out.println("liveRawUrlTransformCandidateSummary; count=${candidates.size}")
+            return
+        }
         if (functions.signature == null && arguments.getString("nLocatorOnly") != "true") {
             val candidateStartedAt = System.nanoTime()
             val candidates = YoutubePlayerTransformLocator.locateExecutable(
@@ -451,6 +494,7 @@ class YoutubePlayerLiveScriptDiagnosticTest {
         private const val MAX_MARKER_SIGNATURE_PROBES = 12
         private const val MAX_STRING_OPERATION_PROBES = 30
         private const val MAX_TOTAL_SIGNATURE_PROBES = 42
+        private const val MAX_RAW_URL_CANDIDATE_RECOVERIES = 4
         private const val DOCUMENT_SHIM = """
             var document={
               createElement:function(){return {style:{},canPlayType:function(){return "";},setAttribute:function(){},getAttribute:function(){return "";},appendChild:function(){},removeChild:function(){},children:[],childNodes:[]};},

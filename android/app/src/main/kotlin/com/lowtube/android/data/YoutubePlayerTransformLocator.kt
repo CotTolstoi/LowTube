@@ -18,6 +18,50 @@ internal object YoutubePlayerTransformLocator {
         val requiredDependencies: Set<String> = emptySet(),
     )
     data class MarkerCandidate(val name: String, val program: String, val isAsync: Boolean)
+    internal data class UrlTransformDiagnosticCandidate(val name: String, val program: String)
+
+    /** Builds a small, opt-in-only set for executing candidates against synthetic URLs. */
+    internal fun locateUrlTransformDiagnosticCandidates(
+        source: String,
+        requiredDependencies: Set<String> = emptySet(),
+        onDiagnosticStage: ((String) -> Unit)? = null,
+    ): List<UrlTransformDiagnosticCandidate> {
+        require(source.length <= YoutubePlayerScriptCache.MAX_SCRIPT_BYTES) {
+            "YouTube player script is larger than 8 MB."
+        }
+        require(requiredDependencies.size <= MAX_REQUIRED_DEPENDENCIES && requiredDependencies.all(bareIdentifier::matches)) {
+            "YouTube player helper identifiers are invalid."
+        }
+        val index = buildDeclarationIndex(source, onDiagnosticStage)
+        val dottedLeaves = index.declarations.keys.filter { it.contains('.') }.groupBy { it.substringAfterLast('.') }
+        val resolvedRequiredDependencies = requiredDependencies.map { name ->
+            if (name in index.declarations) name
+            else dottedLeaves[name]?.singleOrNull()
+                ?: throw java.io.IOException("A required YouTube player helper could not be isolated.")
+        }.toSet()
+        return findReferencedCandidates(source, urlThrottlingCallSites, index.declarations.keys)
+            .take(MAX_URL_DIAGNOSTIC_CANDIDATES)
+            .mapNotNull { name ->
+                runCatching {
+                    UrlTransformDiagnosticCandidate(
+                        name,
+                        buildExecutableProgram(
+                            source,
+                            index,
+                            name,
+                            onDiagnosticStage,
+                            includeUniqueDottedAliases = true,
+                            maxDeclarations = MAX_URL_EXECUTABLE_DECLARATIONS,
+                            maxProgramBytes = MAX_URL_EXECUTABLE_PROGRAM_BYTES,
+                            additionalRootNames = resolvedRequiredDependencies,
+                        ),
+                    )
+                }.onFailure { failure ->
+                    val reason = failure.message.orEmpty().replace(Regex("[^A-Za-z0-9 _-]"), " ").take(96)
+                    onDiagnosticStage?.invoke("locatorUrlDiagnosticProgramFailed; name=$name; reason=$reason")
+                }.getOrNull()
+            }
+    }
 
     private const val IDENTIFIER = "[\$A-Za-z_][\$A-Za-z0-9_]{0,127}"
     private const val FUNCTION_EXPRESSION = "$IDENTIFIER(?:\\.$IDENTIFIER)*"
@@ -47,6 +91,7 @@ internal object YoutubePlayerTransformLocator {
     private val functionAssignment = Regex("\\b($IDENTIFIER)\\s*=\\s*function\\s*\\(")
     private val markerContinuation = Regex("^\\s*$IDENTIFIER&&")
     private const val MARKER_LOOKBACK_CHARS = 64 * 1024
+    private const val MAX_URL_DIAGNOSTIC_CANDIDATES = 8
 
     fun locate(source: String, onDiagnosticStage: ((String) -> Unit)? = null): Functions {
         require(source.length <= YoutubePlayerScriptCache.MAX_SCRIPT_BYTES) { "YouTube player script is larger than 8 MB." }
@@ -320,7 +365,19 @@ internal object YoutubePlayerTransformLocator {
         val declarations = index.declarations.keys
         val signatureCandidates = findReferencedCandidates(source, signatureCallSites, declarations)
         val throttlingCandidates = findReferencedCandidates(source, throttlingCallSites, declarations)
-        val urlThrottlingCandidates = findReferencedCandidates(source, urlThrottlingCallSites, declarations)
+        val rawUrlThrottlingCandidates = findReferencedCandidates(source, urlThrottlingCallSites, declarations)
+        rawUrlThrottlingCandidates.forEach { name ->
+            val declaration = index.declarations[name] ?: return@forEach
+            val range = declaration.memberRange ?: declaration.range
+            val start = index.tokens.getOrNull(range.startToken)?.start ?: return@forEach
+            val end = index.tokens.getOrNull(range.endToken)?.end ?: return@forEach
+            val body = source.substring(start, end)
+            onDiagnosticStage?.invoke(
+                "locatorUrlCandidateShape; name=$name; kind=${declaration.kind}; chars=${body.length}; " +
+                    "getN=${urlNGetter.containsMatchIn(body)}; pathN=${urlPathNRewrite.containsMatchIn(body)}",
+            )
+        }
+        val urlThrottlingCandidates = rawUrlThrottlingCandidates
             .filter { name ->
                 val declaration = index.declarations[name] ?: return@filter false
                 val range = declaration.memberRange ?: declaration.range

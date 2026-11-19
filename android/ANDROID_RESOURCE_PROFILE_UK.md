@@ -254,4 +254,8 @@
 
 19.11.2026 00:10 UTC, Redmi Note 8 / Android13 API33 після `SubscriptionFeedRefreshSchedulerTest`: LowTube `MainActivity` знову у foreground. Settled Home 10 s sample — CPU 0,9% одного ядра, PSS 120 MiB, RSS 205,8 MiB, peak RSS 214,1 MiB, RAM 3 713 MiB / доступно 1 359 MiB. Тест не запускав періодичний worker чи відео. Короткий idle point sample, не benchmark.
 
+19.11.2026 00:22 UTC, Android6/API23 x86_64 AVD, metadata-only порівняння шести публічних YouTube player variants та QuickJS MWEB marker probe: 6 548 ms process CPU за 6 448 ms wall; process PSS 31 927→100 696 KiB. Було прийнято зміну `n` із збереженням HTTPS host/path; CDN Range та Media3 playback у цьому probe не запускалися. Це короткий opt-in diagnostics snapshot, не benchmark і не звичайне споживання LowTube у foreground.
+
+19.11.2026 00:24 UTC, Android6/API23 x86_64 AVD, production MWEB fallback-order acceptance з test-injected no-stream Android/WEB responses і публічною MWEB-відповіддю: 4 541 ms process CPU за 4 485 ms wall; process PSS 32 588→68 017 KiB. CDN отримав тільки bounded 65 536-byte Range (HTTP 206); Media3 не створювався. Короткий resolver diagnostic/acceptance snapshot, не benchmark.
+
 19.11.2026, API23 AVD, natural-order MWEB fallback acceptance без Media3: CPU процесу 4 175 ms за 4 254 ms wall; PSS 26 928→52 155 KiB. Network fixture прочитав лише 65 536 байтів Range; process snapshot, не benchmark.
