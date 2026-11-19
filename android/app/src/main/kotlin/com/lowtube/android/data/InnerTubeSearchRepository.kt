@@ -156,12 +156,16 @@ class InnerTubeSearchRepository(context: Context? = null) {
         preferWebClient: Boolean = false,
     ): ResolvedVideoStream = withContext(Dispatchers.IO) {
         operationMutex.withLock {
-            val resolved = resolvePlayerData(video, preferWebClient)
+            val resolved = resolvePlayerData(video, preferWebClient, ::hasDirectOrDash)
             resolveStreams(resolved.video, resolved.streaming, preferences, resolved.userAgent)
         }
     }
 
-    private suspend fun resolvePlayerData(video: VideoItem, preferWebClient: Boolean): ResolvedPlayerData {
+    private suspend fun resolvePlayerData(
+        video: VideoItem,
+        preferWebClient: Boolean,
+        acceptsStreaming: (JSONObject) -> Boolean,
+    ): ResolvedPlayerData {
         require(VIDEO_ID.matches(video.id)) { "This item is not a playable video." }
         if (video.liveStatus == "is_upcoming") throw IOException("This live stream has not started yet.")
         val html = request("/watch?v=${urlEncode(video.id)}&hl=en", null, false, PLAYER_TIMEOUT_MS)
@@ -182,10 +186,11 @@ class InnerTubeSearchRepository(context: Context? = null) {
             player,
             preferWebClient,
             requestSignatureTimestamp,
+            acceptsStreaming,
         )
-            .takeIf { hasDirectOrDash(it.streaming) }
-            ?: pageStreaming?.takeIf(::hasDirectOrDash)?.let { ResolvedPlayerResponse(it, USER_AGENT) }
-            ?: throw IOException("YouTube did not return a directly playable stream.")
+            .takeIf { acceptsStreaming(it.streaming) }
+            ?: pageStreaming?.takeIf(acceptsStreaming)?.let { ResolvedPlayerResponse(it, USER_AGENT) }
+            ?: throw IOException("YouTube did not return a stream suitable for this operation.")
         val streaming = if (containsPlayerJsChallenge(resolvedStreaming.streaming)) {
             val runtime = playerJavaScriptRuntime
                 ?: throw IOException("This video requires a player signature transform, which is unavailable in this resolver context.")
@@ -221,7 +226,9 @@ class InnerTubeSearchRepository(context: Context? = null) {
         audioOnly: Boolean = false,
     ): List<DownloadFormatOption> = withContext(Dispatchers.IO) {
         operationMutex.withLock {
-            val resolved = resolvePlayerData(video, preferWebClient = true)
+            val resolved = resolvePlayerData(video, preferWebClient = true) {
+                hasDownloadableFormat(it, preferences, audioOnly)
+            }
             downloadOptions(resolved.video, resolved.streaming, preferences, audioOnly, resolved.userAgent)
         }
     }
@@ -242,13 +249,7 @@ class InnerTubeSearchRepository(context: Context? = null) {
         audioOnly: Boolean,
         userAgent: String = USER_AGENT,
     ): List<DownloadFormatOption> {
-        val formats = parsePlaybackFormats(streaming)
-        return formats.asSequence()
-            .filter { if (audioOnly) it.audioOnly else it.videoMuxed }
-            .filter { it.mimeType in SUPPORTED_DOWNLOAD_MIME_TYPES }
-            .filter { audioOnly || it.json.optInt("height", 0) in 1..preferences.maxHeight }
-            .filter { audioOnly || !preferences.h264Only || it.codec.startsWith("avc1") }
-            .filter { audioOnly || !preferences.fps30Only || it.json.optDouble("fps", 0.0) <= 30.0 }
+        return downloadableFormats(streaming, preferences, audioOnly)
             .distinctBy { "${it.json.optInt("itag", 0)}|${it.mimeType}|$audioOnly" }
             .sortedWith(
                 if (audioOnly) compareByDescending<PlaybackFormat> { it.json.optLong("bitrate", 0) }
@@ -359,6 +360,24 @@ class InnerTubeSearchRepository(context: Context? = null) {
             }
         }
         return formats
+    }
+
+    private fun hasDownloadableFormat(
+        streaming: JSONObject,
+        preferences: DownloadStreamPreferences,
+        audioOnly: Boolean,
+    ): Boolean = downloadableFormats(streaming, preferences, audioOnly).isNotEmpty()
+
+    private fun downloadableFormats(
+        streaming: JSONObject,
+        preferences: DownloadStreamPreferences,
+        audioOnly: Boolean,
+    ): List<PlaybackFormat> = parsePlaybackFormats(streaming).filter { format ->
+        (if (audioOnly) format.audioOnly else format.videoMuxed) &&
+            format.mimeType in SUPPORTED_DOWNLOAD_MIME_TYPES &&
+            (audioOnly || format.json.optInt("height", 0) in 1..preferences.maxHeight) &&
+            (audioOnly || !preferences.h264Only || format.codec.startsWith("avc1")) &&
+            (audioOnly || !preferences.fps30Only || format.json.optDouble("fps", 0.0) <= 30.0)
     }
 
     private data class ResolvedPlayerData(val video: VideoItem, val streaming: JSONObject, val userAgent: String)
@@ -654,6 +673,7 @@ class InnerTubeSearchRepository(context: Context? = null) {
         pageResponse: JSONObject,
         preferWebClient: Boolean,
         requestSignatureTimestamp: Int,
+        acceptsStreaming: (JSONObject) -> Boolean,
     ): ResolvedPlayerResponse {
         if (apiKey.isBlank()) throw IOException("YouTube player configuration is incomplete. Retry the video.")
         val androidClient = PlayerRequestClient("ANDROID", "20.13.41", "3", USER_AGENT)
@@ -706,7 +726,7 @@ class InnerTubeSearchRepository(context: Context? = null) {
                 lastStatus = status?.optString("status").orEmpty()
                 val streaming = response.optJSONObject("streamingData")
                 if (streaming != null) playerClientStreamSummaryObserver?.invoke(playerClientStreamSummary(name, streaming))
-                if (streaming != null && hasDirectOrDash(streaming)) return ResolvedPlayerResponse(streaming, userAgent)
+                if (streaming != null && acceptsStreaming(streaming)) return ResolvedPlayerResponse(streaming, userAgent)
             } catch (_: IOException) {
                 // A failed anonymous client is followed by the next client.
             }
@@ -745,7 +765,7 @@ class InnerTubeSearchRepository(context: Context? = null) {
             val streaming = response.optJSONObject("streamingData")
             if (streaming != null) {
                 playerClientStreamSummaryObserver?.invoke(playerClientStreamSummary(mwebClient.name, streaming))
-                if (hasDirectOrDash(streaming)) {
+                if (acceptsStreaming(streaming)) {
                     return ResolvedPlayerResponse(
                         streaming,
                         mwebClient.userAgent,
@@ -758,7 +778,7 @@ class InnerTubeSearchRepository(context: Context? = null) {
             // Fall through to watch-page data or the bounded unavailable-stream message.
         }
         val streaming = pageResponse.optJSONObject("streamingData")
-        if (streaming != null) return ResolvedPlayerResponse(streaming, USER_AGENT)
+        if (streaming != null && acceptsStreaming(streaming)) return ResolvedPlayerResponse(streaming, USER_AGENT)
         throw IOException(if (lastStatus.isBlank()) "YouTube player API returned no streams. Retry on a different network." else "YouTube player API returned $lastStatus without a playable stream.")
     }
 

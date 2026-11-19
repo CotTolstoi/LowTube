@@ -113,6 +113,84 @@ class YoutubePlayerClientComparisonDiagnosticTest {
     }
 
     @Test
+    fun downloadResolverSkipsSyntheticIosHlsOnlyResponseAndContinuesToMwebDirectFormats() = runBlocking {
+        val arguments = InstrumentationRegistry.getArguments()
+        assumeTrue(
+            "Pass -e runDownloadMwebFallbackAcceptance true to run this bounded live network check",
+            arguments.getString("runDownloadMwebFallbackAcceptance") == "true",
+        )
+        val videoId = DEFAULT_VIDEO_ID
+        val configuration = readPublicConfiguration()
+        val iosResponse = JSONObject()
+            .put("playabilityStatus", JSONObject().put("status", "OK"))
+            .put("streamingData", JSONObject().put(
+                "hlsManifestUrl",
+                "https://manifest.googlevideo.com/api/manifest/hls_variant",
+            ))
+
+        val mwebVersion = readMwebWatchPlayerConfig(videoId, MWEB_USER_AGENT)?.clientVersion
+            ?.takeIf(String::isNotBlank) ?: configuration.clientVersion
+        val mwebResponse = requestPublicPlayer(
+            videoId,
+            configuration.copy(clientVersion = mwebVersion),
+            PlayerVariant("MWEB", mwebVersion, "2", MWEB_USER_AGENT),
+        )
+        val repository = InnerTubeSearchRepository(ApplicationProvider.getApplicationContext<Context>())
+        val attemptedClients = mutableListOf<String>()
+        repository.playerRequestOverrideForAcceptance = { body, version, clientId, userAgent ->
+            val client = JSONObject(body).getJSONObject("context").getJSONObject("client")
+            val name = client.optString("clientName")
+            attemptedClients.add(name)
+            assertEquals(clientId, when (name) {
+                "WEB" -> "1"
+                "ANDROID" -> "3"
+                "IOS" -> "5"
+                "MWEB" -> "2"
+                else -> "unknown"
+            })
+            when (name) {
+                "IOS" -> {
+                    assertEquals(IOS_CLIENT_VERSION, version)
+                    assertEquals(IOS_USER_AGENT, userAgent)
+                    iosResponse
+                }
+                "MWEB" -> {
+                    assertEquals(mwebVersion, version)
+                    assertEquals(MWEB_USER_AGENT, userAgent)
+                    mwebResponse
+                }
+                else -> JSONObject().put("playabilityStatus", JSONObject().put("status", "LOGIN_REQUIRED"))
+            }
+        }
+        val video = VideoItem(
+            id = videoId,
+            title = "Public download fallback fixture",
+            duration = "9:56",
+            url = "https://www.youtube.com/watch?v=$videoId",
+        )
+        val cpuStarted = Process.getElapsedCpuTime()
+        val wallStarted = SystemClock.elapsedRealtime()
+        val pssStarted = Debug.getPss()
+
+        val option = repository.resolveDownloadOptions(video, DownloadStreamPreferences(), audioOnly = false).first()
+
+        assertEquals(listOf("WEB", "ANDROID", "IOS", "MWEB"), attemptedClients)
+        assertTrue("Download resolver returned a manifest instead of a direct format", !option.stream.isHlsManifest && !option.stream.isDashManifest)
+        assertTrue("The download resolver did not retain the MWEB User-Agent", option.stream.userAgent.contains("iPad"))
+        val range = boundedRange(option.stream.uri, option.stream.userAgent)
+            ?: error("The production MWEB download URL did not return a bounded CDN range.")
+        assertEquals(HttpURLConnection.HTTP_PARTIAL, range.status)
+        assertEquals(MAX_RANGE_BYTES, range.bytes)
+
+        System.out.println(
+            "downloadMwebFallbackAcceptance; iosFixture=syntheticHlsOnly; clients=${attemptedClients.joinToString(",")}; " +
+                "itag=${option.stream.itag}; mime=${option.stream.mimeType}; httpStatus=${range.status}; " +
+                "bytes=${range.bytes}; cpuMs=${Process.getElapsedCpuTime() - cpuStarted}; " +
+                "wallMs=${SystemClock.elapsedRealtime() - wallStarted}; pssKiB=$pssStarted->${Debug.getPss()}",
+        )
+    }
+
+    @Test
     fun resolvesLiveIosHlsAsFallbackAfterAndroidAndWebReturnNoStreams() = runBlocking {
         val arguments = InstrumentationRegistry.getArguments()
         assumeTrue(
