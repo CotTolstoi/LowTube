@@ -23,6 +23,7 @@
     <string name="account_sign_in_failed">Google sign-in failed. Check the OAuth configuration and try again.</string>
     <string name="account_sign_in_cancelled">Google sign-in was cancelled.</string>
     <string name="account_picker_cancelled">Google account selection was closed before an account was selected.</string>
+    <string name="account_picker_cancelled_diagnostic">Google account selection ended before authorization started (result %1$d). Provider: %2$s %3$s; Authorization API: %4$s. Retry and complete the account selection prompt.</string>
     <string name="account_authorization_cancelled">Google authorization was closed. If you did not close it, check the Android OAuth client for package com.lowtube.android and this APK signing certificate’s SHA-1.</string>
     <string name="account_authorization_cancelled_diagnostic">Google authorization did not complete (%1$s). Provider: %2$s %3$s; Authorization API: %4$s. For OAuth setup, register package %5$s with signing SHA-1 %6$s. Retry if you closed the Google prompt.</string>
     <string name="account_authorization_api_available">available</string>

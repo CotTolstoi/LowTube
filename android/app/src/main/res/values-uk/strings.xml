@@ -23,6 +23,7 @@
     <string name="account_sign_in_failed">Не вдалося ввійти через Google. Перевірте OAuth-налаштування й повторіть спробу.</string>
     <string name="account_sign_in_cancelled">Вхід через Google скасовано.</string>
     <string name="account_picker_cancelled">Вибір облікового запису Google закрито до вибору акаунта.</string>
+    <string name="account_picker_cancelled_diagnostic">Вибір облікового запису Google завершився до початку авторизації (код %1$d). Провайдер: %2$s %3$s; API авторизації: %4$s. Повторіть спробу й завершіть вибір акаунта.</string>
     <string name="account_authorization_cancelled">Вікно авторизації Google закрито. Якщо ви його не закривали, перевірте Android OAuth client для пакета com.lowtube.android і SHA-1 сертифіката підпису цього APK.</string>
     <string name="account_authorization_cancelled_diagnostic">Авторизацію Google не завершено (%1$s). Служба: %2$s %3$s; API авторизації: %4$s. Для OAuth зареєструйте пакет %5$s із SHA‑1 сертифіката підпису %6$s. Повторіть спробу, якщо ви закрили вікно Google.</string>
     <string name="account_authorization_api_available">доступний</string>

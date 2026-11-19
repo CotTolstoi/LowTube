@@ -76,7 +76,7 @@ class MainActivity : ComponentActivity() {
   private val googleAccountSelectionLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
     if (result.resultCode != RESULT_OK) {
       googleSignInBusy = false
-      googleAccountMessage = getString(R.string.account_picker_cancelled)
+      googleAccountMessage = googleAccountSelectionCancelledMessage(result.resultCode)
       return@registerForActivityResult
     }
     val email = result.data?.getStringExtra(AccountManager.KEY_ACCOUNT_NAME).orEmpty().trim()
@@ -432,6 +432,17 @@ class MainActivity : ComponentActivity() {
       getString(if (details.authorizationApiAvailable) R.string.account_authorization_api_available else R.string.account_authorization_api_not_detected),
       details.packageName,
       details.signingSha1,
+    )
+  }
+
+  private fun googleAccountSelectionCancelledMessage(resultCode: Int): String {
+    val details = GoogleAuthorizationDiagnostics.collect(this)
+    return getString(
+      R.string.account_picker_cancelled_diagnostic,
+      resultCode,
+      details.provider,
+      details.providerVersion.ifBlank { "unknown" },
+      getString(if (details.authorizationApiAvailable) R.string.account_authorization_api_available else R.string.account_authorization_api_not_detected),
     )
   }
 
