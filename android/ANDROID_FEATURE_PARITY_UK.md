@@ -228,3 +228,5 @@ Playback acceptance test opt-in і за замовчуванням пропус�
 
 
 19.11.2026: API23 Shorts acceptance пройшла: immersive player відкривається, свайп перемикає на наступний Short у вже завантаженому списку. За підсумком візуальної перевірки safe-area заголовок обмежено двома рядками й піднято над контролерами; коротке відтворення фінального APK зупинено на ~4,7 s. Save/Share/Subscribe ще не натискалися. Підключений фізичний Android залишено у foreground; його system model — TrebleDroid vanilla, не верифікований Redmi Note 8.
+
+19.11.2026, API23 Shorts action acceptance: Watch later показав toast Saved to Watch later, а Share відкрив системний chooser із LowTube та Messaging; нічого не надсилали. Натискання Subscribe не дало видимого переходу до Subscribed, тому follow state треба розібрати перед закриттям acceptance. Відео лишалося на паузі біля 4,7 s; MainActivity foreground на API23 AVD. Фізичний Android перевірено окремо: LowTube лишається foreground.
