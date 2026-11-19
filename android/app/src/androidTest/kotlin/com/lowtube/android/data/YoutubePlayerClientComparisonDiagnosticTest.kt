@@ -211,18 +211,23 @@ class YoutubePlayerClientComparisonDiagnosticTest {
         val cpuStarted = Process.getElapsedCpuTime()
         val wallStarted = SystemClock.elapsedRealtime()
         val pssStarted = Debug.getPss()
-        val option = repository.resolveDownloadOptions(video, DownloadStreamPreferences(), audioOnly = false).first()
+        val options = repository.resolveDownloadOptions(video, DownloadStreamPreferences(), audioOnly = false)
         assertEquals(listOf("WEB", "ANDROID", "IOS", "MWEB"), attemptedClients)
-        assertTrue("The resolved video download MIME is not video/*: ${option.stream.mimeType}", option.stream.mimeType.startsWith("video/"))
-        assertTrue("The resolved download URL is not a trusted CDN URL", Uri.parse(option.stream.uri).host.orEmpty().endsWith("googlevideo.com"))
-        val range = boundedRange(option.stream.uri, option.stream.userAgent)
-            ?: error("The transformed MWEB video download did not return an HTTP response.")
-        assertEquals(HttpURLConnection.HTTP_PARTIAL, range.status)
-        assertEquals(MAX_RANGE_BYTES, range.bytes)
+        assertTrue("The transformed MWEB signature produced no video download options", options.isNotEmpty())
+        val rangeProbes = options.take(3).map { option ->
+            assertTrue("The resolved video download MIME is not video/*: ${option.stream.mimeType}", option.stream.mimeType.startsWith("video/"))
+            assertTrue("The resolved download URL is not a trusted CDN URL", Uri.parse(option.stream.uri).host.orEmpty().endsWith("googlevideo.com"))
+            option to boundedRange(option.stream.uri, option.stream.userAgent)
+        }
+        rangeProbes.forEach { (option, range) ->
+            val boundedRange = range ?: error("itag ${option.stream.itag} did not return an HTTP response.")
+            assertEquals("itag ${option.stream.itag}", HttpURLConnection.HTTP_PARTIAL, boundedRange.status)
+            assertEquals("itag ${option.stream.itag}", MAX_RANGE_BYTES, boundedRange.bytes)
+        }
         System.out.println(
             "mwebSignatureDownloadAcceptance; clients=${attemptedClients.joinToString(",")}; " +
-                "itag=${option.stream.itag}; mime=${option.stream.mimeType}; height=${option.stream.videoHeight}; " +
-                "httpStatus=${range.status}; bytes=${range.bytes}; cpuMs=${Process.getElapsedCpuTime() - cpuStarted}; " +
+                "formats=${options.size}; probes=${rangeProbes.joinToString(",") { "${it.first.stream.itag}:${it.second?.status ?: "error"}:${it.second?.bytes ?: 0}" }}; " +
+                "cpuMs=${Process.getElapsedCpuTime() - cpuStarted}; " +
                 "wallMs=${SystemClock.elapsedRealtime() - wallStarted}; pssKiB=$pssStarted->${Debug.getPss()}",
         )
     }
