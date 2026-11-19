@@ -154,6 +154,9 @@
     <string name="download_format_audio_mp3">Аудіо · MP3</string>
     <string name="downloads_empty">Завантажень LowTube поки немає.</string>
     <string name="download_started">Завантаження додано. Android покаже перебіг у сповіщеннях.</string>
+    <string name="download_preparing">Підготовка черги завантажень</string>
+    <string name="download_paused_resume">Призупинено; поновіть, щоб продовжити</string>
+    <string name="download_cancelled">Завантаження скасовано</string>
     <string name="download_notifications_disabled">LowTube продовжить завантаження. Увімкніть сповіщення в налаштуваннях Android, щоб бачити перебіг і кнопки керування.</string>
     <string name="mini_player_play">Відтворити</string>
     <string name="mini_player_pause">Пауза</string>

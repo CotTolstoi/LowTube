@@ -81,7 +81,7 @@ class DownloadService : Service() {
             allowLoopbackDebugTest = testStreamUrl != null
             store = DownloadJobStore(this, testDb ?: "lowtube_download_queue.db").also { it.requeueInterrupted() }
         }
-        val notification = buildNotification("Preparing download queue", 0, 0, false)
+        val notification = buildNotification(getString(R.string.download_preparing), 0, 0, false)
         if (Build.VERSION.SDK_INT >= 29) ServiceCompat.startForeground(this, NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
         else startForeground(NOTIFICATION_ID, notification)
         when (intent?.action) {
@@ -204,7 +204,7 @@ class DownloadService : Service() {
             if (cancelId == job.id) throw CancellationException("Cancelled by user.")
             if (!outcome.complete && job.maxBytesPerAttempt > 0) {
                 queue.update(job.id, DownloadStatus.PAUSED, "Paused after bounded transfer chunk.", outcome.downloaded, outcome.total)
-                show(job, outcome.downloaded, outcome.total, false, "Paused; resume to continue")
+                show(job, outcome.downloaded, outcome.total, false, getString(R.string.download_paused_resume))
             } else {
                 job = queue.get(job.id) ?: return
                 val published = withContext(Dispatchers.IO) { files.publish(job) }
@@ -219,18 +219,18 @@ class DownloadService : Service() {
                     files.deletePublished(published)
                     throw CancellationException("Cancelled by user.")
                 }
-                show(job, outcome.downloaded, outcome.total, false, "Download complete")
+                show(job, outcome.downloaded, outcome.total, false, getString(R.string.download_complete))
             }
         } catch (cancelled: CancellationException) {
             downloaded = partialBytes(job, part, requiresMuxing).takeIf { it > 0L } ?: downloaded
             queue.update(job.id, DownloadStatus.CANCELLED, "Cancelled by user.", downloaded)
-            show(job, downloaded, job.totalBytes, false, "Download cancelled")
+            show(job, downloaded, job.totalBytes, false, getString(R.string.download_cancelled))
             synchronized(cancelLock) { if (cancelId == job.id) cancelId = 0 }
         } catch (failure: Exception) {
             if (cancelId == job.id) {
                 downloaded = partialBytes(job, part, requiresMuxing).takeIf { it > 0L } ?: downloaded
                 queue.update(job.id, DownloadStatus.CANCELLED, "Cancelled by user.", downloaded)
-                show(job, downloaded, job.totalBytes, false, "Download cancelled")
+                show(job, downloaded, job.totalBytes, false, getString(R.string.download_cancelled))
                 synchronized(cancelLock) { if (cancelId == job.id) cancelId = 0 }
             } else {
                 if (failure.message?.contains("HTTP 416") == true || failure.message?.contains("unexpected byte offset") == true) {
@@ -238,7 +238,7 @@ class DownloadService : Service() {
                     downloaded = 0
                 }
                 queue.update(job.id, DownloadStatus.FAILED, failure.message ?: failure.javaClass.simpleName, downloaded)
-                show(job, downloaded, job.totalBytes, false, "Download failed: ${failure.message ?: "unknown error"}")
+                show(job, downloaded, job.totalBytes, false, getString(R.string.download_failed))
             }
         } finally {
             synchronized(cancelLock) { activeCall = null }
@@ -374,17 +374,17 @@ class DownloadService : Service() {
 
     private fun buildNotification(title: String, downloaded: Long, total: Long, active: Boolean, id: Long = 0): Notification {
         val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-        val builder = NotificationCompat.Builder(this, CHANNEL_ID).setSmallIcon(R.mipmap.ic_launcher).setContentTitle("LowTube downloads").setContentText(title).setContentIntent(open).setOnlyAlertOnce(true).setOngoing(active).setCategory(NotificationCompat.CATEGORY_PROGRESS)
+        val builder = NotificationCompat.Builder(this, CHANNEL_ID).setSmallIcon(R.mipmap.ic_launcher).setContentTitle(getString(R.string.downloads)).setContentText(title).setContentIntent(open).setOnlyAlertOnce(true).setOngoing(active).setCategory(NotificationCompat.CATEGORY_PROGRESS)
         if (total > 0) builder.setProgress(100, ((downloaded * 100L) / total).toInt().coerceIn(0, 100), false) else if (active) builder.setProgress(0, 0, true)
         if (active && id > 0) {
             val cancel = PendingIntent.getService(this, id.toInt(), Intent(this, DownloadService::class.java).setAction(ACTION_CANCEL).putExtra(EXTRA_ID, id), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-            builder.addAction(0, "Cancel", cancel)
+            builder.addAction(0, getString(R.string.cancel_download), cancel)
         }
         return builder.build()
     }
 
     private fun createChannel() {
-        if (Build.VERSION.SDK_INT >= 26) (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(NotificationChannel(CHANNEL_ID, "LowTube downloads", NotificationManager.IMPORTANCE_LOW))
+        if (Build.VERSION.SDK_INT >= 26) (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(NotificationChannel(CHANNEL_ID, getString(R.string.downloads), NotificationManager.IMPORTANCE_LOW))
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
