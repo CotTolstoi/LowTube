@@ -3,7 +3,7 @@
 Дата початку: 2026-11-14
 Базова кодова база: WinForms-версія з гілки `main` (`8c599ab`)
 Робоча гілка: `feat/android-full`
-Статус станом на 18.11.2026: окремий Kotlin/Compose Android-проєкт збирається для minSdk 23; каталог, локальна бібліотека, Media3 плеєр, process-death/background playback state і власна transfer queue мають bounded перевірки на API23 AVD та фізичному Android13 пристрої. Обмежений direct-stream playback прийнято для окремих публічних fixture на обох API, але live `s`/`n` challenge, інші client responses, повний набір форматів і всі ролики не прийняті. Android13 підтверджує PiP і повернення process-death state; API23 підтверджує state restoration і background MediaSession без перевірки чутного звуку. Google Credential Manager та окремий `youtube.readonly` → YouTube Data API v3 мають кодовий потік; реальний OAuth/API acceptance чекає developer-owned Google Cloud config. Повний паритет із Windows не досягнуто.
+Статус станом на 19.11.2026: окремий Kotlin/Compose Android-проєкт збирається як один варіант застосунку для minSdk 23; каталог, локальна бібліотека, Media3 плеєр, process-death/background playback state і власна transfer queue мають bounded перевірки на API23 AVD та фізичному Android13 пристрої. API-різниці обробляються всередині цього APK, із сумісними шляхами для API 23; окремої «новішої» версії застосунку поки немає. Обмежений direct-stream playback прийнято для окремих публічних fixture на обох API, але live `s`/`n` challenge, інші client responses, повний набір форматів і всі ролики не прийняті. Android13 підтверджує PiP і повернення process-death state; API23 підтверджує state restoration і background MediaSession без перевірки чутного звуку. Профільний Google sign-in використовує системний account picker та Google AuthorizationClient; окремий `youtube.readonly` → YouTube Data API v3 має кодовий потік. Реальний OAuth/API acceptance чекає developer-owned Google Cloud config. Повний паритет із Windows не досягнуто.
 
 Оновлення напряму продукту від 2026-11-17: Android має бути самостійним повноцінним YouTube-клієнтом LowTube, у стилі окремого клієнта на кшталт ReVanced, але без модифікації чи перепакування офіційного застосунку YouTube. Основна навігація: **Пошук**, **Для вас/Рекомендації**, **Підписки**, **Профіль**; локальні можливості LowTube — у меню **Ще**, крім еквалайзера, який на Android не переноситься за прямою вказівкою користувача. Цей напрям замінює попередній план із вкладками Library/Settings у головній навігації.
 
@@ -14,6 +14,7 @@
 ## Цільові пристрої
 
 - Мінімальна система: **Android 6.0 Marshmallow (API 23)**.
+- Це одна кодова база й один Android APK із спільним набором продуктових функцій; виклики API, дозволи й окремі системні можливості можуть мати різні внутрішні реалізації за версією Android. Функцію, яка недоступна на API 23, не вважати підтриманою без сумісного fallback.
 - Новіші системи підтримуються; функції з новіших API мають мати перевірений fallback для API 23, якщо ця функція потрібна для повного сценарію.
 - Перевіряти API 23 та актуальну Android-систему, дозволи, мережу, сховище, життєвий цикл, аудіофокус і фонове відтворення.
 - Підключений тестовий пристрій користувача: Redmi Note 8 (2021); Android 13 / API 33, `arm64-v8a`. Системні властивості пристрою зараз показують `TrebleDroid vanilla`; ADB авторизований, встановлення APK проходить.

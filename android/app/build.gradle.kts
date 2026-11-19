@@ -4,10 +4,6 @@ plugins {
   alias(libs.plugins.kotlin.serialization)
 }
 
-val googleWebClientId = providers.gradleProperty("lowtubeGoogleWebClientId")
-  .orElse(providers.environmentVariable("LOWTUBE_GOOGLE_WEB_CLIENT_ID"))
-  .getOrElse("")
-
 android {
   namespace = "com.lowtube.android"
   compileSdk = 36
@@ -15,7 +11,6 @@ android {
     applicationId = "com.lowtube.android"
     minSdk = 23
     targetSdk = 36
-    resValue("string", "google_web_client_id", googleWebClientId)
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     versionCode = 1
     versionName = "0.1.0-android-dev"
@@ -102,9 +97,6 @@ dependencies {
   implementation(libs.coil.network.okhttp)
   implementation(libs.okhttp)
   implementation(libs.quickjs.kt.android)
-  implementation(libs.androidx.credentials)
-  implementation(libs.androidx.credentials.play.services.auth)
   implementation(libs.androidx.work.runtime.ktx)
-  implementation(libs.googleid)
   implementation(libs.play.services.auth)
 }

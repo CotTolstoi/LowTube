@@ -7,27 +7,22 @@ import android.app.PictureInPictureParams
 import android.util.Rational
 import android.content.Context
 import android.content.Intent
-import android.accounts.Account
 import android.net.Uri
+import android.accounts.Account
+import android.accounts.AccountManager
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.credentials.ClearCredentialStateRequest
-import androidx.credentials.CredentialManager
-import androidx.credentials.CustomCredential
-import androidx.credentials.GetCredentialRequest
-import androidx.credentials.exceptions.GetCredentialException
-import androidx.credentials.exceptions.GetCredentialCancellationException
-import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
-import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
-import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import com.google.android.gms.auth.api.identity.AuthorizationRequest
 import com.google.android.gms.auth.api.identity.AuthorizationResult
 import com.google.android.gms.auth.api.identity.Identity
+import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.common.api.CommonStatusCodes
 import com.google.android.gms.common.api.Scope
+import com.lowtube.android.data.GoogleAccountProfile
 import com.lowtube.android.data.YouTubeDataApiRepository
 import com.lowtube.android.model.YouTubeSubscription
 import androidx.lifecycle.lifecycleScope
@@ -60,10 +55,42 @@ class MainActivity : ComponentActivity() {
   private var pictureInPictureEligible = false
   private var inPictureInPictureMode by mutableStateOf(false)
   private var pendingYoutubeSync: ((Result<List<YouTubeSubscription>>) -> Unit)? = null
+  private var pendingGoogleProfileSignIn = false
   private var pendingYoutubeAccountEmail = ""
   private var youtubeSyncGeneration = 0
   private val youtubeDataApi = YouTubeDataApiRepository()
+  private val googleAccountSelectionLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+    if (result.resultCode != RESULT_OK) {
+      googleSignInBusy = false
+      googleAccountMessage = getString(R.string.account_sign_in_cancelled)
+      return@registerForActivityResult
+    }
+    val email = result.data?.getStringExtra(AccountManager.KEY_ACCOUNT_NAME).orEmpty().trim()
+    if (email.isBlank() || email.length > 320 || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+      googleSignInBusy = false
+      googleAccountMessage = getString(R.string.account_sign_in_failed)
+      return@registerForActivityResult
+    }
+    requestGoogleProfileAuthorization(email)
+  }
   private val youtubeAuthorizationLauncher = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
+    if (pendingGoogleProfileSignIn) {
+      pendingGoogleProfileSignIn = false
+      if (result.resultCode != RESULT_OK) {
+        googleSignInBusy = false
+        googleAccountMessage = getString(R.string.account_sign_in_cancelled)
+        return@registerForActivityResult
+      }
+      try {
+        val data = result.data ?: throw IllegalStateException("Google authorization returned no result.")
+        val authorization = Identity.getAuthorizationClient(this).getAuthorizationResultFromIntent(data)
+        useGoogleProfileAuthorization(authorization)
+      } catch (failure: Exception) {
+        googleSignInBusy = false
+        googleAccountMessage = accountAuthorizationError(failure)
+      }
+      return@registerForActivityResult
+    }
     val completion = pendingYoutubeSync
     pendingYoutubeSync = null
     if (completion == null) return@registerForActivityResult
@@ -76,9 +103,9 @@ class MainActivity : ComponentActivity() {
       val data = result.data ?: throw IllegalStateException("YouTube authorization returned no result.")
       val authorization = Identity.getAuthorizationClient(this).getAuthorizationResultFromIntent(data)
       useYoutubeAuthorization(authorization, completion)
-    } catch (_: Exception) {
+    } catch (failure: Exception) {
       youtubeSyncBusy = false
-      completion(Result.failure(IllegalStateException("YouTube authorization failed. Try syncing again.")))
+      completion(Result.failure(IllegalStateException(accountAuthorizationError(failure))))
     }
   }
 
@@ -232,55 +259,99 @@ class MainActivity : ComponentActivity() {
   }
 
   private fun signInWithGoogle() {
-    val webClientId = getString(R.string.google_web_client_id).trim()
-    if (webClientId.isEmpty()) {
-      googleAccountMessage = getString(R.string.account_oauth_not_configured)
-      return
-    }
     if (googleSignInBusy) return
 
     googleSignInBusy = true
     googleAccountMessage = ""
+    val chooser = AccountManager.newChooseAccountIntent(
+      null,
+      null,
+      arrayOf(GOOGLE_ACCOUNT_TYPE),
+      false,
+      null,
+      null,
+      null,
+      null,
+    )
+    try {
+      googleAccountSelectionLauncher.launch(chooser)
+    } catch (failure: Exception) {
+      googleSignInBusy = false
+      googleAccountMessage = accountAuthorizationError(failure)
+    }
+  }
+
+  private fun requestGoogleProfileAuthorization(email: String) {
+    val request = AuthorizationRequest.builder()
+      .setAccount(Account(email, GOOGLE_ACCOUNT_TYPE))
+      .setRequestedScopes(listOf(Scope(OPENID_SCOPE), Scope(EMAIL_SCOPE), Scope(PROFILE_SCOPE)))
+      .build()
+    Identity.getAuthorizationClient(this).authorize(request)
+      .addOnSuccessListener(::useGoogleProfileAuthorization)
+      .addOnFailureListener { failure ->
+        googleSignInBusy = false
+        googleAccountMessage = accountAuthorizationError(failure)
+      }
+  }
+
+  private fun useGoogleProfileAuthorization(authorization: AuthorizationResult) {
+    if (authorization.hasResolution()) {
+      val pendingIntent = authorization.pendingIntent
+      if (pendingIntent == null) {
+        googleSignInBusy = false
+        googleAccountMessage = getString(R.string.account_sign_in_failed)
+        return
+      }
+      pendingGoogleProfileSignIn = true
+      try {
+        youtubeAuthorizationLauncher.launch(IntentSenderRequest.Builder(pendingIntent).build())
+      } catch (failure: Exception) {
+        pendingGoogleProfileSignIn = false
+        googleSignInBusy = false
+        googleAccountMessage = accountAuthorizationError(failure)
+      }
+      return
+    }
+    val accessToken = authorization.accessToken.orEmpty()
+    if (accessToken.isBlank()) {
+      googleSignInBusy = false
+      googleAccountMessage = getString(R.string.account_sign_in_failed)
+      return
+    }
     lifecycleScope.launch {
       try {
-        val option = GetSignInWithGoogleOption.Builder(webClientId).build()
-        val request = GetCredentialRequest.Builder()
-          .addCredentialOption(option)
-          .build()
-        val response = CredentialManager.create(this@MainActivity).getCredential(this@MainActivity, request)
-        val credential = response.credential
-        if (credential !is CustomCredential || credential.type != GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
-          throw IllegalStateException("Unexpected Google credential type")
-        }
-
-        // Keep only display fields locally. The ID token is intentionally not persisted or logged.
-        val account = GoogleIdTokenCredential.createFrom(credential.data)
-        if (googleAccountEmail.isNotBlank() && !googleAccountEmail.equals(account.id, ignoreCase = true)) {
-          youtubeSyncGeneration++
-          pendingYoutubeSync = null
-          pendingYoutubeAccountEmail = ""
-          youtubeSyncBusy = false
-        }
-        googleAccountName = account.displayName.orEmpty()
-        googleAccountEmail = account.id
-        getSharedPreferences("lowtube_settings", MODE_PRIVATE).edit()
-          .putString("google_account_name", googleAccountName)
-          .putString("google_account_email", googleAccountEmail)
-          .apply()
-        googleAccountMessage = getString(R.string.account_profile_local_note)
-      } catch (cancelled: GetCredentialCancellationException) {
-        googleAccountMessage = getString(R.string.account_sign_in_cancelled)
-      } catch (cancelled: CancellationException) {
-        throw cancelled
-      } catch (_: GetCredentialException) {
-        googleAccountMessage = getString(R.string.account_sign_in_failed)
-      } catch (_: GoogleIdTokenParsingException) {
-        googleAccountMessage = getString(R.string.account_sign_in_failed)
-      } catch (_: Exception) {
-        googleAccountMessage = getString(R.string.account_sign_in_failed)
+        val profile = withContext(Dispatchers.IO) { youtubeDataApi.userProfile(accessToken) }
+        applyGoogleProfile(profile)
+      } catch (failure: Exception) {
+        googleAccountMessage = accountAuthorizationError(failure)
       } finally {
         googleSignInBusy = false
       }
+    }
+  }
+
+  private fun applyGoogleProfile(profile: GoogleAccountProfile) {
+    if (googleAccountEmail.isNotBlank() && !googleAccountEmail.equals(profile.email, ignoreCase = true)) {
+      youtubeSyncGeneration++
+      pendingYoutubeSync = null
+      pendingYoutubeAccountEmail = ""
+      youtubeSyncBusy = false
+    }
+    googleAccountName = profile.displayName
+    googleAccountEmail = profile.email
+    getSharedPreferences("lowtube_settings", MODE_PRIVATE).edit()
+      .putString("google_account_name", googleAccountName)
+      .putString("google_account_email", googleAccountEmail)
+      .apply()
+    googleAccountMessage = getString(R.string.account_profile_local_note)
+  }
+
+  private fun accountAuthorizationError(failure: Throwable): String {
+    val apiFailure = failure as? ApiException
+    return if (apiFailure?.statusCode == CommonStatusCodes.DEVELOPER_ERROR) {
+      getString(R.string.account_oauth_not_configured)
+    } else {
+      getString(R.string.account_sign_in_failed)
     }
   }
 
@@ -300,7 +371,7 @@ class MainActivity : ComponentActivity() {
     if (email.isNotBlank()) {
       val request = AuthorizationRequest.builder()
         .setAccount(Account(email, GOOGLE_ACCOUNT_TYPE))
-        .setRequestedScopes(listOf(Scope(YOUTUBE_READONLY_SCOPE)))
+        .setRequestedScopes(listOf(Scope(OPENID_SCOPE), Scope(EMAIL_SCOPE), Scope(PROFILE_SCOPE), Scope(YOUTUBE_READONLY_SCOPE)))
         .build()
       Identity.getAuthorizationClient(this).authorize(request)
         .addOnSuccessListener { authorization ->
@@ -309,10 +380,6 @@ class MainActivity : ComponentActivity() {
             lifecycleScope.launch(Dispatchers.IO) { runCatching { youtubeDataApi.revokeAccess(token) } }
           }
         }
-    }
-    val manager = CredentialManager.create(this)
-    lifecycleScope.launch {
-      runCatching { manager.clearCredentialState(ClearCredentialStateRequest()) }
     }
   }
 
@@ -396,6 +463,9 @@ class MainActivity : ComponentActivity() {
   }
 
   companion object {
+    private const val OPENID_SCOPE = "openid"
+    private const val EMAIL_SCOPE = "email"
+    private const val PROFILE_SCOPE = "profile"
     private const val YOUTUBE_READONLY_SCOPE = "https://www.googleapis.com/auth/youtube.readonly"
     private const val GOOGLE_ACCOUNT_TYPE = "com.google"
     private val YOUTUBE_LINK_HOSTS = setOf("youtube.com", "www.youtube.com", "m.youtube.com", "music.youtube.com", "youtu.be")

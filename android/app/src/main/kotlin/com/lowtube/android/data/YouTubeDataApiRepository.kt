@@ -12,6 +12,12 @@ import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
+data class GoogleAccountProfile(
+    val subject: String,
+    val email: String,
+    val displayName: String,
+)
+
 /** Reads the signed-in user's channel subscriptions through the official YouTube Data API. */
 class YouTubeDataApiRepository {
     private val client = OkHttpClient.Builder()
@@ -19,6 +25,31 @@ class YouTubeDataApiRepository {
         .readTimeout(15, TimeUnit.SECONDS)
         .callTimeout(90, TimeUnit.SECONDS)
         .build()
+
+    suspend fun userProfile(accessToken: String): GoogleAccountProfile = withContext(Dispatchers.IO) {
+        require(accessToken.isNotBlank() && accessToken.length <= MAX_ACCESS_TOKEN_LENGTH) {
+            "Google authorization is missing. Try signing in again."
+        }
+        val request = Request.Builder()
+            .url(USER_INFO_URL)
+            .header("Authorization", "Bearer $accessToken")
+            .header("Accept", "application/json")
+            .get()
+            .build()
+        client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) throw IOException("Google could not return the signed-in account profile (HTTP ${response.code}).")
+            val body = response.body ?: throw IOException("Google returned an empty account profile.")
+            if (body.contentLength() > MAX_PROFILE_BYTES) throw IOException("Google returned an oversized account profile.")
+            val json = JSONObject(readBounded(body.byteStream(), MAX_PROFILE_BYTES))
+            val subject = json.optString("sub").trim()
+            val email = json.optString("email").trim().take(MAX_EMAIL_LENGTH)
+            val displayName = json.optString("name").trim().take(MAX_NAME_LENGTH)
+            if (subject.isBlank() || email.isBlank() || !json.optBoolean("email_verified", false)) {
+                throw IOException("Google did not return a verified account email.")
+            }
+            GoogleAccountProfile(subject, email, displayName)
+        }
+    }
 
     suspend fun subscriptions(accessToken: String): List<YouTubeSubscription> = withContext(Dispatchers.IO) {
         require(accessToken.isNotBlank() && accessToken.length <= MAX_ACCESS_TOKEN_LENGTH) { "Google authorization is missing. Try syncing again." }
@@ -96,10 +127,14 @@ class YouTubeDataApiRepository {
     }
 
     companion object {
+        private const val USER_INFO_URL = "https://openidconnect.googleapis.com/v1/userinfo"
         private const val PAGE_SIZE = 50
         private const val MAX_PAGES = 100
         private const val MAX_SUBSCRIPTIONS = 5000
         private const val MAX_PAGE_BYTES = 2 * 1024 * 1024
+        private const val MAX_PROFILE_BYTES = 64 * 1024
+        private const val MAX_EMAIL_LENGTH = 320
+        private const val MAX_NAME_LENGTH = 160
         private const val MAX_TITLE_LENGTH = 250
         private const val MAX_ACCESS_TOKEN_LENGTH = 8192
         private val CHANNEL_ID = Regex("^UC[A-Za-z0-9_-]{22}$")

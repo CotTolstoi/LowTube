@@ -19,7 +19,7 @@
     <string name="supported_links">Посилання YouTube</string>
     <string name="supported_links_hint">У налаштуваннях Android виберіть, чи відкривати підтримувані посилання YouTube в LowTube.</string>
     <string name="open_link_settings">Налаштувати відкриття посилань</string>
-    <string name="account_oauth_not_configured">Вхід через Google не налаштовано для цієї збірки. Спершу створіть Android і Web OAuth-клієнти LowTube.</string>
+    <string name="account_oauth_not_configured">Вхід через Google не налаштовано для цієї збірки. Android OAuth-клієнт LowTube має бути зареєстрований із назвою пакета та сертифікатом підпису цієї програми.</string>
     <string name="account_sign_in_failed">Не вдалося ввійти через Google. Перевірте OAuth-налаштування й повторіть спробу.</string>
     <string name="account_sign_in_cancelled">Вхід через Google скасовано.</string>
     <string name="account_profile_local_note">Дані Google-акаунта зберігаються лише на цьому пристрої. Доступ до даних YouTube потребує окремого дозволу.</string>

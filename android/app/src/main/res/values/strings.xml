@@ -19,7 +19,7 @@
     <string name="supported_links">YouTube links</string>
     <string name="supported_links_hint">Choose in Android settings whether LowTube should open supported YouTube links.</string>
     <string name="open_link_settings">Open link settings</string>
-    <string name="account_oauth_not_configured">Google sign-in is not configured for this build. Set up LowTube’s Android and Web OAuth clients first.</string>
+    <string name="account_oauth_not_configured">Google sign-in is not configured for this build. The LowTube Android OAuth client must be registered with this app’s package name and signing certificate.</string>
     <string name="account_sign_in_failed">Google sign-in failed. Check the OAuth configuration and try again.</string>
     <string name="account_sign_in_cancelled">Google sign-in was cancelled.</string>
     <string name="account_profile_local_note">Google account details are stored only on this device. YouTube data access is a separate permission.</string>
