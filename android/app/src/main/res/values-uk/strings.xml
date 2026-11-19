@@ -120,6 +120,7 @@
     <string name="youtube_subscription_change_failed">Не вдалося змінити підписку YouTube. Перевірте дозвіл для акаунта й з’єднання та спробуйте ще раз.</string>
     <string name="browse_channel">Відео каналу</string>
     <string name="saved_to_watch_later">Збережено в «Переглянути пізніше»</string>
+    <string name="shorts_save">Зберегти на потім</string>
     <string name="watch_later">Переглянути пізніше</string>
     <string name="action_failed">Не вдалося виконати дію.</string>
     <string name="watch_queue">Черга</string>

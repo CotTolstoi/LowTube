@@ -120,6 +120,7 @@
     <string name="youtube_subscription_change_failed">Не удалось изменить подписку YouTube. Проверьте разрешение для аккаунта и соединение и попробуйте снова.</string>
     <string name="browse_channel">Видео канала</string>
     <string name="saved_to_watch_later">Сохранено в «Посмотреть позже»</string>
+    <string name="shorts_save">Сохранить на потом</string>
     <string name="watch_later">Посмотреть позже</string>
     <string name="action_failed">Не удалось выполнить действие.</string>
     <string name="watch_queue">Очередь</string>

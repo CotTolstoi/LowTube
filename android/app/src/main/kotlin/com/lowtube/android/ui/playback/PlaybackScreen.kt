@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.background
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
@@ -39,6 +40,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -146,6 +149,7 @@ fun PlaybackScreen(
     val latestAutoNext by rememberUpdatedState(autoNext)
     val latestPreloadNext by rememberUpdatedState(preloadNext)
     val latestHasQueuedItems by rememberUpdatedState(hasQueuedItems)
+    val immersiveShorts = video.kind == "shorts" && localAudioTrack == null && !playbackPreferences.audioOnly
 
     DisposableEffect(decoderPreferences) {
         val mainHandler = Handler(Looper.getMainLooper())
@@ -665,11 +669,57 @@ fun PlaybackScreen(
     }
 
     Scaffold(topBar = {
-        TopAppBar(
+        if (!immersiveShorts) TopAppBar(
             title = { Text(stringResource(R.string.now_playing)) },
             navigationIcon = { TextButton(onClick = onBack) { Text(stringResource(R.string.back)) } },
         )
     }) { padding ->
+        if (immersiveShorts) {
+            Box(Modifier.fillMaxSize().background(Color.Black)) {
+                controller?.let { activeController ->
+                    AndroidView(
+                        modifier = Modifier.fillMaxSize(),
+                        factory = { viewContext: Context -> PlayerView(viewContext).apply { player = activeController; useController = true } },
+                        update = { it.player = activeController },
+                    )
+                }
+                TextButton(
+                    onClick = onBack,
+                    modifier = Modifier.align(Alignment.TopStart).padding(top = 12.dp, start = 8.dp),
+                ) { Text(stringResource(R.string.back), color = Color.White) }
+                androidx.compose.foundation.layout.Column(
+                    modifier = Modifier.align(Alignment.BottomEnd).padding(end = 8.dp, bottom = 112.dp),
+                    horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    if (watchedVideo.channelId.matches(Regex("UC[a-zA-Z0-9_-]{22}"))) {
+                        ChannelFollowControl(isFollowing = isFollowing) { onToggleFollow(watchedVideo) }
+                    }
+                    TextButton(onClick = {
+                        library.saveToWatchLater(watchedVideo)
+                        android.widget.Toast.makeText(context, R.string.saved_to_watch_later, android.widget.Toast.LENGTH_SHORT).show()
+                    }) { Text(stringResource(R.string.shorts_save), color = Color.White) }
+                    TextButton(onClick = {
+                        val share = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, watchedVideo.url)
+                        }
+                        context.startActivity(Intent.createChooser(share, context.getString(R.string.share_link)))
+                    }) { Text(stringResource(R.string.share_link), color = Color.White) }
+                }
+                androidx.compose.foundation.layout.Column(
+                    modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth()
+                        .background(Color.Black.copy(alpha = 0.58f)).padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(watchedVideo.channel, color = Color.White, style = MaterialTheme.typography.titleSmall)
+                    Text(watchedVideo.title, color = Color.White, style = MaterialTheme.typography.titleMedium)
+                }
+                if (loading) CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                message?.let { Text(it, modifier = Modifier.align(Alignment.TopCenter).padding(16.dp), color = Color.White) }
+            }
+            return@Scaffold
+        }
         Column(
             Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),

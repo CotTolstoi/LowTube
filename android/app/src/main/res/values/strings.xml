@@ -120,6 +120,7 @@
     <string name="youtube_subscription_change_failed">Could not update the YouTube subscription. Check account permission and connection, then try again.</string>
     <string name="browse_channel">Browse videos</string>
     <string name="saved_to_watch_later">Saved to Watch later</string>
+    <string name="shorts_save">Save to Watch later</string>
     <string name="watch_later">Watch later</string>
     <string name="action_failed">Action failed.</string>
     <string name="watch_queue">Queue</string>
