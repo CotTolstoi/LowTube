@@ -245,6 +245,7 @@
     <string name="resource_usage_peak_rss">LowTube peak RSS: %1$.1f MiB</string>
     <string name="resource_usage_system_ram">Available system RAM: %1$d → %2$d MiB of %3$d MiB</string>
     <string name="copy_diagnostic_report">Copy diagnostic report</string>
+    <string name="diagnostic_report_copying">Collecting bounded status summary…</string>
     <string name="diagnostic_report_copied">Sanitized diagnostic report copied to clipboard.</string>
     <string name="diagnostic_report_error">Could not create the diagnostic report.</string>
     <string name="search_empty_query">Enter a video title or YouTube URL.</string>

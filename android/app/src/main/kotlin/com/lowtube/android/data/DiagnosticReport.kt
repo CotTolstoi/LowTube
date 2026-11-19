@@ -2,6 +2,8 @@ package com.lowtube.android.data
 
 import com.lowtube.android.playback.PlaybackDecoderDiagnostics
 import com.lowtube.android.playback.VideoDecoderSnapshot
+import com.lowtube.android.model.DownloadRecord
+import com.lowtube.android.model.DownloadStatus
 import java.util.Locale
 
 /** Explicit, user-copied troubleshooting data. It has no account, content, URL, or session fields. */
@@ -13,7 +15,61 @@ internal data class DiagnosticReportSnapshot(
     val decoder: VideoDecoderSnapshot,
     val buffer: PlaybackBufferPreferences,
     val resourceSample: ResourceUsageSample?,
+    val downloadJobs: DownloadJobCounts? = null,
 )
+
+internal data class DownloadJobCounts(
+    val pending: Int = 0,
+    val running: Int = 0,
+    val paused: Int = 0,
+    val successful: Int = 0,
+    val failed: Int = 0,
+    val cancelled: Int = 0,
+    val unknown: Int = 0,
+    val legacyScanTruncated: Boolean = false,
+) {
+    companion object {
+        fun from(records: List<DownloadRecord>): DownloadJobCounts =
+            fromCounts(records.groupingBy { it.status }.eachCount().mapValues { it.value.toLong() })
+
+        fun fromCounts(counts: Map<Int, Long>, legacyScanTruncated: Boolean = false): DownloadJobCounts = DownloadJobCounts(
+            pending = count(counts, DownloadStatus.PENDING),
+            running = count(counts, DownloadStatus.RUNNING),
+            paused = count(counts, DownloadStatus.PAUSED),
+            successful = count(counts, DownloadStatus.SUCCESSFUL),
+            failed = count(counts, DownloadStatus.FAILED),
+            cancelled = count(counts, DownloadStatus.CANCELLED),
+            unknown = counts.filterKeys { it !in KNOWN_STATUSES }.values.sumOf { it.coerceAtLeast(0L).coerceAtMost(Int.MAX_VALUE.toLong()).toInt() },
+            legacyScanTruncated = legacyScanTruncated,
+        )
+
+        private fun count(counts: Map<Int, Long>, status: Int): Int =
+            counts[status]?.coerceAtLeast(0L)?.coerceAtMost(Int.MAX_VALUE.toLong())?.toInt() ?: 0
+
+        private val KNOWN_STATUSES = setOf(
+            DownloadStatus.PENDING,
+            DownloadStatus.RUNNING,
+            DownloadStatus.PAUSED,
+            DownloadStatus.SUCCESSFUL,
+            DownloadStatus.FAILED,
+            DownloadStatus.CANCELLED,
+        )
+    }
+
+    operator fun plus(other: DownloadJobCounts) = DownloadJobCounts(
+        pending = safeAdd(pending, other.pending),
+        running = safeAdd(running, other.running),
+        paused = safeAdd(paused, other.paused),
+        successful = safeAdd(successful, other.successful),
+        failed = safeAdd(failed, other.failed),
+        cancelled = safeAdd(cancelled, other.cancelled),
+        unknown = safeAdd(unknown, other.unknown),
+        legacyScanTruncated = legacyScanTruncated || other.legacyScanTruncated,
+    )
+
+    private fun safeAdd(first: Int, second: Int): Int =
+        (first.toLong() + second.toLong()).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+}
 
 internal object DiagnosticReportFormatter {
     fun format(snapshot: DiagnosticReportSnapshot): String = buildString {
@@ -29,6 +85,18 @@ internal object DiagnosticReportFormatter {
                 "${snapshot.buffer.memoryLimitMiB} MiB target, ${snapshot.buffer.backBufferMiB} MiB back buffer, " +
                 "${snapshot.buffer.startupSeconds}s startup",
         )
+        val jobs = snapshot.downloadJobs
+        if (jobs == null) {
+            appendLine("Download jobs: unavailable")
+        } else {
+            appendLine(
+                "Download jobs: ${jobs.pending.coerceAtLeast(0)} pending, ${jobs.running.coerceAtLeast(0)} running, " +
+                    "${jobs.paused.coerceAtLeast(0)} paused, ${jobs.successful.coerceAtLeast(0)} successful, " +
+                    "${jobs.failed.coerceAtLeast(0)} failed, ${jobs.cancelled.coerceAtLeast(0)} cancelled, " +
+                    "${jobs.unknown.coerceAtLeast(0)} unknown",
+            )
+            if (jobs.legacyScanTruncated) appendLine("Download job counts: legacy records are partial (bounded scan)")
+        }
         val sample = snapshot.resourceSample
         if (sample == null) {
             appendLine("Resource sample: not taken")

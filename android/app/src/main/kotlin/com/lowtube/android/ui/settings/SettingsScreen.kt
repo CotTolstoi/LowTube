@@ -51,6 +51,7 @@ import com.lowtube.android.data.PlaybackBufferPreferences
 import com.lowtube.android.data.DownloadStreamPreferences
 import com.lowtube.android.data.DiagnosticReportFormatter
 import com.lowtube.android.data.DiagnosticReportSnapshot
+import com.lowtube.android.data.DownloadRepository
 import com.lowtube.android.data.ResourceUsageSample
 import com.lowtube.android.data.ResourceUsageSampler
 import com.lowtube.android.data.SettingsTransferRepository
@@ -83,6 +84,7 @@ fun SettingsScreen(
     onAutoNextChanged: (Boolean) -> Unit = {},
     preloadNext: Boolean = true,
     onPreloadNextChanged: (Boolean) -> Unit = {},
+    downloadRepository: DownloadRepository? = null,
 ) {
     val context = LocalContext.current
     var language by remember { mutableStateOf(AppLocale.language(context)) }
@@ -100,6 +102,7 @@ fun SettingsScreen(
     var resourceSampleFailed by remember { mutableStateOf(false) }
     var diagnosticReportCopied by remember { mutableStateOf(false) }
     var diagnosticReportFailed by remember { mutableStateOf(false) }
+    var diagnosticReportCopying by remember { mutableStateOf(false) }
     var downloadTreeUri by remember(context) { mutableStateOf(DownloadDestination.selectedTreeUri(context)) }
     var downloadFolderError by remember { mutableStateOf(false) }
     val transferScope = rememberCoroutineScope()
@@ -402,32 +405,46 @@ fun SettingsScreen(
                 Text(stringResource(if (resourceSampling) R.string.resource_usage_sampling else R.string.resource_usage_measure))
             }
             if (resourceSampleFailed) Text(stringResource(R.string.resource_usage_error), color = MaterialTheme.colorScheme.error)
-            TextButton(onClick = {
+            TextButton(enabled = !diagnosticReportCopying, onClick = {
                 diagnosticReportCopied = false
                 diagnosticReportFailed = false
-                runCatching {
-                    val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-                    val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) packageInfo.longVersionCode else packageInfo.versionCode.toLong()
-                    val decoderPreferences = context.getSharedPreferences(PlaybackDecoderDiagnostics.PREFERENCES_NAME, android.content.Context.MODE_PRIVATE)
-                    val report = DiagnosticReportFormatter.format(
-                        DiagnosticReportSnapshot(
-                            appVersion = "${packageInfo.versionName.orEmpty()} ($versionCode)",
-                            androidRelease = Build.VERSION.RELEASE.orEmpty(),
-                            androidApi = Build.VERSION.SDK_INT,
-                            deviceModel = "${Build.MANUFACTURER.orEmpty()} ${Build.MODEL.orEmpty()}".trim(),
-                            decoder = PlaybackDecoderDiagnostics.read(decoderPreferences),
-                            buffer = playbackBufferPreferences,
-                            resourceSample = resourceSample,
-                        ),
-                    )
-                    val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as ClipboardManager
-                    clipboard.setPrimaryClip(ClipData.newPlainText("LowTube diagnostics", report))
-                }.onSuccess {
-                    diagnosticReportCopied = true
-                }.onFailure {
-                    diagnosticReportFailed = true
+                diagnosticReportCopying = true
+                transferScope.launch {
+                    try {
+                        val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+                        val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) packageInfo.longVersionCode else packageInfo.versionCode.toLong()
+                        val decoderPreferences = context.getSharedPreferences(PlaybackDecoderDiagnostics.PREFERENCES_NAME, android.content.Context.MODE_PRIVATE)
+                        val downloadJobs = try {
+                            downloadRepository?.let { repository -> withContext(Dispatchers.IO) { repository.diagnosticStatusCounts() } }
+                        } catch (cancelled: CancellationException) {
+                            throw cancelled
+                        } catch (_: Exception) {
+                            null
+                        }
+                        val report = DiagnosticReportFormatter.format(
+                            DiagnosticReportSnapshot(
+                                appVersion = "${packageInfo.versionName.orEmpty()} ($versionCode)",
+                                androidRelease = Build.VERSION.RELEASE.orEmpty(),
+                                androidApi = Build.VERSION.SDK_INT,
+                                deviceModel = "${Build.MANUFACTURER.orEmpty()} ${Build.MODEL.orEmpty()}".trim(),
+                                decoder = PlaybackDecoderDiagnostics.read(decoderPreferences),
+                                buffer = playbackBufferPreferences,
+                                resourceSample = resourceSample,
+                                downloadJobs = downloadJobs,
+                            ),
+                        )
+                        val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        clipboard.setPrimaryClip(ClipData.newPlainText("LowTube diagnostics", report))
+                        diagnosticReportCopied = true
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (_: Exception) {
+                        diagnosticReportFailed = true
+                    } finally {
+                        diagnosticReportCopying = false
+                    }
                 }
-            }) { Text(stringResource(R.string.copy_diagnostic_report)) }
+            }) { Text(stringResource(if (diagnosticReportCopying) R.string.diagnostic_report_copying else R.string.copy_diagnostic_report)) }
             if (diagnosticReportCopied) Text(stringResource(R.string.diagnostic_report_copied), style = MaterialTheme.typography.bodySmall)
             if (diagnosticReportFailed) Text(stringResource(R.string.diagnostic_report_error), color = MaterialTheme.colorScheme.error)
             resourceSample?.let { sample ->

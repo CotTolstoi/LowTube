@@ -37,6 +37,14 @@ internal class DownloadJobStore(context: Context, databaseName: String = DEFAULT
     @Synchronized fun all(): List<DownloadJob> = readableDatabase.query("jobs", null, null, null, null, null, "created_at DESC").use { c ->
         buildList { while (c.moveToNext()) get(c.getLong(c.getColumnIndexOrThrow("id")))?.let(::add) }
     }
+    @Synchronized fun statusCounts(): Map<Int, Long> = readableDatabase.rawQuery(
+        "SELECT status, COUNT(*) FROM jobs GROUP BY status",
+        null,
+    ).use { cursor ->
+        buildMap {
+            while (cursor.moveToNext()) put(cursor.getInt(0), cursor.getLong(1))
+        }
+    }
     @Synchronized fun pending(): DownloadJob? = readableDatabase.query("jobs", null, "status IN (?,?)", arrayOf(DownloadStatus.PENDING.toString(), DownloadStatus.RUNNING.toString()), null, null, "created_at ASC", "1").use { c ->
         if (c.moveToFirst()) get(c.getLong(c.getColumnIndexOrThrow("id"))) else null
     }

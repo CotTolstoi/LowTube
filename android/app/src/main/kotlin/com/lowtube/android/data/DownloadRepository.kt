@@ -80,6 +80,28 @@ class DownloadRepository(context: Context) {
         return (custom + legacyRecords()).sortedByDescending { it.id }
     }
 
+    /** Aggregates statuses only; it never reads or returns titles, video identifiers, URLs, or paths. */
+    internal fun diagnosticStatusCounts(): DownloadJobCounts {
+        val customCounts = DownloadJobCounts.fromCounts(jobs.statusCounts())
+        val legacyIds = trackedIds()
+        val boundedIds = legacyIds.sortedDescending().take(MAX_DIAGNOSTIC_LEGACY_IDS).toLongArray()
+        if (boundedIds.isEmpty()) return customCounts
+        val legacyCounts = mutableMapOf<Int, Long>()
+        manager.query(DownloadManager.Query().setFilterById(*boundedIds))?.use { cursor ->
+            val statusColumn = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS)
+            if (statusColumn >= 0) {
+                while (cursor.moveToNext()) {
+                    val status = cursor.getInt(statusColumn)
+                    legacyCounts[status] = (legacyCounts[status] ?: 0L) + 1L
+                }
+            }
+        }
+        return customCounts + DownloadJobCounts.fromCounts(
+            legacyCounts,
+            legacyScanTruncated = legacyIds.size > MAX_DIAGNOSTIC_LEGACY_IDS,
+        )
+    }
+
     fun resumePending() {
         if (jobs.pending() != null) startService()
     }
@@ -165,6 +187,7 @@ class DownloadRepository(context: Context) {
     companion object {
         private const val KEY_IDS = "download_manager_ids"
         private const val OWN_ID_BASE = 1_000_000_000_000L
+        private const val MAX_DIAGNOSTIC_LEGACY_IDS = 500
         private val SUPPORTED_MIME_TYPES = setOf("video/mp4", "video/webm", "audio/mp4", "audio/webm", "audio/mpeg")
     }
 }

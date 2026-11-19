@@ -2,6 +2,8 @@ package com.lowtube.android.data
 
 import com.lowtube.android.playback.PlaybackDecoderDiagnostics
 import com.lowtube.android.playback.VideoDecoderSnapshot
+import com.lowtube.android.model.DownloadRecord
+import com.lowtube.android.model.DownloadStatus
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -48,4 +50,45 @@ class DiagnosticReportFormatterTest {
         assertTrue(report.contains("Hardware decoder: unknown"))
         assertTrue(report.contains("Resource sample: not taken"))
     }
+
+    @Test
+    fun reportIncludesAggregateDownloadStatusesWithoutDownloadContent() {
+        val counts = DownloadJobCounts.from(
+            listOf(
+                downloadRecord(DownloadStatus.PENDING, "Private video title", "https://www.youtube.com/watch?v=AbCdEfGhI12"),
+                downloadRecord(DownloadStatus.RUNNING, "Another title", "content://private/path"),
+                downloadRecord(DownloadStatus.FAILED, "Third title", "file:///private/video.mp4"),
+            ),
+        )
+        val report = DiagnosticReportFormatter.format(
+            DiagnosticReportSnapshot(
+                appVersion = "dev",
+                androidRelease = "13",
+                androidApi = 33,
+                deviceModel = "Test",
+                decoder = VideoDecoderSnapshot(),
+                buffer = PlaybackBufferPreferences(),
+                resourceSample = null,
+                downloadJobs = counts,
+            ),
+        )
+
+        assertTrue(report.contains("Download jobs: 1 pending, 1 running"))
+        assertTrue(report.contains("1 failed"))
+        assertFalse(report.contains("Private video title"))
+        assertFalse(report.contains("AbCdEfGhI12"))
+        assertFalse(report.contains("content://"))
+        assertFalse(report.contains("file:///"))
+    }
+
+    private fun downloadRecord(status: Int, title: String, uri: String) = DownloadRecord(
+        id = 12,
+        title = title,
+        status = status,
+        reason = "private diagnostic reason",
+        downloadedBytes = 16,
+        totalBytes = 64,
+        localUri = uri,
+        mimeType = "video/mp4",
+    )
 }

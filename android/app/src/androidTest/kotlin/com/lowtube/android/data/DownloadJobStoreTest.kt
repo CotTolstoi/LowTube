@@ -14,6 +14,25 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class DownloadJobStoreTest {
     @Test
+    fun aggregatesOnlyPersistedDownloadStatusesForDiagnostics() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val database = "download-queue-status-${System.currentTimeMillis()}.db"
+        val store = DownloadJobStore(context, database)
+        try {
+            val pendingId = store.insert("{\"title\":\"private title\",\"url\":\"https://youtube.com/watch?v=AbCdEfGhI12\"}", "a", false, "secret.mp4", "video/mp4", "agent", "/private/secret.part")
+            val failedId = store.insert("{\"title\":\"another private title\"}", "b", false, "another-secret.mp4", "video/mp4", "agent", "/private/another.part")
+            store.update(pendingId, DownloadStatus.RUNNING, reason = "private failure details")
+            store.update(failedId, DownloadStatus.FAILED, reason = "private failure details")
+
+            val counts = store.statusCounts()
+            assertEquals(mapOf(DownloadStatus.RUNNING to 1L, DownloadStatus.FAILED to 1L), counts)
+        } finally {
+            store.close()
+            context.deleteDatabase(database)
+        }
+    }
+
+    @Test
     fun persistsQueueProgressAndRequeuesInterruptedJobsWithoutSignedUrls() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val database = "download-queue-test-${System.currentTimeMillis()}.db"

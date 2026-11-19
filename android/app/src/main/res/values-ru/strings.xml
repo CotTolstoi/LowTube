@@ -245,6 +245,7 @@
     <string name="resource_usage_peak_rss">Пиковый RSS LowTube: %1$.1f MiB</string>
     <string name="resource_usage_system_ram">Доступная системная RAM: %1$d → %2$d MiB из %3$d MiB</string>
     <string name="copy_diagnostic_report">Скопировать отчёт диагностики</string>
+    <string name="diagnostic_report_copying">Сбор ограниченной сводки статусов…</string>
     <string name="diagnostic_report_copied">Обезличенный отчёт диагностики скопирован в буфер обмена.</string>
     <string name="diagnostic_report_error">Не удалось создать отчёт диагностики.</string>
     <string name="search_empty_query">Введите название видео или ссылку YouTube.</string>

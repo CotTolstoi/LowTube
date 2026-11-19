@@ -499,6 +499,7 @@ fun MainNavigation(
                         preloadNext = enabled
                         preferences.edit().putBoolean("playback_preload_next", enabled).apply()
                     },
+                    downloadRepository = downloads,
                 )
             }
             entry<Library> {

@@ -52,11 +52,17 @@ class SettingsTransferScreenTest {
             .performScrollTo()
             .performClick()
 
+        val copiedMessage = composeTestRule.activity.getString(R.string.diagnostic_report_copied)
+        composeTestRule.waitUntil(10_000L) {
+            composeTestRule.onAllNodesWithText(copiedMessage).fetchSemanticsNodes().isNotEmpty()
+        }
+
         val clipboard = composeTestRule.activity.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
         val report = clipboard.primaryClip?.getItemAt(0)?.coerceToText(composeTestRule.activity)?.toString().orEmpty()
         assertTrue(report.contains("LowTube Android diagnostics"))
         assertTrue(report.contains("Android:"))
         assertTrue(report.contains("Playback buffer:"))
+        assertTrue(report.contains("Download jobs: unavailable"))
         assertTrue(report.contains("excludes account details"))
         assertFalse(report.contains("https://"))
         assertFalse(report.contains("@"))
