@@ -185,6 +185,7 @@ class InnerTubeSearchRepository(context: Context? = null) {
                     (playerJavaScriptRuntime != null && hasObfuscatedSignaturePlaybackFormat(streaming))
             }
             resolveStreams(resolved.video, resolved.streaming, preferences, resolved.userAgent)
+                .copy(youtubeCaptionTracks = resolved.captionTracks)
         }
     }
 
@@ -236,7 +237,12 @@ class InnerTubeSearchRepository(context: Context? = null) {
             channelId = details.optString("channelId").ifBlank { video.channelId },
             duration = details.optString("lengthSeconds").toLongOrNull()?.let { formatDuration(it.toString()) } ?: video.duration,
         )
-        return ResolvedPlayerData(enrichedVideo, streaming, resolvedStreaming.userAgent)
+        return ResolvedPlayerData(
+            enrichedVideo,
+            streaming,
+            resolvedStreaming.userAgent,
+            resolvedStreaming.captionTracks.ifEmpty { YouTubeCaptionTrackParser.parse(player, video.id) },
+        )
     }
 
     /** Resolves a single-file progressive stream suitable for Android DownloadManager. */
@@ -486,11 +492,17 @@ class InnerTubeSearchRepository(context: Context? = null) {
             (audioOnly || !preferences.fps30Only || format.json.optDouble("fps", 0.0) <= 30.0)
     }
 
-    private data class ResolvedPlayerData(val video: VideoItem, val streaming: JSONObject, val userAgent: String)
+    private data class ResolvedPlayerData(
+        val video: VideoItem,
+        val streaming: JSONObject,
+        val userAgent: String,
+        val captionTracks: List<com.lowtube.android.model.YouTubeCaptionTrack>,
+    )
     private data class ResolvedPlayerResponse(
         val streaming: JSONObject,
         val userAgent: String,
         val playerScriptUrl: String? = null,
+        val captionTracks: List<com.lowtube.android.model.YouTubeCaptionTrack> = emptyList(),
     )
     private data class MwebClientConfiguration(
         val clientVersion: String,
@@ -949,7 +961,11 @@ class InnerTubeSearchRepository(context: Context? = null) {
                 lastStatus = status?.optString("status").orEmpty()
                 val streaming = response.optJSONObject("streamingData")
                 if (streaming != null) playerClientStreamSummaryObserver?.invoke(playerClientStreamSummary(name, streaming))
-                if (streaming != null && acceptsStreaming(streaming)) return ResolvedPlayerResponse(streaming, userAgent)
+                if (streaming != null && acceptsStreaming(streaming)) return ResolvedPlayerResponse(
+                    streaming = streaming,
+                    userAgent = userAgent,
+                    captionTracks = YouTubeCaptionTrackParser.parse(response, videoId),
+                )
             } catch (_: IOException) {
                 // A failed anonymous client is followed by the next client.
             }
@@ -990,9 +1006,10 @@ class InnerTubeSearchRepository(context: Context? = null) {
                 playerClientStreamSummaryObserver?.invoke(playerClientStreamSummary(mwebClient.name, streaming))
                 if (acceptsStreaming(streaming)) {
                     return ResolvedPlayerResponse(
-                        streaming,
-                        mwebClient.userAgent,
-                        mwebConfiguration.playerScriptUrl,
+                        streaming = streaming,
+                        userAgent = mwebClient.userAgent,
+                        playerScriptUrl = mwebConfiguration.playerScriptUrl,
+                        captionTracks = YouTubeCaptionTrackParser.parse(response, videoId),
                     )
                 }
             }
@@ -1001,7 +1018,11 @@ class InnerTubeSearchRepository(context: Context? = null) {
             // Fall through to watch-page data or the bounded unavailable-stream message.
         }
         val streaming = pageResponse.optJSONObject("streamingData")
-        if (streaming != null && acceptsStreaming(streaming)) return ResolvedPlayerResponse(streaming, USER_AGENT)
+        if (streaming != null && acceptsStreaming(streaming)) return ResolvedPlayerResponse(
+            streaming = streaming,
+            userAgent = USER_AGENT,
+            captionTracks = YouTubeCaptionTrackParser.parse(pageResponse, videoId),
+        )
         throw IOException(if (lastStatus.isBlank()) "YouTube player API returned no streams. Retry on a different network." else "YouTube player API returned $lastStatus without a playable stream.")
     }
 

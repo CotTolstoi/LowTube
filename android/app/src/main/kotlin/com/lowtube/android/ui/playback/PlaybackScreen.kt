@@ -81,6 +81,7 @@ import com.lowtube.android.playback.PlaybackArtworkPolicy
 import com.lowtube.android.playback.EXTERNAL_AUDIO_LABEL
 import com.lowtube.android.playback.EXTERNAL_AUDIO_MIME_TYPE
 import com.lowtube.android.playback.EXTERNAL_AUDIO_URI
+import com.lowtube.android.playback.youtubeCaptionConfigurations
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
@@ -1082,6 +1083,7 @@ internal fun remoteMediaItem(
         .setMediaId(stream.video.id)
         .setUri(stream.uri)
         .setMediaMetadata(itemMetadata)
+        .setSubtitleConfigurations(youtubeCaptionConfigurations(stream.youtubeCaptionTracks))
     if (stream.isDashManifest || stream.mimeType.contains("dash", ignoreCase = true)) {
         builder.setMimeType(MimeTypes.APPLICATION_MPD)
     } else if (stream.isHlsManifest || stream.mimeType.contains("mpegurl", ignoreCase = true)) {

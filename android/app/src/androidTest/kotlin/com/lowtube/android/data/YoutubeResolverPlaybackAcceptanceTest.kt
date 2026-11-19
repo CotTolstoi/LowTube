@@ -17,6 +17,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.text.CueGroup
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.PlayerView
@@ -27,6 +28,7 @@ import com.lowtube.android.playback.PlaybackDecoderDiagnostics
 import com.lowtube.android.playback.configurePlaybackPreload
 import com.lowtube.android.playback.createPlaybackLoadControl
 import com.lowtube.android.playback.createPlaybackDataSourceFactory
+import com.lowtube.android.playback.youtubeCaptionConfigurations
 import com.lowtube.android.playback.ExternalAudioMediaSourceFactory
 import com.lowtube.android.playback.EXTERNAL_AUDIO_URI
 import com.lowtube.android.playback.EXTERNAL_AUDIO_MIME_TYPE
@@ -37,6 +39,7 @@ import com.lowtube.android.ui.playback.externalSubtitleConfiguration
 import com.lowtube.android.ui.playback.replaceExternalSubtitle
 import com.lowtube.android.ui.playback.trackOptions
 import com.lowtube.android.ui.playback.updateTrackOverride
+import com.lowtube.android.ui.playback.remoteMediaItem
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -45,6 +48,7 @@ import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -56,6 +60,152 @@ import java.io.File
 /** Manual network acceptance used only when stream resolver behavior changes. */
 @RunWith(AndroidJUnit4::class)
 class YoutubeResolverPlaybackAcceptanceTest {
+    @Test
+    fun youtubeCaptionTracksResolveAndAreSelectableInMedia3() = runBlocking {
+        assumeTrue(
+            "Pass -e runYouTubeCaptionPlaybackAcceptance true after YouTube subtitle player changes",
+            InstrumentationRegistry.getArguments().getString("runYouTubeCaptionPlaybackAcceptance") == "true",
+        )
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val video = VideoItem(
+            id = "PRU2ShMzQRg",
+            title = "YouTube caption acceptance",
+            duration = "1:44",
+            url = "https://www.youtube.com/watch?v=PRU2ShMzQRg",
+        )
+        val stream = InnerTubeSearchRepository(context).resolvePlayback(video)
+        assertTrue("The public captioned video returned no YouTube caption tracks", stream.youtubeCaptionTracks.isNotEmpty())
+        val preferredCaption = stream.youtubeCaptionTracks.firstOrNull { it.languageCode == "en-US" }
+            ?: stream.youtubeCaptionTracks.firstOrNull { it.languageCode.startsWith("en", ignoreCase = true) }
+            ?: throw AssertionError("The captioned video did not expose an English track")
+        assertTrue("Caption URLs were not converted to Media3 WebVTT configurations", youtubeCaptionConfigurations(stream.youtubeCaptionTracks).all {
+            it.mimeType == androidx.media3.common.MimeTypes.TEXT_VTT
+        })
+        var failure: PlaybackException? = null
+        val youtubeCaptionCueReceived = AtomicBoolean(false)
+        val captionBytesLoaded = AtomicLong(-1L)
+        val captionLanguageLoaded = java.util.concurrent.atomic.AtomicReference("")
+        val visibleSubtitlePixelsAtCue = AtomicInteger(0)
+        var activityScenario: ActivityScenario<MainActivity>? = null
+        var playerView: PlayerView? = null
+        val player = withContext(Dispatchers.Main.immediate) {
+            ExoPlayer.Builder(context)
+                .setMediaSourceFactory(DefaultMediaSourceFactory(createPlaybackDataSourceFactory(context)))
+                .setLoadControl(createPlaybackLoadControl(context))
+                .build()
+                .apply {
+                    addAnalyticsListener(object : AnalyticsListener {
+                        override fun onLoadCompleted(
+                            eventTime: AnalyticsListener.EventTime,
+                            loadEventInfo: androidx.media3.exoplayer.source.LoadEventInfo,
+                            mediaLoadData: androidx.media3.exoplayer.source.MediaLoadData,
+                        ) {
+                            if (loadEventInfo.dataSpec.uri.path == "/api/timedtext") {
+                                captionBytesLoaded.set(loadEventInfo.bytesLoaded)
+                                captionLanguageLoaded.set(loadEventInfo.dataSpec.uri.getQueryParameter("lang").orEmpty())
+                            }
+                        }
+                    })
+                    addListener(object : Player.Listener {
+                        override fun onPlayerError(error: PlaybackException) { failure = error }
+                        override fun onCues(cueGroup: CueGroup) {
+                            if (cueGroup.cues.any { !it.text.isNullOrBlank() }) {
+                                youtubeCaptionCueReceived.set(true)
+                                playerView?.postDelayed({
+                                    visibleSubtitlePixelsAtCue.set(renderedBrightSubtitlePixelCount(playerView?.subtitleView))
+                                }, 100)
+                            }
+                        }
+                    })
+                }
+        }
+        try {
+            activityScenario = ActivityScenario.launch(MainActivity::class.java)
+            activityScenario.onActivity { activity ->
+                playerView = PlayerView(activity).apply {
+                    useController = false
+                    this.player = player
+                }
+                activity.setContentView(playerView)
+            }
+            val item = remoteMediaItem(stream).buildUpon()
+                .setClippingConfiguration(MediaItem.ClippingConfiguration.Builder().setEndPositionMs(30_000).build())
+                .build()
+            withContext(Dispatchers.Main.immediate) {
+                player.setMediaItem(item)
+                player.prepare()
+                withTimeout(60_000) {
+                    while (player.playbackState != Player.STATE_READY && failure == null) delay(100)
+                }
+                assertNull(failure)
+                assertTrue("YouTube text tracks were not exposed by Media3", player.currentTracks.groups.any {
+                    it.type == C.TRACK_TYPE_TEXT && (0 until it.length).any(it::isTrackSupported)
+                })
+                val options = trackOptions(player.currentTracks, C.TRACK_TYPE_TEXT, player, "Subtitle")
+                assertTrue("The playback UI did not expose YouTube subtitle choices", options.isNotEmpty())
+                val selectedOption = options.firstOrNull {
+                    it.group.getFormat(it.index).language.equals(preferredCaption.languageCode, ignoreCase = true)
+                } ?: throw AssertionError("Media3 did not expose the advertised English subtitle track")
+                updateTrackOverride(player, C.TRACK_TYPE_TEXT, selectedOption)
+                withTimeout(10_000) {
+                    while (player.currentTracks.groups.none { group ->
+                            group.type == C.TRACK_TYPE_TEXT && (0 until group.length).any(group::isTrackSelected)
+                        } && failure == null
+                    ) delay(50)
+                }
+                assertNull(failure)
+                assertTrue("The selected YouTube subtitle track was not enabled", player.currentTracks.groups.any { group ->
+                    group.type == C.TRACK_TYPE_TEXT && (0 until group.length).any(group::isTrackSelected)
+                })
+                val trackDetails = stream.youtubeCaptionTracks.joinToString { track ->
+                    "${track.languageCode}/${track.autoGenerated}/poToken=${track.uri.contains("&pot=")}"
+                }
+                println(
+                    "youtubeCaptionTrackSummary; tracks=$trackDetails; selectedLabel=${selectedOption.label}; " +
+                        "captionBytesLoaded=${captionBytesLoaded.get()}",
+                )
+                player.play()
+                val cueReceived = withTimeoutOrNull(29_000) {
+                    while (!youtubeCaptionCueReceived.get() && failure == null) {
+                        assertTrue("Caption acceptance exceeded its 30-second clip", player.currentPosition < 30_000)
+                        delay(50)
+                    }
+                    youtubeCaptionCueReceived.get()
+                } == true
+                player.pause()
+                assertNull(failure)
+                println(
+                    "youtubeCaptionRuntime; cueReceived=$cueReceived; mediaPositionMs=${player.currentPosition}; " +
+                        "captionBytesLoaded=${captionBytesLoaded.get()}; playbackState=${player.playbackState}; textGroups=" +
+                        player.currentTracks.groups.count { it.type == C.TRACK_TYPE_TEXT } +
+                        "; loadedLanguage=${captionLanguageLoaded.get()}; " +
+                        "visibleSubtitlePixels=${visibleSubtitlePixelsAtCue.get()}",
+                )
+                assertTrue(
+                    "The YouTube subtitle endpoint did not deliver a text cue; mediaPositionMs=${player.currentPosition}, " +
+                        "captionBytesLoaded=${captionBytesLoaded.get()}, playbackState=${player.playbackState}, textGroups=" +
+                        player.currentTracks.groups.count { it.type == C.TRACK_TYPE_TEXT } +
+                        ", loadedLanguage=${captionLanguageLoaded.get()}",
+                    cueReceived,
+                )
+                withTimeout(5_000) {
+                    while (visibleSubtitlePixelsAtCue.get() < MIN_VISIBLE_SUBTITLE_PIXELS) delay(50)
+                }
+                assertTrue("PlayerView did not render YouTube subtitle pixels", visibleSubtitlePixelsAtCue.get() >= MIN_VISIBLE_SUBTITLE_PIXELS)
+                assertTrue("Caption acceptance exceeded its 30-second clip", player.currentPosition < 30_000)
+                println(
+                    "youtubeCaptionAcceptance; tracks=${stream.youtubeCaptionTracks.size}; " +
+                        "trackDetails=$trackDetails; " +
+                        "selectedLanguage=${selectedOption.group.getFormat(selectedOption.index).language}; " +
+                        "mediaPositionMs=${player.currentPosition}",
+                )
+            }
+        } finally {
+            withContext(Dispatchers.Main.immediate) { player.pause(); player.release() }
+            activityScenario?.close()
+        }
+    }
+
     @Test
     fun resolvedStreamStartsAndAdvancesWithoutReachingTwoMinutes() = runBlocking {
         assumeTrue(

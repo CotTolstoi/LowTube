@@ -243,6 +243,7 @@ class PlaybackService : MediaSessionService() {
 
         val resolved = requireNotNull(stream) { "A playable stream was not resolved." }
         builder.setUri(resolved.uri)
+        builder.setSubtitleConfigurations(youtubeCaptionConfigurations(resolved.youtubeCaptionTracks))
         if (resolved.isDashManifest || resolved.mimeType.contains("dash", ignoreCase = true)) {
             builder.setMimeType(MimeTypes.APPLICATION_MPD)
         } else if (resolved.isHlsManifest || resolved.mimeType.contains("mpegurl", ignoreCase = true)) {

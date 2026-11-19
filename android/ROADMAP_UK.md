@@ -1,5 +1,7 @@
 # LowTube Android — ціль і план перенесення
 
+20.11.2026: resolver передає публічні YouTube caption tracks із відповіді player у Media3. Парсер приймає лише HTTPS `youtube.com`/`www.youtube.com` `/api/timedtext` URL з відповідним video ID, обмежує кількість і довжину полів, відкидає сторонні/невалідні адреси та відрізняє auto-generated треки. Формат `fmt` у URL замінюється на `vtt`, а підписи додаються до MediaItem і відновлення playback; signed URLs живуть лише в пам’яті. Три parser-тести пройшли на API23. `YoutubeResolverPlaybackAcceptanceTest#youtubeCaptionTracksResolveAndAreSelectableInMedia3` пройшов на API23 AVD та підключеному Android13/API33: на публічному відео `PRU2ShMzQRg` доріжку English auto captions було вибрано, Media3 отримав cue, а прикріплений `PlayerView` намалював видимий текст (поріг тесту — 20 яскравих пікселів). Кожний кліп обрізаний на 30 s; фактична позиція cue — близько 8.5 s. Підключений пристрій звітує `TrebleDroid vanilla`, тому це не підтверджує саме Redmi Note 8. Перевірено один публічний fixture; інші відео й доступність track-ів можуть відрізнятися.
+
 Дата початку: 2026-11-14
 Базова кодова база: WinForms-версія з гілки `main` (`8c599ab`)
 Гілка поточної Android-роботи: `feat/android-first-run-setup`
