@@ -226,7 +226,7 @@ fun SettingsScreen(
             Text(stringResource(R.string.discovery_language), style = MaterialTheme.typography.bodyMedium)
             androidx.compose.foundation.layout.Box {
                 TextButton(onClick = { discoveryLanguageMenuExpanded = true }) {
-                    Text(DISCOVERY_LANGUAGES.firstOrNull { it.first == discoveryLanguage }?.second ?: "Any language")
+                    Text(DISCOVERY_LANGUAGES.firstOrNull { it.first == discoveryLanguage }?.second ?: stringResource(R.string.discovery_language_any))
                 }
                 DropdownMenu(expanded = discoveryLanguageMenuExpanded, onDismissRequest = { discoveryLanguageMenuExpanded = false }) {
                     DISCOVERY_LANGUAGES.forEach { (code, label) ->
