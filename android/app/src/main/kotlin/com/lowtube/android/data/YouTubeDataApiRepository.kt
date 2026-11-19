@@ -3,6 +3,7 @@ package com.lowtube.android.data
 import com.lowtube.android.model.YouTubeSubscription
 import com.lowtube.android.model.YouTubePlaylist
 import com.lowtube.android.model.VideoItem
+import android.net.Uri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.HttpUrl
@@ -20,7 +21,24 @@ data class GoogleAccountProfile(
     val subject: String,
     val email: String,
     val displayName: String,
+    val pictureUrl: String = "",
 )
+
+internal object GoogleProfileAvatarPolicy {
+    private val trustedHosts = setOf("lh3.googleusercontent.com", "lh4.googleusercontent.com")
+    private const val MAX_PICTURE_URL_LENGTH = 2048
+
+    fun validate(raw: String): String {
+        if (raw.isBlank() || raw.length > MAX_PICTURE_URL_LENGTH) return ""
+        val uri = runCatching { Uri.parse(raw) }.getOrNull() ?: return ""
+        if (!uri.scheme.equals("https", ignoreCase = true) ||
+            uri.host?.lowercase() !in trustedHosts ||
+            !uri.userInfo.isNullOrBlank() ||
+            uri.port !in listOf(-1, 443) ||
+            !uri.path.orEmpty().startsWith("/")) return ""
+        return uri.toString()
+    }
+}
 
 /** Reads the signed-in user's channel subscriptions through the official YouTube Data API. */
 class YouTubeDataApiRepository {
@@ -48,10 +66,11 @@ class YouTubeDataApiRepository {
             val subject = json.optString("sub").trim()
             val email = json.optString("email").trim().take(MAX_EMAIL_LENGTH)
             val displayName = json.optString("name").trim().take(MAX_NAME_LENGTH)
+            val pictureUrl = GoogleProfileAvatarPolicy.validate(json.optString("picture"))
             if (subject.isBlank() || email.isBlank() || !json.optBoolean("email_verified", false)) {
                 throw IOException("Google did not return a verified account email.")
             }
-            GoogleAccountProfile(subject, email, displayName)
+            GoogleAccountProfile(subject, email, displayName, pictureUrl)
         }
     }
 

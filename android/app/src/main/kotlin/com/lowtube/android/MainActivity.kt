@@ -23,6 +23,7 @@ import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.CommonStatusCodes
 import com.google.android.gms.common.api.Scope
 import com.lowtube.android.data.GoogleAccountProfile
+import com.lowtube.android.data.GoogleProfileAvatarPolicy
 import com.lowtube.android.data.YouTubeDataApiRepository
 import com.lowtube.android.model.YouTubeSubscription
 import com.lowtube.android.model.YouTubePlaylist
@@ -58,6 +59,7 @@ class MainActivity : ComponentActivity() {
   private var navigationBackHandler: (() -> Boolean)? = null
   private var googleAccountName by mutableStateOf("")
   private var googleAccountEmail by mutableStateOf("")
+  private var googleAccountAvatarUrl by mutableStateOf("")
   private var googleAccountMessage by mutableStateOf("")
   private var googleSignInBusy by mutableStateOf(false)
   private var youtubeSyncBusy by mutableStateOf(false)
@@ -164,6 +166,7 @@ class MainActivity : ComponentActivity() {
     darkTheme = preferences.getBoolean("dark_theme", true)
     googleAccountName = preferences.getString("google_account_name", "").orEmpty()
     googleAccountEmail = preferences.getString("google_account_email", "").orEmpty()
+    googleAccountAvatarUrl = GoogleProfileAvatarPolicy.validate(preferences.getString("google_account_avatar_url", "").orEmpty())
 
     enableEdgeToEdge()
     onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
@@ -188,6 +191,7 @@ class MainActivity : ComponentActivity() {
           MainNavigation(
             googleAccountName = googleAccountName,
             googleAccountEmail = googleAccountEmail,
+            googleAccountAvatarUrl = googleAccountAvatarUrl,
             googleAccountMessage = googleAccountMessage,
             googleSignInBusy = googleSignInBusy,
             youtubeSyncBusy = youtubeSyncBusy,
@@ -387,9 +391,11 @@ class MainActivity : ComponentActivity() {
     }
     googleAccountName = profile.displayName
     googleAccountEmail = profile.email
+    googleAccountAvatarUrl = GoogleProfileAvatarPolicy.validate(profile.pictureUrl)
     getSharedPreferences("lowtube_settings", MODE_PRIVATE).edit()
       .putString("google_account_name", googleAccountName)
       .putString("google_account_email", googleAccountEmail)
+      .putString("google_account_avatar_url", googleAccountAvatarUrl)
       .apply()
     googleAccountMessage = getString(R.string.account_profile_local_note)
   }
@@ -407,6 +413,7 @@ class MainActivity : ComponentActivity() {
     val email = googleAccountEmail
     googleAccountName = ""
     googleAccountEmail = ""
+    googleAccountAvatarUrl = ""
     googleAccountMessage = ""
     youtubeSyncBusy = false
     youtubeSyncGeneration++
@@ -419,6 +426,7 @@ class MainActivity : ComponentActivity() {
     getSharedPreferences("lowtube_settings", MODE_PRIVATE).edit()
       .remove("google_account_name")
       .remove("google_account_email")
+      .remove("google_account_avatar_url")
       .apply()
     if (email.isNotBlank()) {
       val request = AuthorizationRequest.builder()

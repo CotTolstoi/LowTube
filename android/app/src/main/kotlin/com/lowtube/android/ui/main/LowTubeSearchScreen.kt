@@ -93,6 +93,7 @@ import kotlinx.coroutines.withContext
 fun LowTubeSearchScreen(
     googleAccountName: String,
     googleAccountEmail: String,
+    googleAccountAvatarUrl: String = "",
     googleAccountMessage: String,
     googleSignInBusy: Boolean,
     youtubeSyncBusy: Boolean,
@@ -366,6 +367,7 @@ fun LowTubeSearchScreen(
                 "profile" -> ProfileTab(
                     accountName = googleAccountName,
                     accountEmail = googleAccountEmail,
+                    accountAvatarUrl = googleAccountAvatarUrl,
                     accountMessage = googleAccountMessage,
                     signInBusy = googleSignInBusy,
                     onSignIn = onGoogleSignIn,

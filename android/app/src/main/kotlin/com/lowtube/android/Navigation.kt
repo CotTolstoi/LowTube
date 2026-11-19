@@ -57,6 +57,7 @@ import kotlinx.coroutines.launch
 fun MainNavigation(
     googleAccountName: String,
     googleAccountEmail: String,
+    googleAccountAvatarUrl: String = "",
     googleAccountMessage: String,
     googleSignInBusy: Boolean,
     youtubeSyncBusy: Boolean,
@@ -393,6 +394,7 @@ fun MainNavigation(
                 LowTubeSearchScreen(
                     googleAccountName = googleAccountName,
                     googleAccountEmail = googleAccountEmail,
+                    googleAccountAvatarUrl = googleAccountAvatarUrl,
                     googleAccountMessage = googleAccountMessage,
                     googleSignInBusy = googleSignInBusy,
                     onGoogleSignIn = onGoogleSignIn,

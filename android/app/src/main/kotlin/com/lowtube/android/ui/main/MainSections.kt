@@ -6,6 +6,7 @@ import android.os.Build
 import android.provider.Settings
 import android.widget.Toast
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.aspectRatio
@@ -20,6 +21,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -40,10 +42,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.layout.ContentScale
 import coil3.compose.AsyncImage
 import com.lowtube.android.AppLocale
 import com.lowtube.android.R
@@ -343,6 +345,7 @@ internal fun SubscriptionsTab(
 internal fun ProfileTab(
     accountName: String,
     accountEmail: String,
+    accountAvatarUrl: String = "",
     accountMessage: String,
     signInBusy: Boolean,
     onSignIn: () -> Unit,
@@ -362,8 +365,26 @@ internal fun ProfileTab(
                     Text(stringResource(R.string.account_guest), style = MaterialTheme.typography.bodyLarge)
                     Text(stringResource(R.string.account_sign_in_help), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 } else {
-                    Text(accountName.ifBlank { accountEmail }, style = MaterialTheme.typography.bodyLarge)
-                    if (accountName.isNotBlank()) Text(accountEmail, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            Modifier.size(64.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(accountName.trim().firstOrNull()?.uppercaseChar()?.toString() ?: accountEmail.firstOrNull()?.uppercaseChar()?.toString().orEmpty())
+                            if (accountAvatarUrl.isNotBlank()) {
+                                AsyncImage(
+                                    model = accountAvatarUrl,
+                                    contentDescription = accountName.ifBlank { accountEmail },
+                                    modifier = Modifier.fillMaxSize().clip(CircleShape),
+                                    contentScale = ContentScale.Crop,
+                                )
+                            }
+                        }
+                        Column {
+                            Text(accountName.ifBlank { accountEmail }, style = MaterialTheme.typography.bodyLarge)
+                            if (accountName.isNotBlank()) Text(accountEmail, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
                 }
                 if (accountMessage.isNotBlank()) {
                     Text(accountMessage, color = MaterialTheme.colorScheme.onSurfaceVariant)
