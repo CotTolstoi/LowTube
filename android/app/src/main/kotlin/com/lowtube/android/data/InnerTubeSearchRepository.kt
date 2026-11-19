@@ -18,6 +18,7 @@ import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.net.HttpURLConnection
+import java.net.URI
 import java.net.URL
 import java.net.URLEncoder
 import java.util.concurrent.TimeUnit
@@ -603,6 +604,7 @@ class InnerTubeSearchRepository(context: Context? = null) {
         val transformed = JSONObject(streaming.toString())
         val pendingSignatureTransforms = mutableListOf<PendingSignatureTransform>()
         val pendingUrlTransforms = mutableListOf<PendingUrlTransform>()
+        val pendingPathNTransforms = mutableListOf<PendingUrlTransform>()
         for (key in arrayOf("formats", "adaptiveFormats")) {
             val formats = transformed.optJSONArray(key) ?: continue
             for (index in 0 until formats.length()) {
@@ -642,7 +644,12 @@ class InnerTubeSearchRepository(context: Context? = null) {
                 val directUrl = format.optString("url")
                 val throttled = runCatching { Uri.parse(directUrl).getQueryParameter("n") }.getOrNull().orEmpty()
                 if (throttled.isNotBlank()) {
-                    pendingUrlTransforms.add(PendingUrlTransform(format, directUrl))
+                    val pending = PendingUrlTransform(format, directUrl)
+                    if (activeExecutableFunctions.functions.urlPathThrottling != null && hasNPathChallenge(directUrl)) {
+                        pendingPathNTransforms.add(pending)
+                    } else {
+                        pendingUrlTransforms.add(pending)
+                    }
                 }
             }
         }
@@ -677,6 +684,28 @@ class InnerTubeSearchRepository(context: Context? = null) {
                         val throttled = runCatching { Uri.parse(signedUrl).getQueryParameter("n").orEmpty() }.getOrNull().orEmpty()
                         if (throttled.isNotBlank()) pendingUrlTransforms.add(PendingUrlTransform(item.format, signedUrl))
                     }
+                }
+            }
+        }
+        val pathFunction = activeExecutableFunctions.functions.urlPathThrottling
+        if (pathFunction != null && pendingPathNTransforms.isNotEmpty()) {
+            pendingPathNTransforms.chunked(MAX_URL_N_BATCH_SIZE).forEach { batch ->
+                val outputs = try {
+                    runtime.executeFullPlayerFunctions(
+                        playerScript.source,
+                        batch.map { item -> YoutubePlayerJavaScriptRuntime.FunctionCall(pathFunction, item.url) },
+                    )
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (_: Exception) {
+                    emptyList()
+                }
+                batch.forEachIndexed { index, item ->
+                    val accepted = outputs.getOrNull(index)?.let {
+                        YoutubePlayerUrlTransformer.acceptUrlNTransform(item.url, it)
+                    }
+                    if (accepted != null && isTrustedStreamUrl(accepted)) item.format.put("url", accepted)
+                    else pendingUrlTransforms.add(item)
                 }
             }
         }
@@ -758,6 +787,12 @@ class InnerTubeSearchRepository(context: Context? = null) {
 
     private data class PendingUrlTransform(val format: JSONObject, val url: String)
     private data class PendingSignatureTransform(val format: JSONObject, val cipher: String, val signature: String)
+
+    private fun hasNPathChallenge(url: String): Boolean {
+        val path = runCatching { URI(url).rawPath }.getOrNull() ?: return false
+        val segments = path.split('/')
+        return (0 until segments.lastIndex).any { index -> segments[index] == "n" && segments[index + 1].isNotBlank() }
+    }
 
     private suspend fun executeUrlTransformWithRecovery(
         playerScript: YoutubePlayerScriptCache.PlayerScript,

@@ -961,7 +961,9 @@ class YoutubePlayerTransformLocatorTest {
             function consume(entry){entry.url&&(entry.url=rewritePathN(entry.url))}
         """.trimIndent()
 
-        assertNull(YoutubePlayerTransformLocator.locateExecutable(source).functions.urlThrottling)
+        val functions = YoutubePlayerTransformLocator.locateExecutable(source).functions
+        assertNull(functions.urlThrottling)
+        assertEquals("rewritePathN", functions.urlPathThrottling)
     }
 
 }

@@ -7,6 +7,7 @@ internal object YoutubePlayerTransformLocator {
         val throttling: String?,
         val signatureArgumentPrefix: String? = null,
         val urlThrottling: String? = null,
+        val urlPathThrottling: String? = null,
     )
     data class ExecutableFunctions(
         val functions: Functions,
@@ -386,6 +387,15 @@ internal object YoutubePlayerTransformLocator {
                 val body = source.substring(start, end)
                 urlNGetter.containsMatchIn(body) && !urlPathNRewrite.containsMatchIn(body)
             }
+        val urlPathThrottlingCandidates = rawUrlThrottlingCandidates
+            .filter { name ->
+                val declaration = index.declarations[name] ?: return@filter false
+                val range = declaration.memberRange ?: declaration.range
+                val start = index.tokens.getOrNull(range.startToken)?.start ?: return@filter false
+                val end = index.tokens.getOrNull(range.endToken)?.end ?: return@filter false
+                val body = source.substring(start, end)
+                urlNGetter.containsMatchIn(body) && urlPathNRewrite.containsMatchIn(body)
+            }
         logSignatureLiteralContexts(source, index, onDiagnosticStage)
         logGetNCallsiteContexts(source, index, declarations, onDiagnosticStage)
         logNPropertyContexts(source, index, onDiagnosticStage)
@@ -399,7 +409,9 @@ internal object YoutubePlayerTransformLocator {
             ?: if (allowUnverifiedMarker) markerCandidate else null
         onDiagnosticStage?.invoke(
             "locatorCandidates; signature=${signatureCandidates.joinToString(",")}; n=${throttlingCandidates.joinToString(",")}; " +
-                "urlN=${urlThrottlingCandidates.joinToString(",")}; marker=$markerCandidate; unverifiedMarkerAllowed=$allowUnverifiedMarker",
+                "urlN=${urlThrottlingCandidates.joinToString(",")}; " +
+                "urlPathN=${urlPathThrottlingCandidates.joinToString(",")}; marker=$markerCandidate; " +
+                "unverifiedMarkerAllowed=$allowUnverifiedMarker",
         )
         // Detailed source-context logging is intentionally disabled; the callback is metadata-only.
         return Functions(
@@ -407,6 +419,7 @@ internal object YoutubePlayerTransformLocator {
             throttling = throttling,
             signatureArgumentPrefix = findSignatureArgumentPrefix(source, signature, declarations),
             urlThrottling = urlThrottlingCandidates.firstOrNull(),
+            urlPathThrottling = urlPathThrottlingCandidates.firstOrNull(),
         )
     }
 

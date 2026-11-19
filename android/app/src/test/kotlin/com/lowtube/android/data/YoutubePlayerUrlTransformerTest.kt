@@ -45,6 +45,32 @@ class YoutubePlayerUrlTransformerTest {
     }
 
     @Test
+    fun acceptsOnlySinglePathSegmentRewriteAfterNMarkerWithUnchangedQuery() {
+        val original = "https://r1.googlevideo.com/videoplayback/n/old-token/chunk?expire=123&n=encoded&itag=18"
+        val transformed = "https://r1.googlevideo.com/videoplayback/n/new-token/chunk?expire=123&n=encoded&itag=18"
+
+        assertEquals(transformed, YoutubePlayerUrlTransformer.acceptUrlNTransform(original, transformed))
+        assertNull(
+            YoutubePlayerUrlTransformer.acceptUrlNTransform(
+                original,
+                "https://r1.googlevideo.com/videoplayback/n/new-token/other?expire=123&n=encoded&itag=18",
+            ),
+        )
+        assertNull(
+            YoutubePlayerUrlTransformer.acceptUrlNTransform(
+                original,
+                "https://r1.googlevideo.com/videoplayback/n/new-token/chunk?expire=124&n=encoded&itag=18",
+            ),
+        )
+        assertNull(
+            YoutubePlayerUrlTransformer.acceptUrlNTransform(
+                original,
+                "https://r1.googlevideo.com/videoplayback/n/new-token/chunk?expire=123&n=changed&itag=18",
+            ),
+        )
+    }
+
+    @Test
     fun appliesCipherSignatureUsingRequestedParameterName() {
         val cipher = "url=https%3A%2F%2Fr1.googlevideo.com%2Fvideoplayback%3Fitag%3D18&sp=sig& s=unused".replace("& ", "&")
 

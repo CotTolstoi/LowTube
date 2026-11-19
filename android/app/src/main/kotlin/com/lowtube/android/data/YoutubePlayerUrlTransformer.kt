@@ -7,6 +7,7 @@ import java.net.URLEncoder
 /** Pure URL transformations used after the isolated player runtime computes a signature. */
 internal object YoutubePlayerUrlTransformer {
     private val signatureParameter = Regex("^[A-Za-z0-9_]{1,32}$")
+    private val pathNParameter = Regex("^[A-Za-z0-9_-]{1,2048}$")
 
     fun applyN(url: String, transformedN: String): String? {
         if (url.length > MAX_URL_LENGTH || transformedN.isBlank() || transformedN.length > MAX_VALUE_LENGTH) return null
@@ -35,12 +36,25 @@ internal object YoutubePlayerUrlTransformer {
             !original.scheme.equals(transformed.scheme, ignoreCase = true) ||
             !original.host.equals(transformed.host, ignoreCase = true) ||
             original.port != transformed.port ||
-            original.rawPath != transformed.rawPath ||
             original.rawUserInfo != null || transformed.rawUserInfo != null
         ) return null
         val originalN = queryParameter(original.rawQuery, "n") ?: return null
         val transformedN = queryParameter(transformed.rawQuery, "n") ?: return null
-        if (transformedN.isBlank() || transformedN == originalN) return null
+        if (transformedN.isBlank()) return null
+        if (original.rawPath == transformed.rawPath) {
+            return transformedUrl.takeIf { transformedN != originalN }
+        }
+        if (original.rawQuery != transformed.rawQuery || original.rawFragment != transformed.rawFragment) return null
+        val originalSegments = original.rawPath.orEmpty().split('/')
+        val transformedSegments = transformed.rawPath.orEmpty().split('/')
+        if (originalSegments.size != transformedSegments.size) return null
+        val changedSegments = originalSegments.indices.filter { originalSegments[it] != transformedSegments[it] }
+        if (changedSegments.size != 1) return null
+        val changedIndex = changedSegments.single()
+        if (changedIndex <= 0 || originalSegments[changedIndex - 1] != "n") return null
+        val oldSegment = originalSegments[changedIndex]
+        val newSegment = transformedSegments[changedIndex]
+        if (!pathNParameter.matches(oldSegment) || !pathNParameter.matches(newSegment) || oldSegment == newSegment) return null
         return transformedUrl
     }
 

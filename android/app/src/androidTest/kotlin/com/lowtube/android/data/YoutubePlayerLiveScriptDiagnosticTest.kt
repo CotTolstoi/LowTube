@@ -81,6 +81,49 @@ class YoutubePlayerLiveScriptDiagnosticTest {
         )
         val functions = executable.functions
         val urlProgram = executable.urlThrottlingProgram
+        if (arguments.getString("probePathNTransform") == "true") {
+            val syntheticUrl = "https://r1.googlevideo.com/videoplayback/n/LowTube_old_segment/chunk?expire=2000000000&n=LowTube_new_query"
+            val candidates = YoutubePlayerTransformLocator.locateUrlTransformDiagnosticCandidates(script.source)
+            val outputs = if (candidates.isEmpty()) emptyList() else runCatching {
+                runBlocking {
+                    YoutubePlayerJavaScriptRuntime().executeFullPlayerFunctions(
+                        script.source,
+                        candidates.map { YoutubePlayerJavaScriptRuntime.FunctionCall(it.name, syntheticUrl) },
+                    )
+                }
+            }.getOrNull().orEmpty()
+            candidates.forEachIndexed { index, candidate ->
+                val output = outputs.getOrNull(index)
+                val inputUri = URI(syntheticUrl)
+                val outputUri = output?.let { runCatching { URI(it) }.getOrNull() }
+                val inputPath = inputUri.rawPath.orEmpty().split('/')
+                val outputPath = outputUri?.rawPath.orEmpty().split('/')
+                val sameTrustedOrigin = outputUri != null &&
+                    outputUri.scheme.equals(inputUri.scheme, ignoreCase = true) &&
+                    outputUri.host.equals(inputUri.host, ignoreCase = true) &&
+                    outputUri.port == inputUri.port &&
+                    outputUri.rawUserInfo == null
+                val pathSegmentRewritten = inputPath.size == outputPath.size && inputPath.size > 4 &&
+                    inputPath.take(3) == outputPath.take(3) &&
+                    inputPath[3] == "LowTube_old_segment" && outputPath[3] != inputPath[3] &&
+                    inputPath.drop(4) == outputPath.drop(4)
+                val outputN = outputUri?.let { queryValue(it, "n") }
+                val productionSafetyAccepted = output?.let {
+                    YoutubePlayerUrlTransformer.acceptUrlNTransform(syntheticUrl, it) != null
+                } == true
+                System.out.println(
+                    "livePathNTransformCandidate; name=${candidate.name}; executed=${output != null}; " +
+                        "sameInput=${output == syntheticUrl}; sameTrustedOrigin=$sameTrustedOrigin; " +
+                        "outputPathSegments=${outputPath.size}; outputPathMask=${outputPath.joinToString("/") { if (it.contains("LowTube")) "<probe>" else it.take(48) }}; " +
+                        "outputQueryKeys=${outputUri?.rawQuery.orEmpty().split('&').map { it.substringBefore('=') }.filter(String::isNotBlank).joinToString(",")}; " +
+                        "pathSegmentRewritten=$pathSegmentRewritten; queryUnchanged=${outputUri?.rawQuery == inputUri.rawQuery}; " +
+                        "outputHasQuery=${outputUri?.rawQuery != null}; outputNIsNew=${outputN == "LowTube_new_query"}; " +
+                        "productionSafetyAccepted=$productionSafetyAccepted; outputChars=${output?.length ?: 0}",
+                )
+            }
+            System.out.println("livePathNTransformCandidateSummary; count=${candidates.size}; processPssKiB=${Debug.getPss()}")
+            return
+        }
         if (arguments.getString("probeRawUrlCandidates") == "true") {
             val syntheticUrl = "https://r1.googlevideo.com/videoplayback?expire=2000000000&itag=18&n=LowTube_n_probe_Aa0123456789"
             val runtime = YoutubePlayerJavaScriptRuntime()
