@@ -125,6 +125,7 @@
     <string name="previous_video">Предыдущее видео</string>
     <string name="no_previous_video">В журнале нет предыдущего видео</string>
     <string name="add_to_queue">В очередь</string>
+    <string name="add_playlist_to_queue_action">Добавить плейлист в очередь</string>
     <string name="downloads">Загрузки</string>
     <string name="download">Скачать</string>
     <string name="download_options">Параметры загрузки</string>

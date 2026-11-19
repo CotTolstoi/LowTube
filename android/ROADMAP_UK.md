@@ -89,6 +89,8 @@
 
 ## Поточний зріз реалізації
 
+19.11.2026: у YouTube playlist cards додано окрему локалізовану дію додавання до черги, а пункт меню ⋮ лишився доступним. Compose instrumentation пройшла 6/6 на Android 6/API23 AVD; Media3 не запускався. Наступна перевірка — повний live маршрут зовнішнього playlist URL до черги й продовження сторінок.
+
 19.11.2026, Search→Queue route acceptance на фізичному Android13/API33: та сама opt-in MainActivity instrumentation, що пройшла на API23, відкрила `aqz-KE-bpKQ` через внутрішній YouTube URL route, додала Big Buck Bunny з overflow і знайшла його через More→Queue. `OK (1 test)` за 7,247 s; playback не запускався, cleanup прибрав fixture. Instrumentation закрила свою Activity, тому Redmi спершу повернувся до launcher/camera app; вручну запустив LowTube і підтвердив `MainActivity` foreground. Перше 10 s post-test Home sample було CPU 31,8%, PSS 138,3 MiB/RSS 223,7 MiB; settled наступні 10 s — CPU 0%, PSS 116,4 MiB/RSS 202,9 MiB, RAM 3 713/1 559 MiB. Короткі point samples, не benchmark.
 
 19.11.2026, Search→Queue UI route: додано opt-in `SearchToQueueUiAcceptanceTest` на MainActivity. На API23 AVD тест відправив підтримуваний YouTube `ACTION_VIEW`, дочекався картки Big Buck Bunny, відкрив її меню, вибрав Add to queue, відкрив More→Queue та перевірив той самий fixture у локальному SQLite queue. `OK (1 test)` за 4,638 s; тимчасовий fixture видалено, playback не запускався. Основний інтеграційний маршрут більше не має відкритого API23 acceptance; API33 acceptance і ручна перевірка залишаються.

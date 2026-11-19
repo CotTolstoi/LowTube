@@ -113,6 +113,37 @@ class VideoCardShareTest {
     }
 
     @Test
+    fun playlistHasDirectQueueActionWithoutOpeningThePlaylist() {
+        var queueRequested = false
+        var playlistOpened = false
+        composeTestRule.setContent {
+            LowTubeTheme {
+                VideoCard(
+                    item = fixture().copy(
+                        id = "PL0123456789abcdefghijABCDEFGHIJKLM",
+                        title = "Playlist fixture",
+                        kind = "playlist",
+                        url = "https://www.youtube.com/playlist?list=PL0123456789abcdefghijABCDEFGHIJKLM",
+                    ),
+                    isFollowing = false,
+                    onQueue = { queueRequested = true },
+                    onDownload = {},
+                    onSave = {},
+                    onToggleFollow = { true },
+                    onChannelClick = {},
+                    onShare = {},
+                    onClick = { playlistOpened = true },
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.add_playlist_to_queue_action)).performClick()
+
+        assertTrue("The direct playlist action should enqueue the playlist marker", queueRequested)
+        assertFalse("Enqueueing a playlist must not navigate into it", playlistOpened)
+    }
+
+    @Test
     fun shareIntentContainsTitleAndTrustedYoutubeLink() {
         val item = fixture()
         val intent = createShareIntent(item)

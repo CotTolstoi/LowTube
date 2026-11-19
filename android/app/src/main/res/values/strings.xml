@@ -125,6 +125,7 @@
     <string name="previous_video">Previous video</string>
     <string name="no_previous_video">No previous video in watch history</string>
     <string name="add_to_queue">Queue</string>
+    <string name="add_playlist_to_queue_action">Add playlist to queue</string>
     <string name="downloads">Downloads</string>
     <string name="download">Download</string>
     <string name="download_options">Download options</string>

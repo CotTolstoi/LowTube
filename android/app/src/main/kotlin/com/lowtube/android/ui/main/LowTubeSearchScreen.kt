@@ -743,6 +743,16 @@ internal fun VideoCard(
                     }
                 }
             }
+            if (item.kind == "playlist") {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(end = 8.dp, bottom = 4.dp),
+                    horizontalArrangement = Arrangement.End,
+                ) {
+                    TextButton(onClick = onQueue) {
+                        Text(stringResource(R.string.add_playlist_to_queue_action))
+                    }
+                }
+            }
         }
     }
 }
