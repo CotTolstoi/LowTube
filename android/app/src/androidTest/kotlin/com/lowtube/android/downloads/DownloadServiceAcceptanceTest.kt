@@ -179,6 +179,118 @@ class DownloadServiceAcceptanceTest {
     }
 
     @Test
+    fun cancellingMuxedDownloadDuringAudioRangeKeepsPartialsForResume() {
+        runBlocking {
+            assumeTrue(
+                "Muxed cancellation acceptance is opt-in; pass -e runMuxedDownloadCancelAcceptance true",
+                InstrumentationRegistry.getArguments().getString("runMuxedDownloadCancelAcceptance") == "true",
+            )
+            val context = ApplicationProvider.getApplicationContext<Context>()
+            val instrumentation = InstrumentationRegistry.getInstrumentation()
+            val videoBytes = instrumentation.context.assets.open("com/lowtube/android/downloads/mux_video_track.mp4").use { it.readBytes() }
+            val audioBytes = instrumentation.context.assets.open("com/lowtube/android/downloads/mux_audio_track.mp4").use { it.readBytes() }
+            val dbName = "lowtube-mux-cancel-${System.currentTimeMillis()}.db"
+            val partial = File(context.cacheDir, "$dbName.part")
+            val videoPartial = File(partial.absolutePath + ".video")
+            val audioPartial = File(partial.absolutePath + ".audio")
+            val audioTotalFile = File(partial.absolutePath + ".audio.total")
+            val store = DownloadJobStore(context, dbName)
+            val preferences = context.getSharedPreferences("lowtube_settings", Context.MODE_PRIVATE)
+            val previousRateLimit = preferences.getInt("download_limit_kib", 0)
+            val server = SlowPartialRangeServer(audioBytes)
+            val remuxed = File(context.cacheDir, "$dbName-resumed.mp4")
+            var id = 0L
+            var retryServer: RangeResumeLoopbackServer? = null
+            var publishedUri: Uri? = null
+            val video = VideoItem("fixture", "Muxed cancellation fixture", duration = "1", url = "https://www.youtube.com/watch?v=fixture")
+            val videoJson = JSONObject().put("id", video.id).put("title", video.title).put("url", video.url).toString()
+            try {
+                id = store.insert(
+                    videoJson,
+                    "bounded-mux-cancel-test",
+                    false,
+                    "lowtube-mux-cancel-${System.currentTimeMillis()}.mp4",
+                    "video/mp4",
+                    "LowTube muxed cancellation acceptance",
+                    partial.absolutePath,
+                    maxBytesPerAttempt = TRACK_RANGE_CHUNK_BYTES,
+                )
+                videoPartial.writeBytes(videoBytes)
+                File(partial.absolutePath + ".video.total").writeText(videoBytes.size.toString())
+                preferences.edit().putInt("download_limit_kib", 1).commit()
+                server.start()
+
+                startService(context, dbName, server.url, server.url)
+                waitForBytesWritten(store, id, audioPartial)
+                assertEquals("The service should finish the seeded video before fetching audio", videoBytes.size.toLong(), videoPartial.length())
+                assertTrue("Cancellation fixture must stop during the incomplete audio transfer", audioPartial.length() in 1..server.prefixBytes.toLong())
+                cancelService(context, dbName, id)
+                val cancelled = withTimeoutPoll {
+                    val job = store.get(id) ?: error("Cancelled muxed download disappeared.")
+                    if (job.status == DownloadStatus.CANCELLED || job.status == DownloadStatus.FAILED) job else null
+                }
+                assertEquals("Muxed job did not enter CANCELLED: ${cancelled.reason}", DownloadStatus.CANCELLED, cancelled.status)
+                assertEquals("Completed video track should be retained", videoBytes.size.toLong(), videoPartial.length())
+                assertTrue("Downloaded audio prefix should be retained for retry", audioPartial.length() in 1..server.prefixBytes.toLong())
+                assertEquals("The persisted byte count should include both tracks", videoPartial.length() + audioPartial.length(), cancelled.downloadedBytes)
+                assertEquals("bytes=0-${TRACK_RANGE_CHUNK_BYTES - 1}", server.rangeHeader)
+                assertEquals(audioBytes.size.toLong(), audioTotalFile.readText().toLong())
+                assertTrue("OkHttp cancellation did not close the active audio response", server.awaitClientClosed())
+                waitForServiceStopped(context)
+                Log.i(TAG, "muxedCancelStatus=${cancelled.status}, videoBytes=${videoPartial.length()}, audioPartialBytes=${audioPartial.length()}")
+
+                if (Build.VERSION.SDK_INT <= 28) return@runBlocking
+                preferences.edit().putInt("download_limit_kib", previousRateLimit).commit()
+                val resumeServer = RangeResumeLoopbackServer(audioBytes.size.toLong(), MAX_TRACK_RANGE_REQUESTS, audioBytes)
+                retryServer = resumeServer
+                resumeServer.start()
+                store.update(id, DownloadStatus.PENDING)
+                startService(context, dbName, server.url, resumeServer.url)
+                val resumed = waitForTerminalAttempt(store, id)
+                assertEquals("Cancelled muxed partial did not complete on retry: ${resumed.reason}", DownloadStatus.SUCCESSFUL, resumed.status)
+                assertEquals("Retry did not continue at the saved audio offset", "bytes=${server.prefixBytes}-${TRACK_RANGE_CHUNK_BYTES + server.prefixBytes - 1}", resumeServer.rangeHeader)
+                val resultUri = Uri.parse(resumed.localUri)
+                publishedUri = resultUri
+                context.contentResolver.openInputStream(resultUri)?.use { input -> remuxed.outputStream().use(input::copyTo) }
+                    ?: error("Retried muxed MP4 could not be opened.")
+                val extractor = MediaExtractor()
+                try {
+                    extractor.setDataSource(remuxed.absolutePath)
+                    val mimeTypes = (0 until extractor.trackCount).map { extractor.getTrackFormat(it).getString(MediaFormat.KEY_MIME) }.toSet()
+                    assertEquals(setOf("video/avc", "audio/mp4a-latm"), mimeTypes)
+                } finally {
+                    extractor.release()
+                }
+                assertEquals(videoBytes.size.toLong() + audioBytes.size, resumed.downloadedBytes)
+                assertFalse("Video partial should be removed after successful retry", videoPartial.exists())
+                assertFalse("Audio partial should be removed after successful retry", audioPartial.exists())
+                waitForServiceStopped(context)
+                DownloadFileStore(context).deletePublished(resultUri)
+                publishedUri = null
+                Log.i(TAG, "muxedCancelResumeStatus=${resumed.status}, resumedAudioRange=${resumeServer.rangeHeader}")
+            } finally {
+                context.stopService(Intent(context, DownloadService::class.java))
+                server.close()
+                retryServer?.close()
+                preferences.edit().putInt("download_limit_kib", previousRateLimit).commit()
+                partial.delete()
+                videoPartial.delete()
+                audioPartial.delete()
+                remuxed.delete()
+                File(partial.absolutePath + ".video.total").delete()
+                audioTotalFile.delete()
+                File(partial.absolutePath + ".video.total.tmp").delete()
+                File(partial.absolutePath + ".audio.total.tmp").delete()
+                publishedUri?.let { runCatching { DownloadFileStore(context).deletePublished(it) } }
+                if (id > 0L) store.remove(id)
+                store.close()
+                context.deleteDatabase(dbName)
+                (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(NOTIFICATION_ID)
+            }
+        }
+    }
+
+    @Test
     fun foregroundJobPausesAtRangeCapAndResumesFromPartialOffset() {
         runBlocking {
         assumeTrue(
@@ -694,6 +806,54 @@ class DownloadServiceAcceptanceTest {
         }
 
         companion object { const val TOTAL_BYTES = 1_048_576L }
+    }
+
+    private class SlowPartialRangeServer(private val bodyBytes: ByteArray) : AutoCloseable {
+        private val server = ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))
+        private val clientClosed = CountDownLatch(1)
+        @Volatile var rangeHeader: String? = null
+            private set
+        private var thread: Thread? = null
+        val prefixBytes = 1024
+        val url: String get() = "http://127.0.0.1:${server.localPort}/slow-audio-test.m4a"
+
+        fun start() {
+            thread = Thread({
+                try {
+                    server.accept().use { socket ->
+                        socket.soTimeout = 10_000
+                        val input = BufferedReader(InputStreamReader(socket.getInputStream()))
+                        while (true) {
+                            val line = input.readLine() ?: break
+                            if (line.isEmpty()) break
+                            if (line.startsWith("Range:", ignoreCase = true)) rangeHeader = line.substringAfter(':').trim()
+                        }
+                        val range = Regex("(?i)^bytes=(\\d+)-(\\d+)$").matchEntire(rangeHeader.orEmpty())
+                            ?: throw IllegalStateException("Audio cancellation request did not contain a bounded Range header.")
+                        val start = range.groupValues[1].toInt()
+                        val requestedEnd = range.groupValues[2].toInt()
+                        require(start >= 0 && start < bodyBytes.size && requestedEnd >= start) { "Audio cancellation Range was outside the fixture." }
+                        val end = minOf(requestedEnd, bodyBytes.lastIndex)
+                        val responseLength = end - start + 1
+                        val output = socket.getOutputStream()
+                        output.write("HTTP/1.1 206 Partial Content\r\nContent-Type: audio/mp4\r\nContent-Range: bytes $start-$end/${bodyBytes.size}\r\nContent-Length: $responseLength\r\nConnection: close\r\n\r\n".toByteArray())
+                        output.write(bodyBytes, start, minOf(prefixBytes, responseLength))
+                        output.flush()
+                        while (input.read() >= 0) { }
+                    }
+                } catch (_: Exception) {
+                } finally {
+                    clientClosed.countDown()
+                }
+            }, "LowTube-MuxCancelAcceptanceServer").apply { isDaemon = true; start() }
+        }
+
+        fun awaitClientClosed(): Boolean = clientClosed.await(5, TimeUnit.SECONDS)
+
+        override fun close() {
+            runCatching { server.close() }
+            thread?.interrupt()
+        }
     }
 
     private class RangeResumeLoopbackServer(
