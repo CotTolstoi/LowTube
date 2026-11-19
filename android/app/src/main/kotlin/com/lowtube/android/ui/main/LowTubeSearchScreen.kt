@@ -60,6 +60,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.painterResource
@@ -492,7 +493,7 @@ fun LowTubeSearchScreen(
             } else {
                 LazyColumn(
                     state = listState,
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize().testTag(SEARCH_RESULTS_LIST_TEST_TAG),
                     contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
@@ -915,3 +916,5 @@ internal object FeedAutoPaginationPolicy {
     fun shouldPrefetch(lastVisibleIndex: Int, itemCount: Int): Boolean =
         itemCount > 0 && lastVisibleIndex >= 0 && lastVisibleIndex >= (itemCount - PREFETCH_DISTANCE).coerceAtLeast(0)
 }
+
+internal const val SEARCH_RESULTS_LIST_TEST_TAG = "lowtube-search-results"
