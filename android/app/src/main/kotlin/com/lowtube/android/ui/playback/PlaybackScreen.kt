@@ -137,6 +137,7 @@ fun PlaybackScreen(
     var loading by remember(video.id, playbackRequestId) { mutableStateOf(true) }
     var shouldResumePlayback by rememberSaveable(video.id, playbackRequestId, localAudioTrack?.uri) { mutableStateOf(true) }
     var watchedVideo by remember(video.id, playbackRequestId) { mutableStateOf(video) }
+    var displayedFollowState by remember(video.id, playbackRequestId) { mutableStateOf(isFollowing) }
     var readyNotified by remember(video.id, playbackRequestId) { mutableStateOf(false) }
     var endedHandled by remember(video.id, playbackRequestId) { mutableStateOf(false) }
     var recoveryAttempts by remember(video.id, playbackRequestId, localAudioTrack?.uri) { mutableStateOf(0) }
@@ -151,6 +152,9 @@ fun PlaybackScreen(
     var resolvingQueueRowId by remember { mutableStateOf<Long?>(null) }
     var lastObservedDurationMs by remember(video.id, playbackRequestId) { mutableStateOf(0L) }
     val playbackScope = rememberCoroutineScope()
+    LaunchedEffect(isFollowing, video.id, playbackRequestId) {
+        displayedFollowState = isFollowing
+    }
     val latestAutoRecover by rememberUpdatedState(autoRecover)
     val latestAutoNext by rememberUpdatedState(autoNext)
     val latestPreloadNext by rememberUpdatedState(preloadNext)
@@ -738,7 +742,9 @@ fun PlaybackScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     if (watchedVideo.channelId.matches(Regex("UC[a-zA-Z0-9_-]{22}"))) {
-                        ChannelFollowControl(isFollowing = isFollowing) { onToggleFollow(watchedVideo) }
+                        ChannelFollowControl(isFollowing = displayedFollowState) {
+                            displayedFollowState = onToggleFollow(watchedVideo)
+                        }
                     }
                     TextButton(onClick = {
                         library.saveToWatchLater(watchedVideo)
@@ -794,7 +800,9 @@ fun PlaybackScreen(
                 ) {
                     Text(watchedVideo.channel, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
                     if (localAudioTrack == null && watchedVideo.channelId.matches(Regex("UC[a-zA-Z0-9_-]{22}"))) {
-                        ChannelFollowControl(isFollowing = isFollowing) { onToggleFollow(watchedVideo) }
+                        ChannelFollowControl(isFollowing = displayedFollowState) {
+                            displayedFollowState = onToggleFollow(watchedVideo)
+                        }
                     }
                 }
             }
