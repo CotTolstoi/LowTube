@@ -31,6 +31,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -59,6 +60,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import android.os.Build
@@ -301,7 +303,7 @@ fun LowTubeSearchScreen(
                     NavigationBarItem(
                         selected = selectedTab == "search",
                         onClick = { onSelectedTabChanged("search"); viewModel.showSearch() },
-                        icon = { Text("⌕") },
+                        icon = { Icon(painterResource(R.drawable.ic_nav_search), contentDescription = null) },
                         label = { Text(stringResource(R.string.search_tab)) },
                     )
                     NavigationBarItem(
@@ -311,19 +313,19 @@ fun LowTubeSearchScreen(
                             recommendationKind = "all"
                             viewModel.loadHome(language, discoveryTopic, discoveryLanguage, force = true, requestFailedMessage = requestFailedMessage, pageSize = pageSize)
                         },
-                        icon = { Text("⌂") },
+                        icon = { Icon(painterResource(R.drawable.ic_nav_home), contentDescription = null) },
                         label = { Text(stringResource(R.string.recommendations_tab)) },
                     )
                     NavigationBarItem(
                         selected = selectedTab == "subscriptions",
                         onClick = { onSelectedTabChanged("subscriptions") },
-                        icon = { Text("▤") },
+                        icon = { Icon(painterResource(R.drawable.ic_nav_subscriptions), contentDescription = null) },
                         label = { Text(stringResource(R.string.subscriptions_tab)) },
                     )
                     NavigationBarItem(
                         selected = selectedTab == "profile",
                         onClick = { onSelectedTabChanged("profile") },
-                        icon = { Text("●") },
+                        icon = { Icon(painterResource(R.drawable.ic_nav_profile), contentDescription = null) },
                         label = { Text(stringResource(R.string.profile)) },
                     )
                 }
