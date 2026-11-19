@@ -280,3 +280,5 @@
 
 19.11.2026, Android6/API23 AVD, MWEB fallback order після iOS-кроку: контрольовані відмови ANDROID/WEB/iOS, жива MWEB-відповідь; `ANDROID,WEB,IOS,MWEB`, itag 18, CDN Range HTTP 206 / 65 536 bytes. Process 3 026 ms CPU / 3 885 ms wall, AndroidJUnitRunner PSS 32 018→71 296 KiB. Media3 не створювався; короткий resolver acceptance snapshot.
 19.11.2026, Android6/API23 x86_64 AVD, download resolver regression acceptance: синтетичний iOS HLS-only response пропущено, resolver дійшов до живих MWEB форматів; прямий формат отримав CDN HTTP 206 на рівно 65 536 bytes. Інструментальний тест — 1/1; без Media3 та playback. Redmi Note 8 після встановлення APK і 12 s простою: MainActivity foreground, CPU 0%, PSS 144 455 KiB, RSS 245 275 KiB, RAM 3 802 500 KiB / доступно 1 457 656 KiB. Idle point snapshot, не benchmark.
+
+19.11.2026 01:43 UTC, Redmi Note 8 / Android13 API33 після встановлення APK із download resolver fix: офіційний 5 s sampler, Home idle, MainActivity foreground — CPU 0% одного ядра, PSS 120,5 MiB, RSS 207,2 MiB, peak RSS 231,7 MiB, RAM 3 713 MiB / доступно 1 436 MiB. Відео й downloads не запускалися; короткий idle sample, не benchmark.
