@@ -12,6 +12,7 @@ import java.net.URL
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
+import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -125,7 +126,7 @@ class YoutubePlayerLiveScriptDiagnosticTest {
             return
         }
         if (arguments.getString("probeRawUrlCandidates") == "true") {
-            val syntheticUrl = "https://r1.googlevideo.com/videoplayback?expire=2000000000&itag=18&n=LowTube_n_probe_Aa0123456789"
+            val syntheticUrl = "https://r1.googlevideo.com/videoplayback/n/LowTube_old_segment/chunk?expire=2000000000&itag=18&n=LowTube_new_query"
             val runtime = YoutubePlayerJavaScriptRuntime()
             val candidates = YoutubePlayerTransformLocator.locateUrlTransformDiagnosticCandidates(script.source)
             candidates.forEach { candidate ->
@@ -155,15 +156,67 @@ class YoutubePlayerLiveScriptDiagnosticTest {
                 } == true
                 val reason = failure?.let { error ->
                     ((error.cause ?: error).message.orEmpty())
-                        .replace(Regex("[^A-Za-z0-9 _-]"), " ").take(96)
+                        .replace(Regex("[^A-Za-z0-9 _-]"), " ").take(384)
                 }.orEmpty()
                 System.out.println(
                     "liveRawUrlTransformCandidate; name=${candidate.name}; programChars=${activeCandidate.program.length}; " +
-                        "recoveredDependencies=${requiredDependencies.size}; executed=${transformed != null}; " +
+                        "recoveredDependencies=${requiredDependencies.size}; dependencyNames=${requiredDependencies.joinToString(",")}; " +
+                        "executed=${transformed != null}; " +
                         "changedNWithSameHostPath=$accepted; outputChars=${transformed?.length ?: 0}; " +
                         "failure=${failure?.javaClass?.simpleName.orEmpty()}; reason=$reason",
                 )
             }
+            val productionPathFunction = functions.urlPathThrottling
+            val fullFunctionAttempt = runCatching {
+                runBlocking {
+                    if (productionPathFunction == null) emptyList()
+                    else runtime.executeFullPlayerFunctions(
+                        script.source,
+                        listOf(YoutubePlayerJavaScriptRuntime.FunctionCall(productionPathFunction, syntheticUrl)),
+                    )
+                }
+            }
+            val fullFunctionOutputs = fullFunctionAttempt.getOrNull().orEmpty()
+            val acceptedFunctionIndex = fullFunctionOutputs.indices.firstOrNull { index ->
+                fullFunctionOutputs.getOrNull(index)?.let {
+                    YoutubePlayerUrlTransformer.acceptUrlNTransform(syntheticUrl, it) != null
+                } == true
+            }
+            val fullFunctionOutput = acceptedFunctionIndex?.let(fullFunctionOutputs::get)
+            val fullFunctionAccepted = fullFunctionOutput?.let {
+                YoutubePlayerUrlTransformer.acceptUrlNTransform(syntheticUrl, it) != null
+            } == true
+            val inputUri = URI(syntheticUrl)
+            val outputUri = fullFunctionOutput?.let { runCatching { URI(it) }.getOrNull() }
+            val sameTrustedOrigin = outputUri != null &&
+                outputUri.scheme.equals(inputUri.scheme, ignoreCase = true) &&
+                outputUri.host.equals(inputUri.host, ignoreCase = true) &&
+                outputUri.port == inputUri.port && outputUri.rawUserInfo == null
+            val inputPath = inputUri.rawPath.orEmpty().split('/')
+            val outputPath = outputUri?.rawPath.orEmpty().split('/')
+            val pathSegmentRewritten = inputPath.size == outputPath.size && inputPath.size > 4 &&
+                inputPath.take(3) == outputPath.take(3) &&
+                inputPath[3] == "LowTube_old_segment" && outputPath[3] != inputPath[3] &&
+                inputPath.drop(4) == outputPath.drop(4)
+            val queryUnchanged = outputUri?.rawQuery == inputUri.rawQuery
+            if (arguments.getString("acceptPathNTransform") == "true") {
+                assertTrue(
+                    "Full player bundle must rewrite only the n path segment with the production safety gate; " +
+                        "productionCandidate=$productionPathFunction",
+                    fullFunctionAccepted && sameTrustedOrigin && queryUnchanged && pathSegmentRewritten,
+                )
+            }
+            val fullFunctionFailure = fullFunctionAttempt.exceptionOrNull()?.let { error ->
+                ((error.cause ?: error).message.orEmpty())
+                    .replace(Regex("[^A-Za-z0-9 _-]"), " ").take(256)
+            }.orEmpty()
+            System.out.println(
+                "liveFullFunctionUrlNTransform; candidateNames=$productionPathFunction; " +
+                    "acceptedCandidate=${if (acceptedFunctionIndex != null) productionPathFunction.orEmpty() else ""}; " +
+                    "executed=${fullFunctionOutputs.size}; safetyAccepted=$fullFunctionAccepted; " +
+                    "sameTrustedOrigin=$sameTrustedOrigin; queryUnchanged=$queryUnchanged; pathSegmentRewritten=$pathSegmentRewritten; " +
+                    "failureType=${fullFunctionAttempt.exceptionOrNull()?.javaClass?.simpleName.orEmpty()}; failure=$fullFunctionFailure",
+            )
             System.out.println("liveRawUrlTransformCandidateSummary; count=${candidates.size}")
             return
         }
