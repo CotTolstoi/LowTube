@@ -273,3 +273,9 @@
 19.11.2026 01:00 UTC, Redmi Note 8 / Android13 API33 після повернення LowTube `MainActivity` на передній план: три `top` знімки на 5 s інтервалі дали 0% CPU; PSS 124 072 KiB (121,2 MiB), RSS 225 951 KiB (220,7 MiB), RAM 3 713 MiB / доступно 1 399 MiB. Idle point samples, не benchmark.
 
 19.11.2026, Android6/API23 x86_64 AVD, повторна MWEB signature metadata/QuickJS diagnostic для двох public video IDs: 5 080 ms process CPU за 6 408 ms wall; AndroidJUnitRunner PSS 37 889→67 257 KiB. Player bundle 1 586 768 chars; тест розглянув до 2 cipher inputs; Media3, playback і CDN Range не використовувалися. Короткий opt-in diagnostic snapshot, не benchmark і не фонове споживання застосунку.
+
+19.11.2026, Android6/API23 x86_64 AVD, iOS HLS resolver→Media3 acceptance: manifest HTTP 200 / 33 853 bytes; decoder `OMX.google.vp9.decoder`; media time близько 2 044 ms; process 4 848 ms CPU / 5 901 ms wall; PSS 34 044→48 912 KiB. Item обрізано на 12 s; повний ролик не відтворювався. Короткий acceptance snapshot, не benchmark.
+
+19.11.2026, Redmi Note 8 / Android13 API33, iOS HLS resolver→Media3 acceptance: manifest HTTP 200 / 34 393 bytes; decoder `c2.mtk.vp9.decoder`; media time близько 2 011 ms; process 5 382 ms CPU / 5 881 ms wall; PSS 142 474→299 724 KiB. Item обрізано на 12 s; повний ролик не відтворювався. Після повернення `MainActivity` на foreground: три короткі `top` samples CPU 0%; settled `dumpsys meminfo` PSS 124 070 KiB, RSS 226 167 KiB; RAM 3 802 500 KiB / доступно 1 437 480 KiB. Це короткі acceptance та idle point samples, не benchmark.
+
+19.11.2026, Android6/API23 AVD, MWEB fallback order після iOS-кроку: контрольовані відмови ANDROID/WEB/iOS, жива MWEB-відповідь; `ANDROID,WEB,IOS,MWEB`, itag 18, CDN Range HTTP 206 / 65 536 bytes. Process 3 026 ms CPU / 3 885 ms wall, AndroidJUnitRunner PSS 32 018→71 296 KiB. Media3 не створювався; короткий resolver acceptance snapshot.
