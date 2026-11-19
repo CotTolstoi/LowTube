@@ -1210,7 +1210,12 @@ class InnerTubeSearchRepository(context: Context? = null) {
         visit(root.optJSONObject("header"), 0)
         visit(root.optJSONObject("continuationContents"), 0)
         visit(root.optJSONArray("onResponseReceivedActions"), 0)
-        if (result.isEmpty() && primary == null && contents == null) throw IOException("YouTube returned an unsupported search response.")
+        visit(root.opt("onResponseReceivedCommands"), 0)
+        if (result.isEmpty() && primary == null && contents == null) {
+            val responseFields = root.keys().asSequence().take(MAX_DIAGNOSTIC_RESPONSE_FIELDS).joinToString(", ")
+                .ifBlank { "none" }
+            throw IOException("YouTube returned an unsupported search response (top-level fields: $responseFields).")
+        }
         return SearchPage(result.values.take(MAX_PAGE_ITEMS), continuation, playlistTitle)
     }
 
@@ -1605,6 +1610,7 @@ class InnerTubeSearchRepository(context: Context? = null) {
         private const val MAX_RESPONSE_BYTES = 8 * 1024 * 1024
         private const val MAX_PAGE_ITEMS = 100
         private const val MAX_JSON_DEPTH = 80
+        private const val MAX_DIAGNOSTIC_RESPONSE_FIELDS = 8
         private const val MAX_COOLDOWN_SECONDS = 86_400L
         private const val MAX_URL_RECOVERY_ATTEMPTS = 8
         private const val MAX_URL_RECOVERY_DEPENDENCIES = 8
