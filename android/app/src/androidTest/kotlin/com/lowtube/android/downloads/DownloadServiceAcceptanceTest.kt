@@ -35,6 +35,7 @@ import java.io.File
 import java.io.InputStreamReader
 import java.net.InetAddress
 import java.net.ServerSocket
+import java.util.Collections
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -195,7 +196,10 @@ class DownloadServiceAcceptanceTest {
             val context = ApplicationProvider.getApplicationContext<Context>()
             val dbName = "lowtube-rate-limit-acceptance-${System.currentTimeMillis()}.db"
             val partial = File(context.cacheDir, "$dbName.part")
-            val server = RangeResumeLoopbackServer(resourceBytes = RATE_LIMIT_CHUNK_BYTES * 4)
+            val server = RangeResumeLoopbackServer(
+                resourceBytes = RATE_LIMIT_CHUNK_BYTES * 4,
+                expectedRequests = 2,
+            )
             val store = DownloadJobStore(context, dbName)
             val preferences = context.getSharedPreferences("lowtube_settings", Context.MODE_PRIVATE)
             val previousLimit = preferences.getInt("download_limit_kib", 0)
@@ -215,17 +219,35 @@ class DownloadServiceAcceptanceTest {
                     maxBytesPerAttempt = RATE_LIMIT_CHUNK_BYTES,
                 )
                 server.start()
-                val startedNs = System.nanoTime()
+                val firstStartedNs = System.nanoTime()
                 startService(context, dbName, testStreamUrl = server.url)
-                val completed = waitForTerminalAttempt(store, id)
-                val elapsedMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedNs)
-                assertEquals("Rate-limited bounded transfer did not pause: ${completed.reason}", DownloadStatus.PAUSED, completed.status)
-                assertEquals(RATE_LIMIT_CHUNK_BYTES, completed.downloadedBytes)
+                val first = waitForTerminalAttempt(store, id)
+                val firstElapsedMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - firstStartedNs)
+                assertEquals("First rate-limited attempt did not pause: ${first.reason}", DownloadStatus.PAUSED, first.status)
+                assertEquals(RATE_LIMIT_CHUNK_BYTES, first.downloadedBytes)
                 assertEquals(RATE_LIMIT_CHUNK_BYTES, partial.length())
-                assertTrue("1 KiB/s cap completed too quickly ($elapsedMs ms)", elapsedMs >= RATE_LIMIT_MIN_EXPECTED_MS)
-                assertTrue("Range-limited server did not observe client close", server.awaitClientClosed())
+                assertTrue("1 KiB/s cap did not apply to first attempt ($firstElapsedMs ms)", firstElapsedMs >= RATE_LIMIT_MIN_EXPECTED_MS)
                 waitForServiceStopped(context)
-                Log.i(TAG, "rateLimitAcceptance; limitKiB=1; bytes=${completed.downloadedBytes}; elapsedMs=$elapsedMs")
+
+                store.update(id, DownloadStatus.PENDING)
+                val retryStartedNs = System.nanoTime()
+                startService(context, dbName, testStreamUrl = server.url)
+                val retried = waitForTerminalAttempt(store, id)
+                val retryElapsedMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - retryStartedNs)
+                assertEquals("Rate-limited retry did not pause: ${retried.reason}", DownloadStatus.PAUSED, retried.status)
+                assertEquals(RATE_LIMIT_CHUNK_BYTES * 2, retried.downloadedBytes)
+                assertEquals(RATE_LIMIT_CHUNK_BYTES * 2, partial.length())
+                assertTrue("1 KiB/s cap did not apply to retry ($retryElapsedMs ms)", retryElapsedMs >= RATE_LIMIT_MIN_EXPECTED_MS)
+                assertTrue("Both bounded requests did not close", server.awaitClientClosed())
+                assertEquals(
+                    listOf(
+                        "bytes=0-${RATE_LIMIT_CHUNK_BYTES - 1}",
+                        "bytes=${RATE_LIMIT_CHUNK_BYTES}-${RATE_LIMIT_CHUNK_BYTES * 2 - 1}",
+                    ),
+                    synchronized(server.rangeHeaders) { server.rangeHeaders.toList() },
+                )
+                waitForServiceStopped(context)
+                Log.i(TAG, "rateLimitAcceptance; limitKiB=1; bytes=${retried.downloadedBytes}; firstElapsedMs=$firstElapsedMs; retryElapsedMs=$retryElapsedMs")
             } finally {
                 context.stopService(Intent(context, DownloadService::class.java))
                 server.close()
@@ -462,9 +484,13 @@ class DownloadServiceAcceptanceTest {
         companion object { const val TOTAL_BYTES = 1_048_576L }
     }
 
-    private class RangeResumeLoopbackServer(private val resourceBytes: Long = TOTAL_BYTES) : AutoCloseable {
-        private val server = ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))
+    private class RangeResumeLoopbackServer(
+        private val resourceBytes: Long = TOTAL_BYTES,
+        private val expectedRequests: Int = 1,
+    ) : AutoCloseable {
+        private val server = ServerSocket(0, expectedRequests, InetAddress.getByName("127.0.0.1"))
         private val clientClosed = CountDownLatch(1)
+        val rangeHeaders = Collections.synchronizedList(mutableListOf<String>())
         @Volatile var rangeHeader: String? = null
             private set
         private var thread: Thread? = null
@@ -473,25 +499,30 @@ class DownloadServiceAcceptanceTest {
         fun start() {
             thread = Thread({
                 try {
-                    server.accept().use { socket ->
-                        socket.soTimeout = 10_000
-                        val input = BufferedReader(InputStreamReader(socket.getInputStream()))
-                        while (true) {
-                            val line = input.readLine() ?: break
-                            if (line.isEmpty()) break
-                            if (line.startsWith("Range:", ignoreCase = true)) rangeHeader = line.substringAfter(':').trim()
+                    repeat(expectedRequests) {
+                        server.accept().use { socket ->
+                            socket.soTimeout = 10_000
+                            val input = BufferedReader(InputStreamReader(socket.getInputStream()))
+                            var requestRange = ""
+                            while (true) {
+                                val line = input.readLine() ?: break
+                                if (line.isEmpty()) break
+                                if (line.startsWith("Range:", ignoreCase = true)) requestRange = line.substringAfter(':').trim()
+                            }
+                            rangeHeader = requestRange
+                            rangeHeaders.add(requestRange)
+                            val range = Regex("(?i)^bytes=(\\d+)-(\\d+)$").matchEntire(requestRange)
+                                ?: throw IllegalStateException("Resume request did not include a bounded Range header.")
+                            val start = range.groupValues[1].toLong()
+                            val end = range.groupValues[2].toLong()
+                            require(start <= end && end < resourceBytes) { "Resume request range was outside the test resource." }
+                            val body = ByteArray((end - start + 1).toInt()) { (start + it).toByte() }
+                            val output = socket.getOutputStream()
+                            output.write("HTTP/1.1 206 Partial Content\r\nContent-Type: video/mp4\r\nContent-Range: bytes $start-$end/$resourceBytes\r\nContent-Length: ${body.size}\r\nConnection: close\r\n\r\n".toByteArray())
+                            output.write(body)
+                            output.flush()
+                            while (input.read() >= 0) { }
                         }
-                        val range = Regex("(?i)^bytes=(\\d+)-(\\d+)$").matchEntire(rangeHeader.orEmpty())
-                            ?: throw IllegalStateException("Resume request did not include a bounded Range header.")
-                        val start = range.groupValues[1].toLong()
-                        val end = range.groupValues[2].toLong()
-                        require(start <= end && end < resourceBytes) { "Resume request range was outside the test resource." }
-                        val body = ByteArray((end - start + 1).toInt()) { (start + it).toByte() }
-                        val output = socket.getOutputStream()
-                        output.write("HTTP/1.1 206 Partial Content\r\nContent-Type: video/mp4\r\nContent-Range: bytes $start-$end/$resourceBytes\r\nContent-Length: ${body.size}\r\nConnection: close\r\n\r\n".toByteArray())
-                        output.write(body)
-                        output.flush()
-                        while (input.read() >= 0) { }
                     }
                 } catch (_: Exception) {
                 } finally {
