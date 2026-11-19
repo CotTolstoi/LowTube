@@ -8,12 +8,23 @@ import android.os.SystemClock
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.media3.common.MediaItem
+import androidx.media3.common.MimeTypes
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
 import com.lowtube.android.model.VideoItem
+import com.lowtube.android.playback.PlaybackDecoderDiagnostics
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import org.json.JSONObject
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Test
@@ -24,7 +35,7 @@ import java.net.HttpURLConnection
 import java.net.URI
 import java.net.URL
 
-/** Opt-in metadata-only comparison of anonymous Android and WEB player clients; it never creates a media player. */
+/** Opt-in resolver diagnostics; only explicit playback-acceptance arguments create Media3 players. */
 @RunWith(AndroidJUnit4::class)
 class YoutubePlayerClientComparisonDiagnosticTest {
     @Test
@@ -58,6 +69,7 @@ class YoutubePlayerClientComparisonDiagnosticTest {
                 when (name) {
                     "ANDROID" -> "3"
                     "WEB" -> "1"
+                    "IOS" -> "5"
                     "MWEB" -> "2"
                     else -> "unknown"
                 },
@@ -83,7 +95,7 @@ class YoutubePlayerClientComparisonDiagnosticTest {
 
         val stream = repository.resolvePlayback(video)
 
-        assertEquals(listOf("ANDROID", "WEB", "MWEB"), attemptedClients)
+        assertEquals(listOf("ANDROID", "WEB", "IOS", "MWEB"), attemptedClients)
         assertTrue("The resolver did not return an MWEB User-Agent", stream.userAgent.contains("iPad"))
         assertTrue("The returned stream lacks its transformed n query", Uri.parse(stream.uri).getQueryParameter("n").orEmpty().isNotBlank())
         val range = boundedRange(stream.uri, stream.userAgent)
@@ -95,6 +107,141 @@ class YoutubePlayerClientComparisonDiagnosticTest {
             "mwebFallbackOrderAcceptance; clients=${attemptedClients.joinToString(",")}; " +
                 "itag=${stream.itag}; height=${stream.videoHeight}; nPresent=true; " +
                 "userAgent=iPad; httpStatus=${range.status}; bytes=${range.bytes}; " +
+                "cpuMs=${Process.getElapsedCpuTime() - cpuStarted}; " +
+                "wallMs=${SystemClock.elapsedRealtime() - wallStarted}; pssKiB=$pssStarted->${Debug.getPss()}",
+        )
+    }
+
+    @Test
+    fun resolvesLiveIosHlsAsFallbackAfterAndroidAndWebReturnNoStreams() = runBlocking {
+        val arguments = InstrumentationRegistry.getArguments()
+        assumeTrue(
+            "Pass -e runIosHlsFallbackAcceptance true to run this bounded live network check",
+            arguments.getString("runIosHlsFallbackAcceptance") == "true",
+        )
+        val videoId = "dQw4w9WgXcQ"
+        val configuration = readPublicConfiguration()
+        val ios = PlayerVariant(
+            name = "IOS",
+            version = IOS_CLIENT_VERSION,
+            headerId = "5",
+            userAgent = IOS_USER_AGENT,
+            fields = JSONObject()
+                .put("deviceMake", "Apple")
+                .put("deviceModel", "iPhone16,2")
+                .put("osName", "iPhone")
+                .put("osVersion", "18.3.2.22D82"),
+        )
+        val iosResponse = requestPublicPlayer(videoId, configuration, ios)
+        val repository = InnerTubeSearchRepository(ApplicationProvider.getApplicationContext<Context>())
+        val iosStreaming = iosResponse.optJSONObject("streamingData") ?: JSONObject()
+        val hlsHost = Uri.parse(iosStreaming.optString("hlsManifestUrl")).host.orEmpty()
+        assertTrue(
+            "The live iOS response had no trusted HLS manifest",
+            hlsHost == "googlevideo.com" || hlsHost.endsWith(".googlevideo.com"),
+        )
+        val attemptedClients = mutableListOf<String>()
+        repository.playerRequestOverrideForAcceptance = { body, version, clientId, userAgent ->
+            val client = JSONObject(body).getJSONObject("context").getJSONObject("client")
+            val name = client.optString("clientName")
+            attemptedClients.add(name)
+            assertEquals(clientId, when (name) {
+                "ANDROID" -> "3"
+                "WEB" -> "1"
+                "IOS" -> "5"
+                "MWEB" -> "2"
+                else -> "unknown"
+            })
+            if (name == "IOS") {
+                assertEquals(IOS_CLIENT_VERSION, version)
+                assertEquals(IOS_USER_AGENT, userAgent)
+                assertEquals(IOS_USER_AGENT, client.optString("userAgent"))
+                assertEquals("Apple", client.optString("deviceMake"))
+                assertEquals("iPhone16,2", client.optString("deviceModel"))
+                iosResponse
+            } else {
+                JSONObject().put("playabilityStatus", JSONObject().put("status", "LOGIN_REQUIRED"))
+            }
+        }
+        val video = VideoItem(
+            id = videoId,
+            title = "Public iOS HLS fallback fixture",
+            duration = "3:33",
+            url = "https://www.youtube.com/watch?v=$videoId",
+        )
+        val cpuStarted = Process.getElapsedCpuTime()
+        val wallStarted = SystemClock.elapsedRealtime()
+        val pssStarted = Debug.getPss()
+
+        val stream = repository.resolvePlayback(video)
+
+        assertEquals(listOf("ANDROID", "WEB", "IOS"), attemptedClients)
+        assertEquals(IOS_USER_AGENT, stream.userAgent)
+        assertTrue("The resolver did not choose Media3 HLS", stream.isHlsManifest)
+        val manifest = boundedRange(stream.uri, stream.userAgent)
+            ?: error("The production iOS HLS manifest did not return bounded data.")
+        assertTrue("The HLS manifest request failed", manifest.status in 200..299)
+        assertTrue("The HLS manifest was empty", manifest.bytes > 0)
+        PlaybackDecoderDiagnostics.clear(ApplicationProvider.getApplicationContext())
+        var playbackFailure: PlaybackException? = null
+        var decoderName = ""
+        var playbackPositionMs = 0L
+        val player = withContext(Dispatchers.Main.immediate) {
+            ExoPlayer.Builder(ApplicationProvider.getApplicationContext<Context>()).build().apply {
+                addAnalyticsListener(
+                    PlaybackDecoderDiagnostics.analyticsListener(ApplicationProvider.getApplicationContext()),
+                )
+                addListener(object : Player.Listener {
+                    override fun onPlayerError(error: PlaybackException) {
+                        playbackFailure = error
+                    }
+                })
+                setMediaItem(
+                    MediaItem.Builder()
+                        .setUri(stream.uri)
+                        .setMimeType(MimeTypes.APPLICATION_M3U8)
+                        .setClippingConfiguration(
+                            MediaItem.ClippingConfiguration.Builder().setEndPositionMs(12_000).build(),
+                        )
+                        .build(),
+                )
+                prepare()
+            }
+        }
+        try {
+            withContext(Dispatchers.Main.immediate) {
+                withTimeout(45_000) {
+                    while (player.playbackState != Player.STATE_READY && playbackFailure == null) delay(100)
+                }
+                assertNull(playbackFailure)
+                player.play()
+                withTimeout(20_000) {
+                    while (player.currentPosition < 2_000 && playbackFailure == null) {
+                        assertTrue("iOS HLS playback must stop within the first 2 minutes", player.currentPosition < 120_000)
+                        delay(50)
+                    }
+                }
+                player.pause()
+                assertNull(playbackFailure)
+                assertTrue("Media3 did not advance the iOS HLS stream", player.currentPosition >= 1_000)
+                assertTrue("iOS HLS acceptance exceeded 2 minutes", player.currentPosition < 120_000)
+                playbackPositionMs = player.currentPosition
+                decoderName = PlaybackDecoderDiagnostics.read(
+                    ApplicationProvider.getApplicationContext<Context>()
+                        .getSharedPreferences(PlaybackDecoderDiagnostics.PREFERENCES_NAME, Context.MODE_PRIVATE),
+                ).name
+            }
+        } finally {
+            withContext(Dispatchers.Main.immediate) { player.pause(); player.release() }
+            PlaybackDecoderDiagnostics.clear(ApplicationProvider.getApplicationContext())
+        }
+        assertTrue("Media3 did not report an initialized decoder", decoderName.isNotBlank())
+
+        System.out.println(
+            "iosHlsFallbackAcceptance; clients=${attemptedClients.joinToString(",")}; " +
+                "mime=${stream.mimeType}; userAgent=iOS; decoder=$decoderName; " +
+                "mediaMs=$playbackPositionMs; " +
+                "httpStatus=${manifest.status}; bytes=${manifest.bytes}; " +
                 "cpuMs=${Process.getElapsedCpuTime() - cpuStarted}; " +
                 "wallMs=${SystemClock.elapsedRealtime() - wallStarted}; pssKiB=$pssStarted->${Debug.getPss()}",
         )
@@ -1276,6 +1423,8 @@ class YoutubePlayerClientComparisonDiagnosticTest {
     companion object {
         private const val DEFAULT_VIDEO_ID = "aqz-KE-bpKQ"
         private const val MWEB_USER_AGENT = "Mozilla/5.0 (iPad; CPU OS 16_7_10 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1,gzip(gfe)"
+        private const val IOS_CLIENT_VERSION = "21.26.4"
+        private const val IOS_USER_AGENT = "com.google.ios.youtube/21.26.4 (iPhone16,2; U; CPU iOS 18_3_2 like Mac OS X;)"
         private const val MAX_VIDEO_IDS = 3
         private const val REQUEST_TIMEOUT_MS = 10_000
         private const val MAX_CONFIG_BYTES = 4 * 1024 * 1024

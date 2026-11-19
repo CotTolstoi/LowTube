@@ -658,10 +658,11 @@ class InnerTubeSearchRepository(context: Context? = null) {
         if (apiKey.isBlank()) throw IOException("YouTube player configuration is incomplete. Retry the video.")
         val androidClient = PlayerRequestClient("ANDROID", "20.13.41", "3", USER_AGENT)
         val webClient = PlayerRequestClient("WEB", clientVersion, "1", USER_AGENT)
+        val iosClient = PlayerRequestClient("IOS", IOS_CLIENT_VERSION, "5", IOS_USER_AGENT)
         val clients = if (preferWebClient) {
-            listOf(webClient, androidClient)
+            listOf(webClient, androidClient, iosClient)
         } else {
-            listOf(androidClient, webClient)
+            listOf(androidClient, webClient, iosClient)
         }
         var lastStatus = ""
         for ((name, version, clientId, userAgent) in clients) {
@@ -677,7 +678,13 @@ class InnerTubeSearchRepository(context: Context? = null) {
                     .put("deviceMake", Build.MANUFACTURER)
                     .put("deviceModel", Build.MODEL)
             }
-            if (name == "MWEB") client.put("userAgent", userAgent)
+            if (name == "IOS") {
+                client.put("deviceMake", "Apple")
+                    .put("deviceModel", "iPhone16,2")
+                    .put("osName", "iPhone")
+                    .put("osVersion", "18.3.2.22D82")
+                    .put("userAgent", userAgent)
+            }
             val context = JSONObject().put("client", client)
             val payload = JSONObject()
                 .put("videoId", videoId)
@@ -1382,6 +1389,8 @@ class InnerTubeSearchRepository(context: Context? = null) {
         private const val MAX_MARKER_URL_BATCH = 24
         private const val USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
         private const val MWEB_USER_AGENT = "Mozilla/5.0 (iPad; CPU OS 16_7_10 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1,gzip(gfe)"
+        private const val IOS_CLIENT_VERSION = "21.26.4"
+        private const val IOS_USER_AGENT = "com.google.ios.youtube/21.26.4 (iPhone16,2; U; CPU iOS 18_3_2 like Mac OS X;)"
         private const val MAX_MWEB_CONFIG_BYTES = 4 * 1024 * 1024
         private val MWEB_CLIENT_VERSION_PATTERN = Regex("""[\"']INNERTUBE_CLIENT_VERSION[\"']\s*:\s*[\"']([0-9.]{1,64})[\"']""")
         private val MWEB_PLAYER_SCRIPT_PATTERN = Regex("""[\"']PLAYER_JS_URL[\"']\s*:\s*[\"']([^\"']{1,256})[\"']""")
