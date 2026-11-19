@@ -258,4 +258,6 @@
 
 19.11.2026 00:24 UTC, Android6/API23 x86_64 AVD, production MWEB fallback-order acceptance з test-injected no-stream Android/WEB responses і публічною MWEB-відповіддю: 4 541 ms process CPU за 4 485 ms wall; process PSS 32 588→68 017 KiB. CDN отримав тільки bounded 65 536-byte Range (HTTP 206); Media3 не створювався. Короткий resolver diagnostic/acceptance snapshot, не benchmark.
 
+19.11.2026 00:26 UTC, Redmi Note 8 / Android13 API33 після встановлення актуальної збірки з resolver diagnostic instrumentation: `MainActivity` foreground. Settled Home 10 s sample — CPU 0%, PSS 137,4 MiB, RSS 222,3 MiB, peak RSS 224,9 MiB, RAM 3 713 MiB / доступно 1 395 MiB. Відео не запускалося; це короткий UI snapshot, не benchmark.
+
 19.11.2026, API23 AVD, natural-order MWEB fallback acceptance без Media3: CPU процесу 4 175 ms за 4 254 ms wall; PSS 26 928→52 155 KiB. Network fixture прочитав лише 65 536 байтів Range; process snapshot, не benchmark.
