@@ -35,6 +35,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
@@ -126,6 +127,9 @@ fun PlaybackScreen(
         context.getSharedPreferences(PlaybackDecoderDiagnostics.PREFERENCES_NAME, Context.MODE_PRIVATE)
     }
     var controller by remember { mutableStateOf<MediaController?>(null) }
+    var videoPlayerView by remember(video.id, playbackRequestId) { mutableStateOf<PlayerView?>(null) }
+    var seekFeedbackDirection by remember(video.id, playbackRequestId) { mutableIntStateOf(0) }
+    var seekFeedbackSequence by remember(video.id, playbackRequestId) { mutableIntStateOf(0) }
     var decoderSnapshot by remember(video.id, playbackRequestId) { mutableStateOf(PlaybackDecoderDiagnostics.read(decoderPreferences)) }
     var message by remember { mutableStateOf<String?>(null) }
     var speedMenuExpanded by remember { mutableStateOf(false) }
@@ -162,6 +166,29 @@ fun PlaybackScreen(
     val latestPreloadNext by rememberUpdatedState(preloadNext)
     val latestHasQueuedItems by rememberUpdatedState(hasQueuedItems)
     val immersiveShorts = video.kind == "shorts" && localAudioTrack == null && !playbackPreferences.audioOnly
+
+    val seekBy: (Long) -> Unit = { offsetMs ->
+        val activeController = controller
+        if (activeController != null && activeController.isCurrentMediaItemSeekable) {
+            val target = PlaybackSeekPolicy.target(
+                currentPositionMs = activeController.currentPosition,
+                durationMs = activeController.duration,
+                offsetMs = offsetMs,
+            )
+            if (target != null) {
+                activeController.seekTo(target)
+                seekFeedbackDirection = if (offsetMs < 0L) -1 else 1
+                seekFeedbackSequence++
+            }
+        }
+    }
+
+    LaunchedEffect(seekFeedbackSequence) {
+        if (seekFeedbackSequence == 0) return@LaunchedEffect
+        val sequence = seekFeedbackSequence
+        delay(650)
+        if (seekFeedbackSequence == sequence) seekFeedbackDirection = 0
+    }
 
     DisposableEffect(decoderPreferences) {
         val mainHandler = Handler(Looper.getMainLooper())
@@ -796,11 +823,41 @@ fun PlaybackScreen(
                 Text(stringResource(R.string.audio_only_playback), style = MaterialTheme.typography.titleMedium)
             }
             if ((localVideoSource != null || !playbackPreferences.audioOnly) && localAudioTrack == null) controller?.let { activeController ->
-                AndroidView(
-                    modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f),
-                    factory = { viewContext: Context -> PlayerView(viewContext).apply { player = activeController; useController = true } },
-                    update = { it.player = activeController },
-                )
+                Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f)) {
+                    AndroidView(
+                        modifier = Modifier.fillMaxSize(),
+                        factory = { viewContext: Context ->
+                            PlayerView(viewContext).apply {
+                                player = activeController
+                                useController = true
+                                videoPlayerView = this
+                            }
+                        },
+                        update = {
+                            it.player = activeController
+                            videoPlayerView = it
+                        },
+                    )
+                    if (!immersiveShorts) {
+                        PlaybackSeekGestureOverlay(
+                            onShowControls = { videoPlayerView?.showController() },
+                            onSeek = seekBy,
+                            modifier = Modifier.align(Alignment.Center),
+                        )
+                        if (seekFeedbackDirection != 0) {
+                            Text(
+                                text = stringResource(
+                                    if (seekFeedbackDirection < 0) R.string.seek_backward_feedback
+                                    else R.string.seek_forward_feedback,
+                                ),
+                                modifier = Modifier.align(Alignment.Center).background(Color.Black.copy(alpha = 0.72f))
+                                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                                color = Color.White,
+                                style = MaterialTheme.typography.titleLarge,
+                            )
+                        }
+                    }
+                }
             }
             Text(watchedVideo.title, style = MaterialTheme.typography.titleLarge)
             if (watchedVideo.channel.isNotBlank()) {

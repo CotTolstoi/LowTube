@@ -224,6 +224,10 @@
     <string name="watched">Просмотрено</string>
     <string name="now_playing">Сейчас воспроизводится</string>
     <string name="playback_speed">Скорость воспроизведения</string>
+    <string name="seek_backward_10_seconds">Перемотать назад на 10 секунд</string>
+    <string name="seek_forward_10_seconds">Перемотать вперёд на 10 секунд</string>
+    <string name="seek_backward_feedback">−10 секунд</string>
+    <string name="seek_forward_feedback">+10 секунд</string>
     <string name="playback_diagnostics">Диагностика воспроизведения</string>
     <string name="video_decoder_name">Видеодекодер: %1$s</string>
     <string name="video_decoder_waiting">ожидание сведений о декодере</string>

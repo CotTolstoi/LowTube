@@ -224,6 +224,10 @@
     <string name="watched">Watched</string>
     <string name="now_playing">Now playing</string>
     <string name="playback_speed">Playback speed</string>
+    <string name="seek_backward_10_seconds">Seek backward 10 seconds</string>
+    <string name="seek_forward_10_seconds">Seek forward 10 seconds</string>
+    <string name="seek_backward_feedback">−10 seconds</string>
+    <string name="seek_forward_feedback">+10 seconds</string>
     <string name="playback_diagnostics">Playback diagnostics</string>
     <string name="video_decoder_name">Video decoder: %1$s</string>
     <string name="video_decoder_waiting">waiting for decoder information</string>

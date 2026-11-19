@@ -25,6 +25,7 @@ import com.lowtube.android.playback.EXTERNAL_AUDIO_URI
 import com.lowtube.android.playback.EXTERNAL_AUDIO_MIME_TYPE
 import com.lowtube.android.playback.EXTERNAL_AUDIO_LABEL
 import com.lowtube.android.ui.playback.PlaybackResumePolicy
+import com.lowtube.android.ui.playback.PlaybackSeekPolicy
 import com.lowtube.android.ui.playback.externalSubtitleConfiguration
 import com.lowtube.android.ui.playback.replaceExternalSubtitle
 import kotlinx.coroutines.delay
@@ -308,6 +309,84 @@ class YoutubeResolverPlaybackAcceptanceTest {
         } finally {
             withContext(Dispatchers.Main.immediate) { player.pause(); player.release() }
             audioFile.delete()
+        }
+    }
+
+    @Test
+    fun tenSecondSeekTargetsMoveMediaInsideThirtySecondClip() = runBlocking {
+        assumeTrue(
+            "Pass -e runSeekGesturePlaybackAcceptance true after playback seek changes",
+            InstrumentationRegistry.getArguments().getString("runSeekGesturePlaybackAcceptance") == "true",
+        )
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val video = VideoItem(
+            id = "aqz-KE-bpKQ",
+            title = "Big Buck Bunny",
+            duration = "9:56",
+            url = "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
+        )
+        val stream = InnerTubeSearchRepository(context).resolvePlayback(video)
+        var failure: PlaybackException? = null
+        val player = withContext(Dispatchers.Main.immediate) {
+            ExoPlayer.Builder(context).setLoadControl(createPlaybackLoadControl(context)).build().apply {
+                addListener(object : Player.Listener {
+                    override fun onPlayerError(error: PlaybackException) { failure = error }
+                })
+                setMediaItem(
+                    MediaItem.Builder()
+                        .setMediaId(video.id)
+                        .setUri(stream.uri)
+                        .setClippingConfiguration(
+                            MediaItem.ClippingConfiguration.Builder().setEndPositionMs(30_000).build(),
+                        )
+                        .build(),
+                )
+                prepare()
+            }
+        }
+        try {
+            withContext(Dispatchers.Main.immediate) {
+                withTimeout(60_000) {
+                    while (player.playbackState != Player.STATE_READY && failure == null) delay(100)
+                }
+                assertNull(failure)
+                assertTrue("The seek fixture must remain clipped to 30 seconds", player.duration in 1L..30_000L)
+                player.play()
+                withTimeout(20_000) {
+                    while (player.currentPosition < 1_000 && failure == null) {
+                        assertTrue("Seek acceptance exceeded two minutes", player.currentPosition < 120_000)
+                        delay(50)
+                    }
+                }
+                player.pause()
+                assertNull(failure)
+
+                val forwardTarget = PlaybackSeekPolicy.target(player.currentPosition, player.duration, 10_000L)
+                    ?: throw AssertionError("The forward seek target was rejected")
+                player.seekTo(forwardTarget)
+                withTimeout(10_000) {
+                    while (player.currentPosition < forwardTarget - 1_000L && failure == null) delay(50)
+                }
+                assertNull(failure)
+                assertTrue("Forward seek did not move the media position", player.currentPosition >= forwardTarget - 1_000L)
+
+                val backwardTarget = PlaybackSeekPolicy.target(player.currentPosition, player.duration, -10_000L)
+                    ?: throw AssertionError("The backward seek target was rejected")
+                player.seekTo(backwardTarget)
+                withTimeout(10_000) {
+                    while (player.currentPosition > backwardTarget + 1_000L && failure == null) delay(50)
+                }
+                player.pause()
+                assertNull(failure)
+                assertTrue("Backward seek did not move the media position", player.currentPosition <= backwardTarget + 1_000L)
+                assertTrue("Seek acceptance exceeded two minutes", player.currentPosition < 120_000)
+                println(
+                    "seekGesturePlaybackAcceptance=ten_seconds; durationMs=${player.duration}; " +
+                        "forwardTargetMs=$forwardTarget; backwardTargetMs=$backwardTarget; mediaMs=${player.currentPosition}",
+                )
+            }
+        } finally {
+            withContext(Dispatchers.Main.immediate) { player.pause(); player.release() }
         }
     }
 
