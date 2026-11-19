@@ -2,16 +2,15 @@
 
 This branch publishes the latest available Android development build.
 
-## Current artifact (2026-11-20, source revision 45e4fdf)
+## Current artifact (2026-11-20, source revision 5259c04)
 
 - File: `LowTube-Android-debug-0.1.0.apk`; version `0.1.0-android-dev` (version code 1); minimum Android 6.0 (API 23).
 - Build type: installable debug APK, signed with the Android debug certificate; not a production-signed release.
-- Source revision: `45e4fdf` (`feat/android-first-run-setup`).
+- Source revision: `5259c04` (`feat/android-first-run-setup`).
 - APK size: 25759871 bytes.
-- SHA-256: `8BAA6A7D2CF8EF4B274B7DAFCE5CAB8881C0682089CD190014E078960DD81293`.
-- Offline `:app:assembleDebug --offline --no-configuration-cache` succeeded for armeabi-v7a, arm64-v8a, and x86_64. `Verify-LocaleResourceParity.ps1` reports 358 resources each for EN/UK/RU with no missing or extra keys. This build localizes decoder benchmark durations and the diagnostic clipboard label; instrumentation tests were not rerun for these resource-only UI changes.
-- `MiniPlayerPlaybackAcceptanceTest#miniPlayerPausesAndResumesTheCurrentMediaSessionItem` passed on Android 6/API 23 and Android 13/API 33 AVDs: Play on an empty MediaSession invoked `onPlaybackResumption`, the saved YouTube item was resolved, Media3 reached READY, and artwork metadata plus pause/resume were verified. Each playback run stayed below 120 s. A separate process-death acceptance passed on API23 and API33: after force-stop of both app and test processes, a fresh LowTube process resolved and briefly played the saved video. Reboot recovery and visible notification/lock-screen rendering remain unverified.
-- `FirstRunSetupScreenTest` passed 3/3 compact scenarios on API23 and 1/1 wide-layout scenario at 960 dp on API23 in the preceding source revision. This APK was installed on the connected Android13/API33 system; `MainActivity` remains top-resumed. Idle sample after update: PSS 119.0 MiB, RSS 217.5 MiB, swap PSS 0.45 MiB, available RAM 1,493 MiB; `dumpsys cpuinfo` reported 0% in that sample. No playback ran. Point sample, not a benchmark. The system identifies as `TrebleDroid_vanilla`, so Redmi Note 8 hardware remains unverified.
+- SHA-256: `36DBE563F685E312D6E2F56CC7D031C1BCB5805474295D4E83DE68A4365CB033`.
+- `:app:assembleDebug` and `:app:assembleDebugAndroidTest` succeeded offline. `VideoCardShareTest` passed 8/8 on Android 6/API 23 and Android 13/API 33 AVDs. Open URL now creates an HTTPS-only YouTube `ACTION_VIEW` intent and rejects non-YouTube hosts, HTTP, user-info, and non-standard ports. This verifies intent construction, not launching a browser or selecting a system handler. No video opened and playback did not run.
+- Installed on the connected Android13/API33 system; `MainActivity` is top-resumed. One post-install point sample: PSS 127,814 KiB, RSS 228,114 KiB, swap PSS 472 KiB, total/available RAM 3,802,500/1,657,076 KiB. This is a single sample, not a benchmark. System identity reports `TrebleDroid_vanilla`; Redmi Note 8 hardware remains unverified.
 ## Previous artifact details (source revision 52c984e; historical)
 
 - Built from Android development branch `feat/android-first-run-setup` at source commit `52c984e`; the APK includes the SAF download-folder option in first-run setup and centralized persistable-grant cleanup. Unit and instrumentation test sources are not packaged in the APK.
