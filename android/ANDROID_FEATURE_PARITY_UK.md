@@ -24,7 +24,9 @@
 
 ## Картки, дії та черги
 
-19.11.2026: для карток YouTube-плейлистів додано видиму локалізовану дію «Додати плейлист у чергу»; пункт у меню ⋮ збережено. `VideoCardShareTest` пройшов 6/6 на Android 6/API23 AVD, включно з перевіркою, що дія викликає enqueue callback і не відкриває картку. Плеєр не створювався. Повний live маршрут відкритого `ACTION_VIEW` playlist → Search result → Queue та перевірка сторінок/порядку лишаються відкритими.
+19.11.2026: для карток YouTube-плейлистів додано видиму локалізовану дію «Додати плейлист у чергу»; пункт у меню ⋮ збережено. `VideoCardShareTest` пройшов 6/6 на Android 6/API23 AVD, включно з перевіркою, що дія викликає enqueue callback і не відкриває картку. Плеєр не створювався. Повний bounded live маршрут описано в наступному записі.
+
+19.11.2026: `ExternalYoutubePlaylistIntentAcceptanceTest#playlistViewIntentCanBeQueuedWithoutPlayback` пройшов на Android 6/API23 AVD: зовнішній `ACTION_VIEW` playlist URL відкрив Search, видима дія додала playlist marker, More→Queue показав його, а перше live metadata завантаження вставило відео та зберегло continuation. Тест видалив лише створені ним queue rows; Media3 не створювався. API33 фізичний acceptance цього повного маршруту ще відкритий.
 
 18.11.2026: `LocalPlaylistQueueAcceptanceTest` на API23 пройшов SQLite-перевірку playlist marker: перша сторінка вставляється перед marker-ом та зберігає порядок; continuation і порядок лишаються після закриття/повторного відкриття репозиторію; остання сторінка прибирає marker і лишає наступний елемент черги після відео плейлиста. Це приймає локальну операцію сховища, але не мережеве отримання continuation, UI/Media3 перехід або повний Android process-death сценарій.
 

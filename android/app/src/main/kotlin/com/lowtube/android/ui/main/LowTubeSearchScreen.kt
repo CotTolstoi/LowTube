@@ -167,6 +167,9 @@ fun LowTubeSearchScreen(
         if (channelBrowse != null || activeKind == "all") forYouItems
         else forYouItems.filter { it.kind == activeKind }
     }
+    val directPlaylistQueueItem = remember(query, selectedTab) {
+        if (selectedTab == "search") youtubePlaylistQueueMarker(query, context.getString(R.string.playlist)) else null
+    }
     val executeSearch: (String) -> Unit = { input ->
         val normalized = input.trim()
         if (normalized.isNotEmpty()) {
@@ -361,6 +364,15 @@ fun LowTubeSearchScreen(
                     keyboardActions = KeyboardActions(onSearch = { searchAction() }),
                 )
                 Button(onClick = searchAction, enabled = !state.loading) { Text(stringResource(R.string.search_action)) }
+            }
+
+            directPlaylistQueueItem?.let { playlist ->
+                TextButton(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+                    onClick = { onAddToQueue(playlist) },
+                ) {
+                    Text(stringResource(R.string.add_playlist_to_queue_action))
+                }
             }
 
             val matchingRecentSearches = if (query.isBlank()) recentSearches else recentSearches.filter {
@@ -786,6 +798,22 @@ internal fun createShareIntent(item: VideoItem): Intent {
 private fun isTrustedYouTubeUri(uri: Uri): Boolean {
     val host = uri.host?.lowercase(java.util.Locale.ROOT)
     return uri.scheme == "https" && host in setOf("youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be")
+}
+
+internal fun youtubePlaylistQueueMarker(input: String, title: String): VideoItem? {
+    val uri = runCatching { Uri.parse(input) }.getOrNull() ?: return null
+    val host = uri.host?.lowercase(java.util.Locale.ROOT)
+    if (uri.scheme != "https" || host !in setOf("youtube.com", "www.youtube.com", "m.youtube.com", "music.youtube.com")) return null
+    if (uri.userInfo != null || (uri.port != -1 && uri.port != 443) || uri.path != "/playlist") return null
+    val ids = uri.getQueryParameters("list")
+    if (ids.size != 1) return null
+    val id = ids.single().takeIf { it.matches(Regex("[A-Za-z0-9_-]{1,256}")) } ?: return null
+    return VideoItem(
+        id = id,
+        title = title,
+        kind = "playlist",
+        url = "https://www.youtube.com/playlist?list=$id",
+    )
 }
 
 internal data class ChannelBrowseTab(val baseUrl: String, val kind: String)

@@ -584,9 +584,13 @@ fun MainNavigation(
                                 library.expandQueuedPlaylist(entry.rowId, page.items, page.continuation)
                                     queueRevision++
                                     val message = if (entry.continuation.isBlank()) R.string.playlist_page_added else R.string.playlist_next_page_added
-                                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main.immediate) {
+                                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                    }
                                 } catch (failure: Exception) {
-                                    Toast.makeText(context, failure.message ?: context.getString(R.string.action_failed), Toast.LENGTH_LONG).show()
+                                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main.immediate) {
+                                        Toast.makeText(context, failure.message ?: context.getString(R.string.action_failed), Toast.LENGTH_LONG).show()
+                                    }
                                 } finally {
                                     expandingQueueRowId = null
                                 }
