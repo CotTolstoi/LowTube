@@ -2,9 +2,15 @@ package com.lowtube.android.ui.main
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.lowtube.android.R
 import com.lowtube.android.data.LocalLibraryRepository
@@ -13,6 +19,7 @@ import com.lowtube.android.model.DownloadFormatOption
 import com.lowtube.android.ui.theme.LowTubeTheme
 import org.junit.After
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -66,6 +73,29 @@ class RecentSearchSuggestionsTest {
         composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.recent_searches)).assertDoesNotExist()
     }
 
+    @Test
+    fun savesPublicSearchResultToSelectedLocalPlaylist() {
+        val activity = composeTestRule.activity
+        val playlistName = "Save acceptance ${System.nanoTime()}"
+        val playlistId = library.createPlaylist(playlistName)
+        showSearch()
+
+        composeTestRule.onNodeWithText(activity.getString(R.string.search_hint)).performTextInput(VIDEO_URL)
+        val searchButton = hasText(activity.getString(R.string.search_action)) and
+            SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button)
+        composeTestRule.onNode(searchButton).performClick()
+        composeTestRule.waitUntil(60_000) {
+            composeTestRule.onAllNodesWithText(VIDEO_TITLE, substring = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithContentDescription(activity.getString(R.string.more_actions)).performClick()
+        composeTestRule.onNodeWithText(activity.getString(R.string.save_for_later)).performClick()
+        composeTestRule.onNodeWithText(activity.getString(R.string.save_to_playlist)).assertExists()
+        composeTestRule.onNodeWithText(playlistName).performClick()
+
+        assertEquals(listOf(VIDEO_ID), library.videos(playlistId).map { it.id })
+        library.deletePlaylist(playlistId)
+    }
+
     private fun showSearch() {
         val activity = composeTestRule.activity
         composeTestRule.setContent {
@@ -94,8 +124,8 @@ class RecentSearchSuggestionsTest {
                     onResolveDownloadOptions = { _, _, complete -> complete(Result.success(emptyList<DownloadFormatOption>())) },
                     onDownload = { _, _ -> },
                     onSaveVideo = {},
-                    onSaveToPlaylist = { _, _ -> },
-                    localPlaylists = emptyList(),
+                    onSaveToPlaylist = { video, playlistId -> library.addVideo(playlistId, video) },
+                    localPlaylists = library.playlists(),
                     channelBrowseRequest = null,
                     onChannelBrowseConsumed = {},
                     onToggleFollow = { true },
@@ -110,5 +140,11 @@ class RecentSearchSuggestionsTest {
                 )
             }
         }
+    }
+
+    private companion object {
+        const val VIDEO_ID = "aqz-KE-bpKQ"
+        const val VIDEO_TITLE = "Big Buck Bunny"
+        const val VIDEO_URL = "https://www.youtube.com/watch?v=$VIDEO_ID"
     }
 }
