@@ -4,8 +4,8 @@ This branch publishes the latest available Android development build.
 
 ## Current artifact (2026-11-19)
 
-- Built from Android development branch `feat/android-first-run-setup` at `a479354`. The Kotlin source tree remains on the development branch.
-- `:app:testDebugUnitTest --tests com.lowtube.android.benchmark.DecoderBenchmarkMetricsTest`, `:app:assembleDebug`, and `:app:assembleDebugAndroidTest` succeeded; the APK is built from the committed source revision above.
+- Built from Android development branch `feat/android-first-run-setup` at `a479354`, plus a local visibility-only change to the benchmark report formatter for unit-test access. This does not alter app behavior; test sources are not packaged in the APK.
+- `:app:assembleDebug --offline --no-configuration-cache` succeeded. `DecoderBenchmarkReportTest` passed; no playback was run for this publication.
 - A live player-bundle diagnostic rewrote only the `/n/{segment}` path challenge in a synthetic URL; trusted origin, unchanged query, and the production safety gate all passed. `YoutubeResolverPlaybackAcceptanceTest#resolvedStreamStartsAndAdvancesWithoutReachingTwoMinutes` passed 1/1 on the API23 AVD and again on the connected physical Android13/API33 ARM64 device using public video `aqz-KE-bpKQ`. Each run clipped the first item at 12 seconds and advanced to the next item for about 1 second. API23 decoder: `OMX.google.h264.decoder`, hardware status unknown; API33: `c2.mtk.avc.decoder`, `avc1.4D401E`, hardware acceleration status 1. The connected system reports `TrebleDroid vanilla`; Redmi Note 8 identity is unverified. These runs confirm one resolver fixture, not broad YouTube compatibility. `DecoderBenchmarkEngineAcceptanceTest#decoderProfilesRunAgainstTheSameBoundedLocalVideo` also passed 1/1 on API23 and 1/1 on the connected API33 device using an isolated synthetic AVC file and a 10-second media cap per profile. API23 selected `OMX.google.h264.decoder` for DEFAULT and SOFTWARE_PREFERRED; API33 selected hardware `c2.mtk.avc.decoder` for DEFAULT/HARDWARE_ONLY and software `c2.android.avc.decoder` for SOFTWARE_PREFERRED. The API33 engine reported SLOW_OR_STALLED for all profiles at a media/wall ratio below 0.95; this single synthetic run does not establish a profile performance advantage. Manual benchmark UI, SAF selection, and report-export acceptance remain open.
 - This is an installable debug APK signed with the debug certificate, not a production/release-signed package.
 
@@ -17,7 +17,7 @@ This branch publishes the latest available Android development build.
 - Updated: 2026-11-19
 - Build source revision: `a479354` (`feat/android-first-run-setup`).
 - APK size: 25,751,571 bytes
-- SHA-256: `B5753A0965D2C693BAC8536281F494E7A38050FFEDAAE5835DDE1DA091967E3A`
+- SHA-256: `3A1C38D845A5406EE709BD951CEDD395A6A5E7AE38439CAAE4A38443406927E7`
 - Latest build: `:app:assembleDebug :app:assembleDebugAndroidTest --offline --no-configuration-cache` succeeded. The downloaded-audio playback/session acceptance passed on API23 and API33 AVDs; the Downloads action test passed on API23. No live YouTube audio download was used in these tests.
 - Recent Android changes: tablet-aware two-column Library/Settings layouts, first-run language/UI-scale/theme/quality setup, LAME MP3 download conversion, in-app playback of completed audio downloads, and a sequential decoder-profile comparison action. Engine-level local comparison acceptance passed on API23 and API33; manual benchmark-screen, SAF-source, and export acceptance remains open.
 - Resolver: bounded direct-format resolution supports verified Android/WEB/iOS/MWEB fallback and the verified MWEB signature-helper path; audio-only downloads retain the Android VR fallback. The VR fallback is not used for video playback or video downloads.
