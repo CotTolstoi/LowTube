@@ -249,6 +249,9 @@
     <string name="diagnostic_report_copying">Збір обмеженого підсумку статусів…</string>
     <string name="diagnostic_report_copied">Знеособлений звіт діагностики скопійовано в буфер обміну.</string>
     <string name="diagnostic_report_error">Не вдалося створити звіт діагностики.</string>
+    <string name="export_diagnostic_report">Експортувати звіт діагностики у файл</string>
+    <string name="diagnostic_report_exporting">Підготовка звіту діагностики…</string>
+    <string name="diagnostic_report_exported">Звіт діагностики збережено.</string>
     <string name="search_empty_query">Введіть назву відео або URL YouTube.</string>
     <string name="request_failed_retry">Не вдалося виконати запит. Спробуйте ще раз.</string>
     <string name="audio_codec_generic">Звук</string>

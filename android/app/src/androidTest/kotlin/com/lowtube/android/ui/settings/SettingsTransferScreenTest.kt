@@ -41,6 +41,7 @@ class SettingsTransferScreenTest {
         composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.resource_usage_title)).assertExists()
         composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.resource_usage_measure)).assertExists()
         composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.copy_diagnostic_report)).assertExists()
+        composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.export_diagnostic_report)).assertExists()
         composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.subscription_feed_pace)).assertExists()
     }
 

@@ -249,6 +249,9 @@
     <string name="diagnostic_report_copying">Сбор ограниченной сводки статусов…</string>
     <string name="diagnostic_report_copied">Обезличенный отчёт диагностики скопирован в буфер обмена.</string>
     <string name="diagnostic_report_error">Не удалось создать отчёт диагностики.</string>
+    <string name="export_diagnostic_report">Экспортировать отчёт диагностики в файл</string>
+    <string name="diagnostic_report_exporting">Подготовка отчёта диагностики…</string>
+    <string name="diagnostic_report_exported">Отчёт диагностики сохранён.</string>
     <string name="search_empty_query">Введите название видео или ссылку YouTube.</string>
     <string name="request_failed_retry">Не удалось выполнить запрос. Повторите попытку.</string>
     <string name="audio_codec_generic">Звук</string>

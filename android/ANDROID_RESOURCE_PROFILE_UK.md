@@ -322,3 +322,5 @@
 19.11.2026 05:05 UTC, після muxed-track cancel/resume acceptance на API23/API33 та повернення до MainActivity на API33: CPU 0%, PSS 134,4 MiB, RSS 229,8 MiB, системна RAM 3 713,4 MiB / доступно 1 483,1 MiB. `MainActivity` підтверджена як `topResumedActivity`; peak RSS не зчитувався. Короткий point sample, не benchmark.
 
 19.11.2026 05:28 UTC, після встановлення збірки з маршрутом YouTube playlist → Queue на Redmi Note 8/API33: `MainActivity` підтверджена як `topResumedActivity`; settled 5 s sample — CPU 0%, PSS 120,2 MiB, RSS 205,3 MiB, peak RSS 225,9 MiB, RAM 3 713 MiB / доступно 1 491 MiB. Playback не запускався; короткий idle snapshot, не benchmark.
+
+19.11.2026 05:35 UTC, після встановлення збірки з SAF-експортом діагностичного звіту на Redmi Note 8/API33: `MainActivity` підтверджена як `topResumedActivity`; settled 5 s sample — CPU 0%, PSS 141,9 MiB, RSS 226,1 MiB, peak RSS 226,6 MiB, RAM 3 713 MiB / доступно 1 514 MiB. Playback не запускався; це одиночний idle snapshot, не benchmark.

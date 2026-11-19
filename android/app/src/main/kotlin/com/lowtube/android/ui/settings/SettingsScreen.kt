@@ -1,6 +1,7 @@
 package com.lowtube.android.ui.settings
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -103,9 +104,27 @@ fun SettingsScreen(
     var diagnosticReportCopied by remember { mutableStateOf(false) }
     var diagnosticReportFailed by remember { mutableStateOf(false) }
     var diagnosticReportCopying by remember { mutableStateOf(false) }
+    var diagnosticReportExportPending by remember { mutableStateOf(false) }
+    var diagnosticReportExported by remember { mutableStateOf(false) }
+    var pendingDiagnosticReport by remember { mutableStateOf<String?>(null) }
     var downloadTreeUri by remember(context) { mutableStateOf(DownloadDestination.selectedTreeUri(context)) }
     var downloadFolderError by remember { mutableStateOf(false) }
     val transferScope = rememberCoroutineScope()
+    val diagnosticReportExportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
+        val report = pendingDiagnosticReport
+        pendingDiagnosticReport = null
+        diagnosticReportExportPending = false
+        if (uri != null && report != null) transferScope.launch {
+            val result = runCatching {
+                withContext(Dispatchers.IO) {
+                    context.contentResolver.openOutputStream(uri, "wt")?.use { it.write(report.toByteArray(Charsets.UTF_8)) }
+                        ?: throw IOException("Could not open the selected diagnostics file.")
+                }
+            }
+            diagnosticReportExported = result.isSuccess
+            if (result.isFailure) diagnosticReportFailed = true
+        }
+    }
     val downloadFolderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri != null) {
             val grantFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
@@ -411,28 +430,11 @@ fun SettingsScreen(
                 diagnosticReportCopying = true
                 transferScope.launch {
                     try {
-                        val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-                        val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) packageInfo.longVersionCode else packageInfo.versionCode.toLong()
-                        val decoderPreferences = context.getSharedPreferences(PlaybackDecoderDiagnostics.PREFERENCES_NAME, android.content.Context.MODE_PRIVATE)
-                        val downloadJobs = try {
-                            downloadRepository?.let { repository -> withContext(Dispatchers.IO) { repository.diagnosticStatusCounts() } }
-                        } catch (cancelled: CancellationException) {
-                            throw cancelled
-                        } catch (_: Exception) {
-                            null
-                        }
-                        val report = DiagnosticReportFormatter.format(
-                            DiagnosticReportSnapshot(
-                                appVersion = "${packageInfo.versionName.orEmpty()} ($versionCode)",
-                                androidRelease = Build.VERSION.RELEASE.orEmpty(),
-                                androidApi = Build.VERSION.SDK_INT,
-                                deviceModel = "${Build.MANUFACTURER.orEmpty()} ${Build.MODEL.orEmpty()}".trim(),
-                                decoder = PlaybackDecoderDiagnostics.read(decoderPreferences),
-                                buffer = playbackBufferPreferences,
-                                resourceSample = resourceSample,
-                                downloadJobs = downloadJobs,
-                                playbackFailure = PlaybackDecoderDiagnostics.readFailure(decoderPreferences),
-                            ),
+                        val report = createDiagnosticReport(
+                            context = context.applicationContext,
+                            playbackBufferPreferences = playbackBufferPreferences,
+                            resourceSample = resourceSample,
+                            downloadRepository = downloadRepository,
                         )
                         val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as ClipboardManager
                         clipboard.setPrimaryClip(ClipData.newPlainText("LowTube diagnostics", report))
@@ -446,7 +448,32 @@ fun SettingsScreen(
                     }
                 }
             }) { Text(stringResource(if (diagnosticReportCopying) R.string.diagnostic_report_copying else R.string.copy_diagnostic_report)) }
+            TextButton(enabled = !diagnosticReportExportPending, onClick = {
+                diagnosticReportExported = false
+                diagnosticReportFailed = false
+                diagnosticReportExportPending = true
+                transferScope.launch {
+                    try {
+                        pendingDiagnosticReport = createDiagnosticReport(
+                            context = context.applicationContext,
+                            playbackBufferPreferences = playbackBufferPreferences,
+                            resourceSample = resourceSample,
+                            downloadRepository = downloadRepository,
+                        )
+                        diagnosticReportExportLauncher.launch("lowtube-diagnostics.txt")
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (_: Exception) {
+                        pendingDiagnosticReport = null
+                        diagnosticReportExportPending = false
+                        diagnosticReportFailed = true
+                    }
+                }
+            }) {
+                Text(stringResource(if (diagnosticReportExportPending) R.string.diagnostic_report_exporting else R.string.export_diagnostic_report))
+            }
             if (diagnosticReportCopied) Text(stringResource(R.string.diagnostic_report_copied), style = MaterialTheme.typography.bodySmall)
+            if (diagnosticReportExported) Text(stringResource(R.string.diagnostic_report_exported), style = MaterialTheme.typography.bodySmall)
             if (diagnosticReportFailed) Text(stringResource(R.string.diagnostic_report_error), color = MaterialTheme.colorScheme.error)
             resourceSample?.let { sample ->
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -467,6 +494,37 @@ fun SettingsScreen(
             }
         }
     }
+}
+
+private suspend fun createDiagnosticReport(
+    context: Context,
+    playbackBufferPreferences: PlaybackBufferPreferences,
+    resourceSample: ResourceUsageSample?,
+    downloadRepository: DownloadRepository?,
+): String {
+    val packageInfo = withContext(Dispatchers.IO) { context.packageManager.getPackageInfo(context.packageName, 0) }
+    val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) packageInfo.longVersionCode else packageInfo.versionCode.toLong()
+    val decoderPreferences = context.getSharedPreferences(PlaybackDecoderDiagnostics.PREFERENCES_NAME, Context.MODE_PRIVATE)
+    val downloadJobs = try {
+        downloadRepository?.let { repository -> withContext(Dispatchers.IO) { repository.diagnosticStatusCounts() } }
+    } catch (cancelled: CancellationException) {
+        throw cancelled
+    } catch (_: Exception) {
+        null
+    }
+    return DiagnosticReportFormatter.format(
+        DiagnosticReportSnapshot(
+            appVersion = "${packageInfo.versionName.orEmpty()} ($versionCode)",
+            androidRelease = Build.VERSION.RELEASE.orEmpty(),
+            androidApi = Build.VERSION.SDK_INT,
+            deviceModel = "${Build.MANUFACTURER.orEmpty()} ${Build.MODEL.orEmpty()}".trim(),
+            decoder = PlaybackDecoderDiagnostics.read(decoderPreferences),
+            buffer = playbackBufferPreferences,
+            resourceSample = resourceSample,
+            downloadJobs = downloadJobs,
+            playbackFailure = PlaybackDecoderDiagnostics.readFailure(decoderPreferences),
+        ),
+    )
 }
 
 private val DISCOVERY_LANGUAGES = listOf(

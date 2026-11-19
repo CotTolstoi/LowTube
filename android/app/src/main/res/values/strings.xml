@@ -249,6 +249,9 @@
     <string name="diagnostic_report_copying">Collecting bounded status summary…</string>
     <string name="diagnostic_report_copied">Sanitized diagnostic report copied to clipboard.</string>
     <string name="diagnostic_report_error">Could not create the diagnostic report.</string>
+    <string name="export_diagnostic_report">Export diagnostic report to file</string>
+    <string name="diagnostic_report_exporting">Preparing diagnostic report…</string>
+    <string name="diagnostic_report_exported">Diagnostic report saved.</string>
     <string name="search_empty_query">Enter a video title or YouTube URL.</string>
     <string name="request_failed_retry">The request failed. Retry.</string>
     <string name="audio_codec_generic">Audio</string>

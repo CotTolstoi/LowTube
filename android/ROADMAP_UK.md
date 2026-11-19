@@ -89,6 +89,8 @@
 
 ## Поточний зріз реалізації
 
+19.11.2026: у Settings додано явне збереження знеособленого діагностичного звіту через системний SAF picker як `text/plain`; копіювання в буфер лишилося. Експорт і копіювання використовують спільний allowlisted report builder, що не додає URL, назви відео, акаунти чи tokens. Formatter unit-тести пройшли 4/4, `SettingsTransferScreenTest` — 4/4 на Android 6/API23 AVD. Відкриття системного picker і фактичний запис файла ще не прийняті вручну.
+
 19.11.2026: у YouTube playlist cards додано окрему локалізовану дію додавання до черги, а пункт меню ⋮ лишився доступним. Compose instrumentation пройшла 6/6 на Android 6/API23 AVD; Media3 не запускався. Повний bounded маршрут зовнішнього URL пройшов окремим acceptance нижче.
 
 19.11.2026: наскрізний bounded маршрут зовнішнього playlist URL до queue пройшов на API23 AVD: ACTION_VIEW → Search → додавання marker → More→Queue → перша YouTube metadata page. Відео збережені перед marker-ом, continuation лишився, тестові рядки прибрані, playback не запускався. API33 physical acceptance залишається наступним кроком.
