@@ -334,7 +334,7 @@
     <string name="decoder_benchmark_profile_unavailable">This decoder profile is unavailable on this Android version.</string>
     <string name="decoder_benchmark_run_failed">The benchmark could not complete. Check that the selected local video is readable and contains video.</string>
     <string name="decoder_benchmark_decoder">Decoder: %1$s · %2$s</string>
-    <string name="decoder_benchmark_summary">CPU mean %1$.1f%% of one core · PSS peak %2$.1f MiB · frames %3$d · dropped %4$d · media/wall %5$.1f/%6$.1f s</string>
+    <string name="decoder_benchmark_summary">CPU mean %1$.1f%% of one core · PSS peak %2$.1f MiB · frame samples %3$d · dropped %4$d · media/wall %5$.1f/%6$.1f s</string>
     <string name="decoder_benchmark_av_sync">A/V sync: %1$s</string>
     <string name="decoder_benchmark_av_sync_unavailable">not exposed by Media3; review audio underruns and video-frame offsets</string>
     <string name="decoder_benchmark_status_ok">OK</string>

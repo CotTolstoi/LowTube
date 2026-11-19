@@ -71,10 +71,10 @@ data class AndroidDecoderBenchmarkResult(
         "pss_peak_mib=${"%.1f".format(java.util.Locale.ROOT, pssPeakMiB)}",
         "rss_peak_mib=${rssPeakMiB?.let { "%.1f".format(java.util.Locale.ROOT, it) } ?: "unavailable"}",
         "available_ram_mib=${availableRamMiB?.let { "%.1f".format(java.util.Locale.ROOT, it) } ?: "unavailable"}",
-        "processed_video_frames=$processedFrames",
+        "video_frame_processing_samples=$processedFrames",
         "dropped_video_frames=$droppedFrames",
         "audio_underruns=$audioUnderruns",
-        "max_frame_processing_offset_ms=${frameProcessingOffsetMaxMs?.let { "%.3f".format(java.util.Locale.ROOT, it) } ?: "unavailable"}",
+        "max_frame_batch_mean_processing_offset_ms=${frameProcessingOffsetMaxMs?.let { "%.3f".format(java.util.Locale.ROOT, it) } ?: "unavailable"}",
         "media_advance_seconds=${"%.3f".format(java.util.Locale.ROOT, mediaAdvanceSeconds)}",
         "measured_wall_seconds=${"%.3f".format(java.util.Locale.ROOT, wallSeconds)}",
         "first_frame_seconds=${firstFrameSeconds?.let { "%.3f".format(java.util.Locale.ROOT, it) } ?: "unavailable"}",
@@ -192,7 +192,7 @@ object DecoderBenchmarkEngine {
                 totalProcessingOffsetUs: Long,
                 frameCount: Int,
             ) {
-                updateMaxAbs(maxFrameOffsetUs, totalProcessingOffsetUs)
+                if (frameCount > 0) updateMaxAbs(maxFrameOffsetUs, totalProcessingOffsetUs / frameCount)
                 processedFrames.addAndGet(frameCount.toLong().coerceAtLeast(0L))
             }
 
@@ -242,6 +242,11 @@ object DecoderBenchmarkEngine {
                 delay(100)
             }
 
+            // Keep playback metrics on the same interval as CPU, wall-time, and media-time measurements.
+            droppedFrames.set(0L)
+            processedFrames.set(0L)
+            audioUnderruns.set(0L)
+            maxFrameOffsetUs.set(0L)
             val measurementMediaStart = player.currentPosition
             val measurementWallStart = SystemClock.elapsedRealtime()
             var previousWall = measurementWallStart
@@ -301,9 +306,16 @@ object DecoderBenchmarkEngine {
             else if (advanceMs < wallMs * 0.95 || advanceMs > wallMs * 1.10) status = "SLOW_OR_STALLED"
 
             val fps = java.lang.Double.longBitsToDouble(fpsBits.get()).takeIf { it.isFinite() && it > 0.0 } ?: 0.0
-            val estimatedFrames = fps * advanceMs / 1_000.0
             if (status == "OK" && fps <= 0.0) status = "UNVERIFIED_FPS"
-            else if (status == "OK" && estimatedFrames > 0.0 && droppedFrames.get() / estimatedFrames > 0.01) status = "FRAME_DROPS"
+            else if (status == "OK" && hasExcessiveDroppedFrameRatio(
+                    droppedFrameCount = droppedFrames.get(),
+                    frameProcessingSampleCount = processedFrames.get(),
+                    frameRate = fps,
+                    mediaAdvanceMs = advanceMs,
+                )
+            ) {
+                status = "FRAME_DROPS"
+            }
 
             val firstFrameSeconds = ((firstFrameTime - wallStart).coerceAtLeast(0L)) / 1_000.0
             val frameOffset = maxFrameOffsetUs.get().takeIf { it > 0L }?.div(1_000.0)
@@ -355,6 +367,22 @@ object DecoderBenchmarkEngine {
         val kib = line.trim().split(Regex("\\s+")).getOrNull(1)?.toLongOrNull() ?: return null
         kib / 1024.0
     }.getOrNull()
+
+    internal fun hasExcessiveDroppedFrameRatio(
+        droppedFrameCount: Long,
+        frameProcessingSampleCount: Long,
+        frameRate: Double,
+        mediaAdvanceMs: Long,
+    ): Boolean {
+        if (droppedFrameCount <= 0L) return false
+        val observedFrameCount = frameProcessingSampleCount.toDouble()
+        val denominator = if (observedFrameCount > 0.0) {
+            observedFrameCount
+        } else {
+            frameRate * mediaAdvanceMs.coerceAtLeast(0L) / 1_000.0
+        }
+        return denominator > 0.0 && droppedFrameCount / denominator > 0.01
+    }
 
     private fun updateMaxAbs(target: AtomicLong, value: Long) {
         val magnitude = if (value == Long.MIN_VALUE) Long.MAX_VALUE else abs(value)

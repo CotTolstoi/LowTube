@@ -334,7 +334,7 @@
     <string name="decoder_benchmark_profile_unavailable">Этот профиль декодера недоступен в этой версии Android.</string>
     <string name="decoder_benchmark_run_failed">Не удалось завершить бенчмарк. Проверьте, что выбранное локальное видео доступно и содержит видеодорожку.</string>
     <string name="decoder_benchmark_decoder">Декодер: %1$s · %2$s</string>
-    <string name="decoder_benchmark_summary">Средний CPU %1$.1f%% одного ядра · пиковый PSS %2$.1f MiB · кадры %3$d · пропуски %4$d · медиа/время %5$.1f/%6$.1f с</string>
+    <string name="decoder_benchmark_summary">Средний CPU %1$.1f%% одного ядра · пиковый PSS %2$.1f MiB · выборки кадров %3$d · пропуски %4$d · медиа/время %5$.1f/%6$.1f с</string>
     <string name="decoder_benchmark_av_sync">A/V sync: %1$s</string>
     <string name="decoder_benchmark_av_sync_unavailable">Media3 не предоставляет сырой сдвиг; смотрите пропуски аудио и смещение обработки кадров</string>
     <string name="decoder_benchmark_status_ok">OK</string>
