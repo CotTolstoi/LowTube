@@ -140,11 +140,16 @@ fun LowTubeSearchScreen(
     val searchHistory = remember(context, searchHistoryRepository) {
         searchHistoryRepository ?: LocalSearchHistoryRepository(context)
     }
+    val lowtubePreferences = remember(context) {
+        context.getSharedPreferences("lowtube_settings", android.content.Context.MODE_PRIVATE)
+    }
     var query by rememberSaveable { mutableStateOf("") }
     var searchFocused by remember { mutableStateOf(false) }
     var recentSearches by remember(searchHistory) { mutableStateOf(searchHistory.recent()) }
     var searchKind by rememberSaveable { mutableStateOf("all") }
-    var recommendationKind by rememberSaveable { mutableStateOf("all") }
+    var recommendationKind by rememberSaveable {
+        mutableStateOf(lowtubePreferences.getString(PREF_RECOMMENDATION_FILTER, "all").orEmpty().takeIf { it in RECOMMENDATION_FILTERS } ?: "all")
+    }
     var autoLoadAttemptedToken by remember(state.query, state.isHome, state.homeCacheKey, selectedTab, state.displayLimit) { mutableStateOf<String?>(null) }
     var saveTarget by remember { mutableStateOf<VideoItem?>(null) }
     var downloadTarget by remember { mutableStateOf<VideoItem?>(null) }
@@ -456,6 +461,7 @@ fun LowTubeSearchScreen(
                             onClick = {
                                 if (selectedTab == "home") {
                                     recommendationKind = value
+                                    lowtubePreferences.edit().putString(PREF_RECOMMENDATION_FILTER, value).apply()
                                 } else if (channelBrowse != null) {
                                     val target = channelBrowseUrl(query, value)
                                     if (target != null) {
@@ -615,6 +621,9 @@ fun LowTubeSearchScreen(
         )
     }
 }
+
+private const val PREF_RECOMMENDATION_FILTER = "recommendation_filter"
+private val RECOMMENDATION_FILTERS = setOf("all", "video", "shorts", "live")
 
 @Composable
 internal fun DownloadFormatPickerDialog(
