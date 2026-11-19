@@ -170,6 +170,7 @@ fun MainNavigation(
     var autoNext by remember(context) { mutableStateOf(preferences.getBoolean("playback_auto_next", true)) }
     var preloadNext by remember(context) { mutableStateOf(preferences.getBoolean("playback_preload_next", true)) }
     var feedRefreshPreset by remember(context) { mutableIntStateOf(preferences.getInt("feed_refresh_preset", 1).coerceIn(0, 2)) }
+    var pageSize by remember(context) { mutableIntStateOf(preferences.getInt("page_size", 25).coerceIn(1, 250)) }
     LaunchedEffect(library, libraryRevision, feedRefreshPreset) {
         val hasLocalChannels = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
             library.localChannels().isNotEmpty()
@@ -423,6 +424,7 @@ fun MainNavigation(
                     discoveryTopic = discoveryTopic,
                     discoveryLanguage = discoveryLanguage,
                     feedRefreshPreset = feedRefreshPreset,
+                    pageSize = pageSize,
                     libraryRepository = library,
                     libraryRevision = libraryRevision,
                     onAddChannel = addChannel,
@@ -437,9 +439,14 @@ fun MainNavigation(
                     discoveryTopic = discoveryTopic,
                     discoveryLanguage = discoveryLanguage,
                     feedRefreshPreset = feedRefreshPreset,
+                    pageSize = pageSize,
                     onFeedRefreshPresetChanged = { preset ->
                         feedRefreshPreset = preset.coerceIn(0, 2)
                         preferences.edit().putInt("feed_refresh_preset", feedRefreshPreset).apply()
+                    },
+                    onPageSizeChanged = { value ->
+                        pageSize = value.coerceIn(1, 250)
+                        preferences.edit().putInt("page_size", pageSize).apply()
                     },
                     onDiscoveryPreferencesChanged = { topic, language ->
                         discoveryTopic = topic.take(200)

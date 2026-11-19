@@ -16,6 +16,7 @@ data class SearchUiState(
     val continuation: String? = null,
     val loading: Boolean = false,
     val loadingMore: Boolean = false,
+    val displayLimit: Int = FeedPagePolicy.DEFAULT_PAGE_SIZE,
     val searched: Boolean = false,
     val isHome: Boolean = false,
     val homeTopic: String = "science and technology",
@@ -39,7 +40,9 @@ class SearchViewModel(
         discoveryLanguage: String = "any",
         force: Boolean = false,
         requestFailedMessage: String = DEFAULT_REQUEST_FAILED_MESSAGE,
+        pageSize: Int = FeedPagePolicy.DEFAULT_PAGE_SIZE,
     ) {
+        require(pageSize in FeedPagePolicy.MIN_PAGE_SIZE..FeedPagePolicy.MAX_PAGE_SIZE)
         val cleanTopic = topic.trim().take(200).ifBlank { "science and technology" }
         val cleanDiscoveryLanguage = discoveryLanguage.takeIf { it in DISCOVERY_LANGUAGES } ?: "any"
         val cacheKey = "$language|$cleanTopic|$cleanDiscoveryLanguage"
@@ -47,7 +50,9 @@ class SearchViewModel(
         if (!force && current.isHome && current.homeCacheKey == cacheKey && (current.loading || current.items.isNotEmpty())) return
         val cached = homePages[cacheKey]
         if (!force && cached != null) {
-            mutableState.value = cached
+            val restored = cached.copy(displayLimit = pageSize)
+            mutableState.value = restored
+            rememberHomePage(restored)
             return
         }
         val requestGeneration = ++generation
@@ -57,6 +62,7 @@ class SearchViewModel(
                 items = cached?.items.orEmpty(),
                 continuation = cached?.continuation,
                 loading = true,
+                displayLimit = pageSize,
                 isHome = true,
                 homeTopic = cleanTopic,
                 discoveryLanguage = cleanDiscoveryLanguage,
@@ -69,6 +75,7 @@ class SearchViewModel(
                         items = page.items,
                         continuation = page.continuation,
                         isHome = true,
+                        displayLimit = pageSize,
                         homeTopic = cleanTopic,
                         discoveryLanguage = cleanDiscoveryLanguage,
                         homeCacheKey = cacheKey,
@@ -92,38 +99,63 @@ class SearchViewModel(
         mutableState.value = SearchUiState()
     }
 
+    fun setPageSize(pageSize: Int) {
+        require(pageSize in FeedPagePolicy.MIN_PAGE_SIZE..FeedPagePolicy.MAX_PAGE_SIZE)
+        val current = mutableState.value
+        if (current.displayLimit == pageSize) return
+        val updated = current.copy(displayLimit = pageSize)
+        mutableState.value = updated
+        if (updated.isHome) rememberHomePage(updated)
+    }
+
     fun search(
         query: String,
         language: String,
         emptySearchMessage: String = DEFAULT_EMPTY_SEARCH_MESSAGE,
         requestFailedMessage: String = DEFAULT_REQUEST_FAILED_MESSAGE,
+        pageSize: Int = FeedPagePolicy.DEFAULT_PAGE_SIZE,
     ) {
+        require(pageSize in FeedPagePolicy.MIN_PAGE_SIZE..FeedPagePolicy.MAX_PAGE_SIZE)
         val normalized = query.trim()
         if (normalized.isEmpty()) {
             generation++
             searchJob?.cancel()
-            mutableState.value = SearchUiState(error = emptySearchMessage, searched = true)
+            mutableState.value = SearchUiState(error = emptySearchMessage, searched = true, displayLimit = pageSize)
             return
         }
         val requestGeneration = ++generation
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
-            mutableState.value = SearchUiState(query = normalized, loading = true, searched = true)
+            mutableState.value = SearchUiState(query = normalized, loading = true, searched = true, displayLimit = pageSize)
             try {
                 val page = repository.search(normalized, language = language)
                 if (requestGeneration == generation) {
-                    mutableState.value = SearchUiState(query = normalized, items = page.items, continuation = page.continuation, searched = true)
+                    mutableState.value = SearchUiState(query = normalized, items = page.items, continuation = page.continuation, searched = true, displayLimit = pageSize)
                 }
             } catch (error: Exception) {
                 if (requestGeneration == generation) {
-                    mutableState.value = SearchUiState(query = normalized, searched = true, error = safeMessage(error, requestFailedMessage))
+                    mutableState.value = SearchUiState(query = normalized, searched = true, error = safeMessage(error, requestFailedMessage), displayLimit = pageSize)
                 }
             }
         }
     }
 
-    fun loadMore(language: String, requestFailedMessage: String = DEFAULT_REQUEST_FAILED_MESSAGE) {
+    fun loadMore(
+        language: String,
+        requestFailedMessage: String = DEFAULT_REQUEST_FAILED_MESSAGE,
+        pageSize: Int = FeedPagePolicy.DEFAULT_PAGE_SIZE,
+        availableItemCount: Int = -1,
+    ) {
+        require(pageSize in FeedPagePolicy.MIN_PAGE_SIZE..FeedPagePolicy.MAX_PAGE_SIZE)
         val current = mutableState.value
+        val availableCount = availableItemCount.takeIf { it >= 0 } ?: current.items.size
+        if (FeedPagePolicy.hasBufferedResults(availableCount, current.displayLimit)) {
+            mutableState.value = current.copy(
+                displayLimit = FeedPagePolicy.nextDisplayLimit(current.displayLimit, pageSize, availableCount),
+                error = null,
+            )
+            return
+        }
         val token = current.continuation ?: return
         if (current.loading || current.loadingMore) return
         val requestGeneration = generation

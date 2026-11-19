@@ -71,6 +71,8 @@ fun SettingsScreen(
     onDiscoveryPreferencesChanged: (String, String) -> Unit,
     feedRefreshPreset: Int = 1,
     onFeedRefreshPresetChanged: (Int) -> Unit = {},
+    pageSize: Int = 25,
+    onPageSizeChanged: (Int) -> Unit = {},
     playbackPreferences: PlaybackStreamPreferences,
     onPlaybackPreferencesChanged: (PlaybackStreamPreferences) -> Unit,
     playbackBufferPreferences: PlaybackBufferPreferences = PlaybackBufferPreferences(),
@@ -140,7 +142,7 @@ fun SettingsScreen(
     }
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         if (uri != null) transferScope.launch {
-            val snapshot = SettingsTransferRepository.Snapshot(language, darkTheme, discoveryTopic, discoveryLanguage, playbackPreferences.maxHeight, playbackPreferences.h264Only, playbackPreferences.fps30Only, playbackPreferences.audioOnly, downloadPreferences.maxHeight, downloadPreferences.h264Only, downloadPreferences.fps30Only, downloadPreferences.limitKiB, resumePlayback, playbackBufferPreferences.maximumSeconds, playbackBufferPreferences.memoryLimitMiB, playbackBufferPreferences.backBufferMiB, playbackBufferPreferences.startupSeconds, autoRecover, autoNext, preloadNext, feedRefreshPreset)
+            val snapshot = SettingsTransferRepository.Snapshot(language, darkTheme, discoveryTopic, discoveryLanguage, playbackPreferences.maxHeight, playbackPreferences.h264Only, playbackPreferences.fps30Only, playbackPreferences.audioOnly, downloadPreferences.maxHeight, downloadPreferences.h264Only, downloadPreferences.fps30Only, downloadPreferences.limitKiB, resumePlayback, playbackBufferPreferences.maximumSeconds, playbackBufferPreferences.memoryLimitMiB, playbackBufferPreferences.backBufferMiB, playbackBufferPreferences.startupSeconds, autoRecover, autoNext, preloadNext, feedRefreshPreset, pageSize)
             val result = runCatching {
                 val json = SettingsTransferRepository.encode(snapshot)
                 withContext(Dispatchers.IO) {
@@ -153,7 +155,7 @@ fun SettingsScreen(
     }
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) transferScope.launch {
-            val fallback = SettingsTransferRepository.Snapshot(language, darkTheme, discoveryTopic, discoveryLanguage, playbackPreferences.maxHeight, playbackPreferences.h264Only, playbackPreferences.fps30Only, playbackPreferences.audioOnly, downloadPreferences.maxHeight, downloadPreferences.h264Only, downloadPreferences.fps30Only, downloadPreferences.limitKiB, resumePlayback, playbackBufferPreferences.maximumSeconds, playbackBufferPreferences.memoryLimitMiB, playbackBufferPreferences.backBufferMiB, playbackBufferPreferences.startupSeconds, autoRecover, autoNext, preloadNext, feedRefreshPreset)
+            val fallback = SettingsTransferRepository.Snapshot(language, darkTheme, discoveryTopic, discoveryLanguage, playbackPreferences.maxHeight, playbackPreferences.h264Only, playbackPreferences.fps30Only, playbackPreferences.audioOnly, downloadPreferences.maxHeight, downloadPreferences.h264Only, downloadPreferences.fps30Only, downloadPreferences.limitKiB, resumePlayback, playbackBufferPreferences.maximumSeconds, playbackBufferPreferences.memoryLimitMiB, playbackBufferPreferences.backBufferMiB, playbackBufferPreferences.startupSeconds, autoRecover, autoNext, preloadNext, feedRefreshPreset, pageSize)
             val result = runCatching {
                 val json = withContext(Dispatchers.IO) {
                     context.contentResolver.openInputStream(uri)?.use(::readSettingsTransfer)
@@ -174,6 +176,7 @@ fun SettingsScreen(
                 onPreloadNextChanged(imported.preloadNext)
                 selectedFeedPreset = imported.feedPreset
                 onFeedRefreshPresetChanged(imported.feedPreset)
+                onPageSizeChanged(imported.pageSize)
                 language = imported.language
                 onLanguageChanged(imported.language)
                 transferMessage = context.getString(R.string.settings_imported)
@@ -237,6 +240,13 @@ fun SettingsScreen(
                     }
                 }
             }
+            NumericPreferenceField(
+                value = pageSize,
+                label = stringResource(R.string.page_size),
+                range = 1..250,
+                onValueChanged = onPageSizeChanged,
+            )
+            Text(stringResource(R.string.page_size_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(stringResource(R.string.subscription_feed_pace), style = MaterialTheme.typography.bodyMedium)
             Text(stringResource(R.string.subscription_feed_pace_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             androidx.compose.foundation.layout.Box {

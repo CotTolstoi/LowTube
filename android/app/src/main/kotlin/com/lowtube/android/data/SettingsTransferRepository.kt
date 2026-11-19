@@ -27,6 +27,7 @@ internal object SettingsTransferRepository {
         val autoNext: Boolean = true,
         val preloadNext: Boolean = true,
         val feedPreset: Int = 1,
+        val pageSize: Int = 25,
     )
 
     fun encode(snapshot: Snapshot): String {
@@ -54,6 +55,7 @@ internal object SettingsTransferRepository {
             .put("AutoNext", snapshot.autoNext)
             .put("PreloadNext", snapshot.preloadNext)
             .put("FeedPreset", snapshot.feedPreset)
+            .put("PageSize", snapshot.pageSize)
             .toString(2)
     }
 
@@ -93,6 +95,7 @@ internal object SettingsTransferRepository {
             autoNext = bool(root, "AutoNext", "autoNext", fallback.autoNext),
             preloadNext = bool(root, "PreloadNext", "preloadNext", fallback.preloadNext),
             feedPreset = int(root, "FeedPreset", "feedPreset", fallback.feedPreset),
+            pageSize = int(root, "PageSize", "pageSize", fallback.pageSize),
         )
         validate(result)
         return result
@@ -139,6 +142,7 @@ internal object SettingsTransferRepository {
         require(snapshot.downloadMaxHeight in PlaybackStreamPreferences.SUPPORTED_HEIGHTS) { "Unsupported download quality cap." }
         require(snapshot.downloadLimitKiB in 0..1_048_576) { "Unsupported download speed limit." }
         require(snapshot.feedPreset in 0..2) { "Unsupported subscription feed refresh preset." }
+        require(snapshot.pageSize in 1..250) { "Unsupported page size." }
         PlaybackBufferPreferences(
             maximumSeconds = snapshot.bufferSeconds,
             memoryLimitMiB = snapshot.bufferMiB,

@@ -116,6 +116,7 @@ fun LowTubeSearchScreen(
     discoveryTopic: String,
     discoveryLanguage: String,
     feedRefreshPreset: Int = 1,
+    pageSize: Int = 25,
     libraryRepository: LocalLibraryRepository,
     libraryRevision: Int,
     onAddChannel: (String) -> Unit,
@@ -135,7 +136,7 @@ fun LowTubeSearchScreen(
     var recentSearches by remember(searchHistory) { mutableStateOf(searchHistory.recent()) }
     var searchKind by rememberSaveable { mutableStateOf("all") }
     var recommendationKind by rememberSaveable { mutableStateOf("all") }
-    var autoLoadAttemptedToken by remember(state.query, state.isHome, state.homeCacheKey, selectedTab) { mutableStateOf<String?>(null) }
+    var autoLoadAttemptedToken by remember(state.query, state.isHome, state.homeCacheKey, selectedTab, state.displayLimit) { mutableStateOf<String?>(null) }
     var saveTarget by remember { mutableStateOf<VideoItem?>(null) }
     var downloadTarget by remember { mutableStateOf<VideoItem?>(null) }
     var downloadOptions by remember { mutableStateOf<List<DownloadFormatOption>?>(null) }
@@ -167,6 +168,7 @@ fun LowTubeSearchScreen(
         if (channelBrowse != null || activeKind == "all") forYouItems
         else forYouItems.filter { it.kind == activeKind }
     }
+    val displayedItems = remember(visibleItems, state.displayLimit) { visibleItems.take(state.displayLimit) }
     val directPlaylistQueueItem = remember(query, selectedTab) {
         if (selectedTab == "search") youtubePlaylistQueueMarker(query, context.getString(R.string.playlist)) else null
     }
@@ -178,7 +180,7 @@ fun LowTubeSearchScreen(
             query = target
             searchKind = channelBrowseTab(target)?.kind ?: "all"
             onSelectedTabChanged("search")
-            viewModel.search(target, language, emptySearchMessage, requestFailedMessage)
+            viewModel.search(target, language, emptySearchMessage, requestFailedMessage, pageSize)
         }
         searchFocused = false
         focusManager.clearFocus()
@@ -209,9 +211,11 @@ fun LowTubeSearchScreen(
 
     LaunchedEffect(language, requestFailedMessage, selectedTab, discoveryTopic, discoveryLanguage) {
         if (selectedTab == "home") {
-            viewModel.loadHome(language, discoveryTopic, discoveryLanguage, requestFailedMessage = requestFailedMessage)
+            viewModel.loadHome(language, discoveryTopic, discoveryLanguage, requestFailedMessage = requestFailedMessage, pageSize = pageSize)
         }
     }
+
+    LaunchedEffect(pageSize) { viewModel.setPageSize(pageSize) }
 
     LaunchedEffect(libraryRepository, libraryRevision, selectedTab) {
         if (selectedTab == "home") {
@@ -225,7 +229,7 @@ fun LowTubeSearchScreen(
         query = target
         searchKind = channelBrowseTab(target)?.kind ?: "all"
         onSelectedTabChanged("search")
-        viewModel.search(target, language, emptySearchMessage, requestFailedMessage)
+        viewModel.search(target, language, emptySearchMessage, requestFailedMessage, pageSize)
         onChannelBrowseConsumed()
     }
 
@@ -241,22 +245,24 @@ fun LowTubeSearchScreen(
         state.continuation,
         state.loading,
         state.loadingMore,
-        visibleItems.size,
+        displayedItems.size,
+        state.displayLimit,
     ) {
         if (selectedTab != "search" && selectedTab != "home") return@LaunchedEffect
         val continuation = state.continuation ?: return@LaunchedEffect
-        if (state.loading || state.loadingMore || visibleItems.isEmpty() || autoLoadAttemptedToken == continuation) return@LaunchedEffect
+        val attemptKey = "$continuation|${state.displayLimit}"
+        if (state.loading || state.loadingMore || visibleItems.isEmpty() || autoLoadAttemptedToken == attemptKey) return@LaunchedEffect
 
-        fun nearEnd(lastVisibleIndex: Int) = FeedAutoPaginationPolicy.shouldPrefetch(lastVisibleIndex, visibleItems.size)
+        fun nearEnd(lastVisibleIndex: Int) = FeedAutoPaginationPolicy.shouldPrefetch(lastVisibleIndex, displayedItems.size)
         val lastVisibleIndex = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
         if (!listState.isScrollInProgress || !nearEnd(lastVisibleIndex)) {
             snapshotFlow {
                 (listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1) to listState.isScrollInProgress
             }.first { (index, isScrolling) -> isScrolling && nearEnd(index) }
         }
-        if (autoLoadAttemptedToken == continuation) return@LaunchedEffect
-        autoLoadAttemptedToken = continuation
-        viewModel.loadMore(language, requestFailedMessage)
+        if (autoLoadAttemptedToken == attemptKey) return@LaunchedEffect
+        autoLoadAttemptedToken = attemptKey
+        viewModel.loadMore(language, requestFailedMessage, pageSize, visibleItems.size)
     }
 
     Scaffold(
@@ -303,7 +309,7 @@ fun LowTubeSearchScreen(
                         onClick = {
                             onSelectedTabChanged("home")
                             recommendationKind = "all"
-                            viewModel.loadHome(language, discoveryTopic, discoveryLanguage, force = true, requestFailedMessage = requestFailedMessage)
+                            viewModel.loadHome(language, discoveryTopic, discoveryLanguage, force = true, requestFailedMessage = requestFailedMessage, pageSize = pageSize)
                         },
                         icon = { Text("⌂") },
                         label = { Text(stringResource(R.string.recommendations_tab)) },
@@ -434,7 +440,7 @@ fun LowTubeSearchScreen(
                                     if (target != null) {
                                         searchKind = value
                                         query = target
-                                        viewModel.search(target, language, emptySearchMessage, requestFailedMessage)
+                                        viewModel.search(target, language, emptySearchMessage, requestFailedMessage, pageSize)
                                     }
                                 } else {
                                     searchKind = value
@@ -463,7 +469,7 @@ fun LowTubeSearchScreen(
                     contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    items(visibleItems, key = { it.kind + ":" + it.id }) { item ->
+                    items(displayedItems, key = { it.kind + ":" + it.id }) { item ->
                         VideoCard(
                             item = item,
                             isFollowing = isFollowing(item.channelId),
@@ -499,16 +505,16 @@ fun LowTubeSearchScreen(
                             onClick = if (item.kind == "playlist") {
                             {
                                 query = item.url
-                                viewModel.search(item.url, language, emptySearchMessage, requestFailedMessage)
+                                viewModel.search(item.url, language, emptySearchMessage, requestFailedMessage, pageSize)
                             }
                             } else ({ onPlay(item) }),
                         )
                     }
-                    if (state.continuation != null) {
+                    if (state.continuation != null || visibleItems.size > state.displayLimit) {
                         item(key = "load-more") {
                             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                                 if (state.error != null) Text(state.error.orEmpty(), color = MaterialTheme.colorScheme.error)
-                                Button(onClick = { viewModel.loadMore(language, requestFailedMessage) }, enabled = !state.loadingMore) {
+                                Button(onClick = { viewModel.loadMore(language, requestFailedMessage, pageSize, visibleItems.size) }, enabled = !state.loadingMore) {
                                     if (state.loadingMore) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
                                     else Text(stringResource(R.string.load_more))
                                 }

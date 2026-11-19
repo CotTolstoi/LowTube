@@ -15,7 +15,7 @@ class SettingsTransferRepositoryTest {
     @Test
     fun importsPcSettingsButIgnoresCredentials() {
         val imported = SettingsTransferRepository.decode(
-            """{"Language":"uk","Theme":"dark","DiscoveryTopic":"space","DiscoveryLanguage":"de","Height":480,"H264":false,"Fps30":false,"DownloadHeight":1080,"DownloadH264":false,"DownloadFps30":true,"ResumePlayback":false,"AutoRecover":false,"AutoNext":false,"PreloadNext":false,"BufferSeconds":120,"BufferMiB":128,"BackBufferMiB":8,"BufferStartSeconds":5,"FeedPreset":2,"Auth":"cookies","FirefoxProfile":"private"}""",
+            """{"Language":"uk","Theme":"dark","DiscoveryTopic":"space","DiscoveryLanguage":"de","Height":480,"H264":false,"Fps30":false,"DownloadHeight":1080,"DownloadH264":false,"DownloadFps30":true,"ResumePlayback":false,"AutoRecover":false,"AutoNext":false,"PreloadNext":false,"BufferSeconds":120,"BufferMiB":128,"BackBufferMiB":8,"BufferStartSeconds":5,"FeedPreset":2,"PageSize":40,"Auth":"cookies","FirefoxProfile":"private"}""",
             defaults,
         )
         assertEquals("uk", imported.language)
@@ -37,11 +37,12 @@ class SettingsTransferRepositoryTest {
         assertEquals(128, imported.bufferMiB)
         assertEquals(8, imported.backBufferMiB)
         assertEquals(5, imported.bufferStartSeconds)
+        assertEquals(40, imported.pageSize)
     }
 
     @Test
     fun exportContainsOnlyAllowlistedSettings() {
-        val changed = defaults.copy(downloadMaxHeight = 1080, downloadH264Only = false, downloadFps30Only = true, downloadLimitKiB = 512, resumePlayback = false, bufferSeconds = 120, bufferMiB = 128, backBufferMiB = 8, bufferStartSeconds = 5, autoRecover = false, autoNext = false, preloadNext = false, feedPreset = 0)
+        val changed = defaults.copy(downloadMaxHeight = 1080, downloadH264Only = false, downloadFps30Only = true, downloadLimitKiB = 512, resumePlayback = false, bufferSeconds = 120, bufferMiB = 128, backBufferMiB = 8, bufferStartSeconds = 5, autoRecover = false, autoNext = false, preloadNext = false, feedPreset = 0, pageSize = 50)
         val json = SettingsTransferRepository.encode(changed)
         assertEquals(changed, SettingsTransferRepository.decode(json, defaults))
         assertTrue(json.contains("ResumePlayback"))
@@ -49,6 +50,7 @@ class SettingsTransferRepositoryTest {
         assertTrue(json.contains("AutoNext"))
         assertTrue(json.contains("PreloadNext"))
         assertTrue(json.contains("FeedPreset"))
+        assertTrue(json.contains("PageSize"))
         assertTrue(json.contains("BufferSeconds"))
         assertTrue(json.contains("BufferMiB"))
         assertTrue(json.contains("BackBufferMiB"))
@@ -70,6 +72,7 @@ class SettingsTransferRepositoryTest {
         assertFalse(imported.resumePlayback)
         assertFalse(imported.preloadNext)
         assertEquals(fallback.feedPreset, imported.feedPreset)
+        assertEquals(fallback.pageSize, imported.pageSize)
     }
 
     @Test
@@ -113,6 +116,9 @@ class SettingsTransferRepositoryTest {
         }
         assertThrows(IllegalArgumentException::class.java) {
             SettingsTransferRepository.decode("""{"FeedPreset":7}""", defaults)
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            SettingsTransferRepository.decode("""{"PageSize":251}""", defaults)
         }
     }
 }

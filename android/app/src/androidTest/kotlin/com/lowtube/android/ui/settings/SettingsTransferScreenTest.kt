@@ -6,6 +6,8 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextClearance
+import androidx.compose.ui.test.performTextInput
 import com.lowtube.android.R
 import com.lowtube.android.data.PlaybackStreamPreferences
 import org.junit.Assert.assertEquals
@@ -43,6 +45,7 @@ class SettingsTransferScreenTest {
         composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.copy_diagnostic_report)).assertExists()
         composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.export_diagnostic_report)).assertExists()
         composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.subscription_feed_pace)).assertExists()
+        composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.page_size)).assertExists()
     }
 
     @Test
@@ -72,7 +75,7 @@ class SettingsTransferScreenTest {
     @Test
     fun connectionPresetSelectionNotifiesSettingsOwner() {
         val selectedPreset = AtomicInteger(-1)
-        showSettings { selectedPreset.set(it) }
+        showSettings(onFeedRefreshPresetChanged = { selectedPreset.set(it) })
 
         composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.connection_preset_balanced))
             .performScrollTo()
@@ -83,6 +86,20 @@ class SettingsTransferScreenTest {
         composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.connection_preset_slow)).performClick()
         composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.connection_preset_fast)).performClick()
         assertEquals(2, selectedPreset.get())
+    }
+
+    @Test
+    fun pageSizeFieldNotifiesSettingsOwner() {
+        val selectedPageSize = AtomicInteger(-1)
+        showSettings(onPageSizeChanged = { selectedPageSize.set(it) })
+
+        val pageSizeField = composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.page_size))
+            .performScrollTo()
+        pageSizeField.performClick()
+        pageSizeField.performTextClearance()
+        pageSizeField.performTextInput("40")
+
+        assertEquals(40, selectedPageSize.get())
     }
 
     @Test
@@ -105,7 +122,10 @@ class SettingsTransferScreenTest {
         composeTestRule.onNodeWithText(errorMessage).assertDoesNotExist()
     }
 
-    private fun showSettings(onFeedRefreshPresetChanged: (Int) -> Unit = {}) {
+    private fun showSettings(
+        onFeedRefreshPresetChanged: (Int) -> Unit = {},
+        onPageSizeChanged: (Int) -> Unit = {},
+    ) {
         composeTestRule.setContent {
             SettingsScreen(
                 onDarkThemeChanged = {},
@@ -114,6 +134,7 @@ class SettingsTransferScreenTest {
                 discoveryLanguage = "any",
                 onDiscoveryPreferencesChanged = { _, _ -> },
                 onFeedRefreshPresetChanged = onFeedRefreshPresetChanged,
+                onPageSizeChanged = onPageSizeChanged,
                 playbackPreferences = PlaybackStreamPreferences(),
                 onPlaybackPreferencesChanged = {},
             )

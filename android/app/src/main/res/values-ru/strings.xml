@@ -44,6 +44,8 @@
     <string name="discovery_topic">Тема</string>
     <string name="discovery_topic_hint">До 200 символов; пустое поле использует тему по умолчанию.</string>
     <string name="discovery_language">Язык поиска</string>
+    <string name="page_size">Результатов на странице</string>
+    <string name="page_size_hint">Определяет, сколько загруженных результатов показывать за раз. Размер сетевой страницы задаёт YouTube.</string>
     <string name="subscription_feed_pace">Скорость обновления подписок</string>
     <string name="subscription_feed_pace_hint">Задает размер пакета и число параллельных запросов при ручном обновлении.</string>
     <string name="connection_preset_slow">Медленное соединение</string>
