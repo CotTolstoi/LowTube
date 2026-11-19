@@ -18,6 +18,7 @@ data class VideoItem(
 data class SearchPage(
     val items: List<VideoItem>,
     val continuation: String?,
+    val playlistTitle: String? = null,
 )
 
 data class ResolvedVideoStream(

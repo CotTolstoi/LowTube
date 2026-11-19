@@ -14,6 +14,7 @@ data class SearchUiState(
     val query: String = "",
     val items: List<VideoItem> = emptyList(),
     val continuation: String? = null,
+    val playlistTitle: String? = null,
     val loading: Boolean = false,
     val loadingMore: Boolean = false,
     val displayLimit: Int = FeedPagePolicy.DEFAULT_PAGE_SIZE,
@@ -130,7 +131,14 @@ class SearchViewModel(
             try {
                 val page = repository.search(normalized, language = language)
                 if (requestGeneration == generation) {
-                    mutableState.value = SearchUiState(query = normalized, items = page.items, continuation = page.continuation, searched = true, displayLimit = pageSize)
+                    mutableState.value = SearchUiState(
+                        query = normalized,
+                        items = page.items,
+                        continuation = page.continuation,
+                        playlistTitle = page.playlistTitle,
+                        searched = true,
+                        displayLimit = pageSize,
+                    )
                 }
             } catch (error: Exception) {
                 if (requestGeneration == generation) {
@@ -171,7 +179,12 @@ class SearchViewModel(
                     else repository.search(current.query, continuation = token, language = language)
                 if (requestGeneration == generation) {
                     val merged = (current.items + page.items).distinctBy { it.kind + ":" + it.id }.take(5_000)
-                    val updated = current.copy(items = merged, continuation = page.continuation, loadingMore = false)
+                    val updated = current.copy(
+                        items = merged,
+                        continuation = page.continuation,
+                        playlistTitle = page.playlistTitle ?: current.playlistTitle,
+                        loadingMore = false,
+                    )
                     mutableState.value = updated
                     if (updated.isHome) rememberHomePage(updated)
                 }

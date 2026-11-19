@@ -1152,6 +1152,7 @@ class InnerTubeSearchRepository(context: Context? = null) {
     private fun parseSearchPage(root: JSONObject): SearchPage {
         val result = linkedMapOf<String, VideoItem>()
         var continuation: String? = null
+        var playlistTitle: String? = null
         fun add(item: VideoItem?) {
             if (item != null) {
                 val key = item.kind + ":" + item.id
@@ -1168,6 +1169,12 @@ class InnerTubeSearchRepository(context: Context? = null) {
                         val key = keys.next()
                         val renderer = value.optJSONObject(key)
                         when (key) {
+                            "playlistHeaderRenderer", "playlistMetadataRenderer" -> {
+                                val title = text(renderer?.opt("title")).takeIf(String::isNotBlank)
+                                if (!title.isNullOrBlank()) playlistTitle = title
+                                visit(renderer, depth + 1)
+                            }
+                            "header" -> visit(value.opt(key), depth + 1)
                             "continuationItemRenderer" -> {
                                 continuation = nestedString(renderer, "continuationEndpoint", "continuationCommand", "token")
                                     .ifBlank { nestedString(renderer, "button", "buttonRenderer", "command", "continuationCommand", "token") }
@@ -1196,10 +1203,11 @@ class InnerTubeSearchRepository(context: Context? = null) {
         val contents = root.optJSONObject("contents")
         val primary = contents?.optJSONObject("twoColumnSearchResultsRenderer")?.optJSONObject("primaryContents")
         visit(primary ?: contents, 0)
+        visit(root.optJSONObject("header"), 0)
         visit(root.optJSONObject("continuationContents"), 0)
         visit(root.optJSONArray("onResponseReceivedActions"), 0)
         if (result.isEmpty() && primary == null && contents == null) throw IOException("YouTube returned an unsupported search response.")
-        return SearchPage(result.values.take(MAX_PAGE_ITEMS), continuation)
+        return SearchPage(result.values.take(MAX_PAGE_ITEMS), continuation, playlistTitle)
     }
 
     private fun legacyVideo(renderer: JSONObject?, rendererName: String): VideoItem? {

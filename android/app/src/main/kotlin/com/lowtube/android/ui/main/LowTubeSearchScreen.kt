@@ -175,8 +175,10 @@ fun LowTubeSearchScreen(
         else forYouItems.filter { it.kind == activeKind }
     }
     val displayedItems = remember(visibleItems, state.displayLimit) { visibleItems.take(state.displayLimit) }
-    val directPlaylistQueueItem = remember(query, selectedTab) {
-        if (selectedTab == "search") youtubePlaylistQueueMarker(query, context.getString(R.string.playlist)) else null
+    val directPlaylistQueueItem = remember(query, selectedTab, state.playlistTitle) {
+        if (selectedTab == "search") {
+            youtubePlaylistQueueMarker(query, state.playlistTitle?.takeIf(String::isNotBlank) ?: context.getString(R.string.playlist))
+        } else null
     }
     val executeSearch: (String) -> Unit = { input ->
         val normalized = input.trim()
