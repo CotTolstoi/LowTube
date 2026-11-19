@@ -14,6 +14,36 @@ import java.io.IOException
 
 internal class DownloadFileStore(private val context: Context) {
     fun partialFile(job: DownloadJob): File = File(job.partialPath)
+    fun videoTrackFile(job: DownloadJob): File = File(job.partialPath + ".video")
+    fun audioTrackFile(job: DownloadJob): File = File(job.partialPath + ".audio")
+    fun videoTrackTotalFile(job: DownloadJob): File = File(job.partialPath + ".video.total")
+    fun audioTrackTotalFile(job: DownloadJob): File = File(job.partialPath + ".audio.total")
+
+    fun trackTotal(job: DownloadJob, video: Boolean): Long = runCatching {
+        (if (video) videoTrackTotalFile(job) else audioTrackTotalFile(job)).readText().trim().toLong().coerceAtLeast(0L)
+    }.getOrDefault(0L)
+
+    fun saveTrackTotal(job: DownloadJob, video: Boolean, total: Long) {
+        if (total <= 0L) return
+        val target = if (video) videoTrackTotalFile(job) else audioTrackTotalFile(job)
+        val temporary = File(target.parentFile, target.name + ".tmp")
+        runCatching {
+            temporary.writeText(total.toString())
+            if (!temporary.renameTo(target)) {
+                target.writeText(total.toString())
+                temporary.delete()
+            }
+        }
+    }
+
+    fun deleteTrackFiles(job: DownloadJob) {
+        videoTrackFile(job).delete()
+        audioTrackFile(job).delete()
+        videoTrackTotalFile(job).delete()
+        audioTrackTotalFile(job).delete()
+        File(videoTrackTotalFile(job).absolutePath + ".tmp").delete()
+        File(audioTrackTotalFile(job).absolutePath + ".tmp").delete()
+    }
 
     fun deletePublished(uri: Uri) {
         if (uri.scheme == "file") File(uri.path.orEmpty()).delete()

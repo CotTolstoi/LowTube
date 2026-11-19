@@ -143,7 +143,7 @@
     <string name="mini_player_open">Open</string>
     <string name="download_loading_formats">Finding available formats…</string>
     <string name="download_no_formats">No direct downloadable formats match these settings. Try changing the download limits.</string>
-    <string name="download_video_format">%1$dp · %2$d FPS · %3$s · %4$s</string>
+    <string name="download_video_format">%1$dp · %2$d FPS · %3$s + %4$s · %5$s</string>
     <string name="download_audio_format">%1$s · %2$s kbps · %3$s</string>
     <string name="download_pending">Waiting to download</string>
     <string name="download_running">Downloading</string>

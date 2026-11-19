@@ -42,6 +42,8 @@ data class DownloadFormatOption(
     val stream: ResolvedVideoStream,
     val bitrateKbps: Int = 0,
     val container: String,
+    val audioStream: ResolvedVideoStream? = null,
 ) {
     val audioOnly: Boolean get() = stream.isAudioOnly
+    val requiresMuxing: Boolean get() = audioStream != null
 }

@@ -52,7 +52,14 @@ class DownloadRepository private constructor(
         val host = uri.host?.lowercase().orEmpty()
         require(uri.scheme == "https" && (host == "googlevideo.com" || host.endsWith(".googlevideo.com"))) { "Selected download format has an untrusted stream address." }
         require(option.stream.mimeType in SUPPORTED_MIME_TYPES) { "Selected download format is not supported." }
-        require(if (option.audioOnly) option.stream.isAudioOnly else option.stream.isMuxed) { "Selected format is not a single-file download." }
+        require(if (option.audioOnly) option.stream.isAudioOnly else option.stream.isMuxed || option.requiresMuxing) { "Selected format is not a downloadable video." }
+        if (option.requiresMuxing) {
+            val audio = option.audioStream ?: throw IllegalArgumentException("The selected MP4 format has no audio track.")
+            val audioUri = Uri.parse(audio.uri)
+            val audioHost = audioUri.host?.lowercase().orEmpty()
+            require(audioUri.scheme == "https" && (audioHost == "googlevideo.com" || audioHost.endsWith(".googlevideo.com"))) { "Selected audio format has an untrusted stream address." }
+            require(option.stream.mimeType == "video/mp4" && audio.mimeType == "audio/mp4" && !option.stream.isMuxed && audio.isAudioOnly) { "Selected track pair cannot be combined into MP4." }
+        }
         val fileName = buildFileName(video, option)
         val partialDir = File(appContext.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: appContext.filesDir, "LowTube/.partial")
         if (!partialDir.isDirectory && !partialDir.mkdirs() && !partialDir.isDirectory) throw IOException("Android could not prepare private download storage.")
@@ -128,6 +135,12 @@ class DownloadRepository private constructor(
         if (id >= OWN_ID_BASE) {
             jobs.get(id)?.let { job ->
                 File(job.partialPath).delete()
+                File(job.partialPath + ".video").delete()
+                File(job.partialPath + ".audio").delete()
+                File(job.partialPath + ".video.total").delete()
+                File(job.partialPath + ".audio.total").delete()
+                File(job.partialPath + ".video.total.tmp").delete()
+                File(job.partialPath + ".audio.total.tmp").delete()
                 if (job.localUri.isNotBlank()) runCatching {
                     val uri = Uri.parse(job.localUri)
                     if (uri.scheme == "file") File(uri.path.orEmpty()).delete()
@@ -187,7 +200,8 @@ class DownloadRepository private constructor(
         val extension = when (option.stream.mimeType) { "video/webm", "audio/webm" -> "webm"; "audio/mp4" -> "m4a"; "audio/mpeg" -> "mp3"; else -> "mp4" }
         val safe = video.title.replace(Regex("""[\\/:*?"<>|\p{Cntrl}]"""), "_").trim().replace(Regex("\\s+"), " ").trimEnd('.', ' ').take(70).ifBlank { "LowTube video" }
         val uniqueTag = UUID.randomUUID().toString().take(8)
-        return "LowTube_${safe}_${video.id}_${option.stream.itag}_$uniqueTag.$extension"
+        val audioTag = option.audioStream?.itag?.let { "_a$it" }.orEmpty()
+        return "LowTube_${safe}_${video.id}_${option.stream.itag}${audioTag}_$uniqueTag.$extension"
     }
 
     private fun encodeVideo(video: VideoItem) = JSONObject().put("id", video.id).put("title", video.title).put("channel", video.channel).put("channelId", video.channelId).put("published", video.published).put("duration", video.duration).put("kind", video.kind).put("liveStatus", video.liveStatus).put("thumbnailUrl", video.thumbnailUrl).put("url", video.url).toString()

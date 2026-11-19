@@ -255,28 +255,56 @@ class InnerTubeSearchRepository(context: Context? = null) {
         audioOnly: Boolean,
         userAgent: String = USER_AGENT,
     ): List<DownloadFormatOption> {
-        return downloadableFormats(streaming, preferences, audioOnly)
-            .distinctBy { "${it.json.optInt("itag", 0)}|${it.mimeType}|$audioOnly" }
-            .sortedWith(
-                if (audioOnly) compareByDescending<PlaybackFormat> { it.json.optLong("bitrate", 0) }
-                    .thenByDescending { it.mimeType == "audio/mp4" }
-                else compareByDescending<PlaybackFormat> { it.json.optInt("height", 0) }
-                    .thenByDescending { it.json.optDouble("fps", 0.0) }
-                    .thenByDescending { it.json.optLong("bitrate", 0) },
+        val formats = parsePlaybackFormats(streaming)
+        val selected = if (audioOnly) {
+            downloadableFormats(streaming, preferences, true).map { it to null }
+        } else {
+            val muxed = downloadableFormats(streaming, preferences, false).map { it to null }
+            val separate = separateMp4Tracks(formats, preferences)
+            muxed + separate
+        }
+        return selected.distinctBy { (videoFormat, audioFormat) ->
+            "${videoFormat.json.optInt("itag", 0)}|${videoFormat.mimeType}|$audioOnly|${audioFormat?.json?.optInt("itag", 0) ?: 0}"
+        }.sortedWith(
+            if (audioOnly) compareByDescending<Pair<PlaybackFormat, PlaybackFormat?>> { it.first.json.optLong("bitrate", 0) }
+                .thenByDescending { it.first.mimeType == "audio/mp4" }
+            else compareByDescending<Pair<PlaybackFormat, PlaybackFormat?>> { it.first.json.optInt("height", 0) }
+                .thenByDescending { it.first.json.optDouble("fps", 0.0) }
+                .thenByDescending { it.first.json.optLong("bitrate", 0) },
+        ).map { (format, audioFormat) ->
+            val stream = format.toStream(video, isAudioOnly = audioOnly, userAgent = userAgent)
+            val audioStream = audioFormat?.toStream(video, isAudioOnly = true, userAgent = userAgent)
+            val key = if (audioStream == null) "${stream.itag}|${stream.mimeType}|$audioOnly"
+                else "${stream.itag}|${stream.mimeType}|false|${audioStream.itag}|${audioStream.mimeType}"
+            DownloadFormatOption(
+                key = key,
+                stream = stream,
+                bitrateKbps = (format.json.optLong("bitrate", 0) / 1000L).toInt().coerceAtLeast(0),
+                container = when (format.mimeType) {
+                    "video/webm", "audio/webm" -> "WebM"
+                    "audio/mpeg" -> "MP3"
+                    else -> if (audioOnly) "M4A" else "MP4"
+                },
+                audioStream = audioStream,
             )
-            .map { format ->
-                val stream = format.toStream(video, isAudioOnly = audioOnly, userAgent = userAgent)
-                DownloadFormatOption(
-                    key = "${stream.itag}|${stream.mimeType}|$audioOnly",
-                    stream = stream,
-                    bitrateKbps = (format.json.optLong("bitrate", 0) / 1000L).toInt().coerceAtLeast(0),
-                    container = when (format.mimeType) {
-                        "video/webm", "audio/webm" -> "WebM"
-                        "audio/mpeg" -> "MP3"
-                        else -> if (audioOnly) "M4A" else "MP4"
-                    },
-                )
-            }.toList()
+        }
+    }
+
+    private fun separateMp4Tracks(
+        formats: List<PlaybackFormat>,
+        preferences: DownloadStreamPreferences,
+    ): List<Pair<PlaybackFormat, PlaybackFormat?>> {
+        val audio = formats.asSequence()
+            .filter { it.audioOnly && it.mimeType == "audio/mp4" && it.codec.startsWith("mp4a") }
+            .maxByOrNull { it.json.optLong("bitrate", 0) }
+            ?: return emptyList()
+        return formats.asSequence()
+            .filter { it.videoOnly && it.mimeType == "video/mp4" && it.codec.startsWith("avc1") }
+            .filter { it.json.optInt("height", 0) in 1..preferences.maxHeight }
+            .filter { !preferences.h264Only || it.codec.startsWith("avc1") }
+            .filter { !preferences.fps30Only || it.json.optDouble("fps", 0.0) <= 30.0 }
+            .map { it to audio }
+            .toList()
     }
 
     private fun resolveStreams(
@@ -372,13 +400,16 @@ class InnerTubeSearchRepository(context: Context? = null) {
         streaming: JSONObject,
         preferences: DownloadStreamPreferences,
         audioOnly: Boolean,
-    ): Boolean = downloadableFormats(streaming, preferences, audioOnly).isNotEmpty()
+    ): Boolean = downloadableFormats(streaming, preferences, audioOnly).isNotEmpty() ||
+        (!audioOnly && separateMp4Tracks(parsePlaybackFormats(streaming), preferences).isNotEmpty())
 
     private fun hasResolvableSignatureDownloadFormat(
         streaming: JSONObject,
         preferences: DownloadStreamPreferences,
         audioOnly: Boolean,
     ): Boolean {
+        var hasVideoTrack = false
+        var hasAudioTrack = false
         for (key in arrayOf("formats", "adaptiveFormats")) {
             val formats = streaming.optJSONArray(key) ?: continue
             for (index in 0 until formats.length()) {
@@ -387,20 +418,33 @@ class InnerTubeSearchRepository(context: Context? = null) {
                 if (audioOnly) {
                     if (mime !in SUPPORTED_DOWNLOAD_MIME_TYPES || !mime.startsWith("audio/")) continue
                 } else {
-                    if (!mime.startsWith("video/") || !format.has("audioQuality")) continue
-                    if (format.optInt("height", 0) !in 1..preferences.maxHeight) continue
+                    if (mime == "audio/mp4") {
+                        val codec = format.optString("mimeType").substringAfter("codecs=\"", "").substringBefore('"')
+                        if (codec.startsWith("mp4a") && hasDirectOrSignatureCipher(format)) hasAudioTrack = true
+                        continue
+                    }
+                    if (!mime.startsWith("video/") || format.optInt("height", 0) !in 1..preferences.maxHeight) continue
                     val codec = format.optString("mimeType").substringAfter("codecs=\"", "").substringBefore('"').substringBefore(',')
                     if (preferences.h264Only && !codec.startsWith("avc1")) continue
                     if (preferences.fps30Only && format.optDouble("fps", 0.0) > 30.0) continue
+                    if (hasDirectOrSignatureCipher(format)) {
+                        if (format.has("audioQuality")) return true
+                        if (mime == "video/mp4" && codec.startsWith("avc1")) hasVideoTrack = true
+                    }
+                    continue
                 }
-                val cipher = format.optString("signatureCipher").ifBlank { format.optString("cipher") }
-                if (cipher.isBlank() || cipher.length > MAX_CIPHER_LENGTH) continue
-                val fields = Uri.parse("https://cipher.invalid/?$cipher")
-                if (fields.getQueryParameter("s").orEmpty().isBlank()) continue
-                if (isTrustedStreamUrl(fields.getQueryParameter("url").orEmpty())) return true
+                if (hasDirectOrSignatureCipher(format)) return true
             }
         }
-        return false
+        return !audioOnly && hasVideoTrack && hasAudioTrack
+    }
+
+    private fun hasDirectOrSignatureCipher(format: JSONObject): Boolean {
+        if (isTrustedStreamUrl(format.optString("url"))) return true
+        val cipher = format.optString("signatureCipher").ifBlank { format.optString("cipher") }
+        if (cipher.isBlank() || cipher.length > MAX_CIPHER_LENGTH) return false
+        val fields = runCatching { Uri.parse("https://cipher.invalid/?$cipher") }.getOrNull() ?: return false
+        return fields.getQueryParameter("s").orEmpty().isNotBlank() && isTrustedStreamUrl(fields.getQueryParameter("url").orEmpty())
     }
 
     private fun downloadableFormats(

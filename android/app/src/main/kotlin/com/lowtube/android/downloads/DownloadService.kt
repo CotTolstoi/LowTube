@@ -43,6 +43,7 @@ import java.util.concurrent.TimeUnit
 
 /** Owns LowTube's durable sequential queue and keeps active transfers visible as a foreground service. */
 class DownloadService : Service() {
+    private data class TransferOutcome(val downloaded: Long, val total: Long, val complete: Boolean)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var store: DownloadJobStore? = null
     private var testStreamUrl: String? = null
@@ -135,6 +136,7 @@ class DownloadService : Service() {
         val part = files.partialFile(job)
         runCatching { part.parentFile?.mkdirs() }
         var downloaded = part.takeIf { it.isFile }?.length() ?: 0L
+        var requiresMuxing = false
         transferStartNs = System.nanoTime()
         queue.update(job.id, DownloadStatus.RUNNING, downloaded = downloaded)
         show(job, downloaded, 0, true)
@@ -149,37 +151,42 @@ class DownloadService : Service() {
                     container = job.mimeType.substringAfter('/', "test"),
                 )
             } ?: repository.resolveDownloadOption(video, DownloadStreamPreferences(maxHeight = 2160, h264Only = false, fps30Only = false), job.audioOnly, job.formatKey)
-            val result = OkHttpDownloadTransport(client).download(
-                option.stream, video, part,
-                getSharedPreferences("lowtube_settings", MODE_PRIVATE).getInt("download_limit_kib", 0).coerceAtLeast(0),
-                shouldCancel = { cancelId == job.id },
-                maxBytesThisAttempt = job.maxBytesPerAttempt.takeIf { it > 0 } ?: Long.MAX_VALUE,
-                requirePartialResponse = job.maxBytesPerAttempt > 0,
-                allowLoopbackHttpForDebugTest = allowLoopbackDebugTest,
-                onCallCreated = { call ->
-                    synchronized(cancelLock) {
-                        activeCall = call
-                        if (call != null && cancelId == job.id) call.cancel()
-                    }
-                },
-                onProgress = { progress ->
-                    downloaded = progress.downloaded
-                    queue.update(job.id, DownloadStatus.RUNNING, downloaded = progress.downloaded, total = progress.total)
-                    show(job, progress.downloaded, progress.total, true)
-                },
-            )
-            downloaded = result.downloaded
+            requiresMuxing = option.requiresMuxing
+            if (requiresMuxing) downloaded = files.videoTrackFile(job).length() + files.audioTrackFile(job).length()
+            else downloaded = part.takeIf { it.isFile }?.length() ?: 0L
+            queue.update(job.id, DownloadStatus.RUNNING, downloaded = downloaded, total = 0)
+            show(job, downloaded, 0, true)
+            val rateLimit = getSharedPreferences("lowtube_settings", MODE_PRIVATE).getInt("download_limit_kib", 0).coerceAtLeast(0)
+            val outcome = if (requiresMuxing) {
+                downloadMuxedTracks(job, option, video, part, queue, rateLimit)
+            } else {
+                val result = OkHttpDownloadTransport(client).download(
+                    option.stream, video, part, rateLimit,
+                    shouldCancel = { cancelId == job.id },
+                    maxBytesThisAttempt = job.maxBytesPerAttempt.takeIf { it > 0 } ?: Long.MAX_VALUE,
+                    requirePartialResponse = job.maxBytesPerAttempt > 0,
+                    allowLoopbackHttpForDebugTest = allowLoopbackDebugTest,
+                    onCallCreated = { call -> setActiveCall(job.id, call) },
+                    onProgress = { progress ->
+                        downloaded = progress.downloaded
+                        queue.update(job.id, DownloadStatus.RUNNING, downloaded = progress.downloaded, total = progress.total)
+                        show(job, progress.downloaded, progress.total, true)
+                    },
+                )
+                TransferOutcome(result.downloaded, result.total, result.total <= 0L || result.downloaded >= result.total)
+            }
+            downloaded = outcome.downloaded
             if (cancelId == job.id) throw CancellationException("Cancelled by user.")
-            if (result.total > result.downloaded && job.maxBytesPerAttempt > 0) {
-                queue.update(job.id, DownloadStatus.PAUSED, "Paused after bounded transfer chunk.", result.downloaded, result.total)
-                show(job, result.downloaded, result.total, false, "Paused; resume to continue")
+            if (!outcome.complete && job.maxBytesPerAttempt > 0) {
+                queue.update(job.id, DownloadStatus.PAUSED, "Paused after bounded transfer chunk.", outcome.downloaded, outcome.total)
+                show(job, outcome.downloaded, outcome.total, false, "Paused; resume to continue")
             } else {
                 job = queue.get(job.id) ?: return
                 val published = withContext(Dispatchers.IO) { files.publish(job) }
                 val committed = synchronized(cancelLock) {
                     if (cancelId == job.id) false
                     else {
-                        queue.update(job.id, DownloadStatus.SUCCESSFUL, downloaded = result.downloaded, total = result.total, uri = published.toString())
+                        queue.update(job.id, DownloadStatus.SUCCESSFUL, downloaded = outcome.downloaded, total = outcome.total, uri = published.toString())
                         true
                     }
                 }
@@ -187,22 +194,22 @@ class DownloadService : Service() {
                     files.deletePublished(published)
                     throw CancellationException("Cancelled by user.")
                 }
-                show(job, result.downloaded, result.total, false, "Download complete")
+                show(job, outcome.downloaded, outcome.total, false, "Download complete")
             }
         } catch (cancelled: CancellationException) {
-            downloaded = part.takeIf { it.isFile }?.length() ?: downloaded
+            downloaded = partialBytes(job, part, requiresMuxing).takeIf { it > 0L } ?: downloaded
             queue.update(job.id, DownloadStatus.CANCELLED, "Cancelled by user.", downloaded)
             show(job, downloaded, job.totalBytes, false, "Download cancelled")
             synchronized(cancelLock) { if (cancelId == job.id) cancelId = 0 }
         } catch (failure: Exception) {
             if (cancelId == job.id) {
-                downloaded = part.takeIf { it.isFile }?.length() ?: downloaded
+                downloaded = partialBytes(job, part, requiresMuxing).takeIf { it > 0L } ?: downloaded
                 queue.update(job.id, DownloadStatus.CANCELLED, "Cancelled by user.", downloaded)
                 show(job, downloaded, job.totalBytes, false, "Download cancelled")
                 synchronized(cancelLock) { if (cancelId == job.id) cancelId = 0 }
             } else {
                 if (failure.message?.contains("HTTP 416") == true || failure.message?.contains("unexpected byte offset") == true) {
-                    part.delete()
+                    if (requiresMuxing) files.deleteTrackFiles(job) else part.delete()
                     downloaded = 0
                 }
                 queue.update(job.id, DownloadStatus.FAILED, failure.message ?: failure.javaClass.simpleName, downloaded)
@@ -210,6 +217,125 @@ class DownloadService : Service() {
             }
         } finally {
             synchronized(cancelLock) { activeCall = null }
+        }
+    }
+
+    private suspend fun downloadMuxedTracks(
+        job: DownloadJob,
+        option: DownloadFormatOption,
+        video: VideoItem,
+        outputPart: File,
+        queue: DownloadJobStore,
+        rateLimitKiB: Int,
+    ): TransferOutcome {
+        val audioStream = option.audioStream ?: throw IOException("The selected MP4 format has no audio track.")
+        val videoPart = files.videoTrackFile(job)
+        val audioPart = files.audioTrackFile(job)
+        var videoTotal = files.trackTotal(job, video = true)
+        var audioTotal = files.trackTotal(job, video = false)
+        val attemptLimit = job.maxBytesPerAttempt.takeIf { it > 0L } ?: Long.MAX_VALUE
+        var attemptBytes = 0L
+
+        fun reportProgress() {
+            val downloaded = videoPart.length() + audioPart.length()
+            val total = if (videoTotal > 0L && audioTotal > 0L) videoTotal + audioTotal else 0L
+            queue.update(job.id, DownloadStatus.RUNNING, downloaded = downloaded, total = total)
+            show(job, downloaded, total, true)
+        }
+
+        suspend fun fetchTrack(stream: ResolvedVideoStream, file: File, isVideo: Boolean, limit: Long): TransferProgress {
+            return OkHttpDownloadTransport(client).download(
+                stream,
+                video,
+                file,
+                rateLimitKiB,
+                shouldCancel = { cancelId == job.id },
+                maxBytesThisAttempt = limit,
+                requirePartialResponse = job.maxBytesPerAttempt > 0L,
+                allowLoopbackHttpForDebugTest = allowLoopbackDebugTest,
+                onCallCreated = { call -> setActiveCall(job.id, call) },
+                onProgress = { progress ->
+                    if (progress.total > 0L) {
+                        if (isVideo) {
+                            videoTotal = progress.total
+                            files.saveTrackTotal(job, video = true, videoTotal)
+                        } else {
+                            audioTotal = progress.total
+                            files.saveTrackTotal(job, video = false, audioTotal)
+                        }
+                    }
+                    reportProgress()
+                },
+            )
+        }
+
+        var videoComplete = videoTotal > 0L && videoPart.length() >= videoTotal
+        if (!videoComplete) {
+            val before = videoPart.length()
+            val result = fetchTrack(option.stream, videoPart, isVideo = true, limit = attemptLimit)
+            if (result.total > 0L) {
+                videoTotal = result.total
+                files.saveTrackTotal(job, video = true, videoTotal)
+            }
+            val added = (result.downloaded - before).coerceAtLeast(0L)
+            attemptBytes += added
+            videoComplete = if (videoTotal > 0L) videoPart.length() >= videoTotal
+                else attemptLimit == Long.MAX_VALUE || added < attemptLimit
+            if (!videoComplete) {
+                reportProgress()
+                return TransferOutcome(videoPart.length() + audioPart.length(), combinedTotal(videoTotal, audioTotal), false)
+            }
+        }
+
+        val remaining = if (attemptLimit == Long.MAX_VALUE) Long.MAX_VALUE else (attemptLimit - attemptBytes).coerceAtLeast(0L)
+        if (remaining == 0L && !(audioTotal > 0L && audioPart.length() >= audioTotal)) {
+            reportProgress()
+            return TransferOutcome(videoPart.length() + audioPart.length(), combinedTotal(videoTotal, audioTotal), false)
+        }
+
+        var audioComplete = audioTotal > 0L && audioPart.length() >= audioTotal
+        if (!audioComplete) {
+            val before = audioPart.length()
+            val result = fetchTrack(audioStream, audioPart, isVideo = false, limit = remaining)
+            if (result.total > 0L) {
+                audioTotal = result.total
+                files.saveTrackTotal(job, video = false, audioTotal)
+            }
+            val added = (result.downloaded - before).coerceAtLeast(0L)
+            audioComplete = if (audioTotal > 0L) audioPart.length() >= audioTotal
+                else remaining == Long.MAX_VALUE || added < remaining
+            if (!audioComplete) {
+                reportProgress()
+                return TransferOutcome(videoPart.length() + audioPart.length(), combinedTotal(videoTotal, audioTotal), false)
+            }
+        }
+
+        if (!videoComplete || !audioComplete) {
+            reportProgress()
+            return TransferOutcome(videoPart.length() + audioPart.length(), combinedTotal(videoTotal, audioTotal), false)
+        }
+        if (cancelId == job.id) throw CancellationException("Cancelled by user.")
+        val sourceBytes = videoPart.length() + audioPart.length()
+        Mp4TrackMuxer.merge(videoPart, audioPart, outputPart)
+        files.deleteTrackFiles(job)
+        return TransferOutcome(
+            downloaded = sourceBytes,
+            total = combinedTotal(videoTotal, audioTotal),
+            complete = true,
+        )
+    }
+
+    private fun combinedTotal(videoTotal: Long, audioTotal: Long): Long =
+        if (videoTotal > 0L && audioTotal > 0L) videoTotal + audioTotal else 0L
+
+    private fun partialBytes(job: DownloadJob, part: File, muxing: Boolean): Long =
+        if (muxing) files.videoTrackFile(job).length() + files.audioTrackFile(job).length()
+        else part.takeIf { it.isFile }?.length() ?: 0L
+
+    private fun setActiveCall(jobId: Long, call: Call?) {
+        synchronized(cancelLock) {
+            activeCall = call
+            if (call != null && cancelId == jobId) call.cancel()
         }
     }
 

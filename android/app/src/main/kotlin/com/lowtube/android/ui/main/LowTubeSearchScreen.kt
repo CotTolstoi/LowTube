@@ -611,6 +611,7 @@ internal fun DownloadFormatPickerDialog(
                                 stream.videoHeight,
                                 stream.fps.roundToInt(),
                                 codec.ifBlank { videoCodecFallback },
+                                (option.audioStream?.audioCodec ?: stream.audioCodec).ifBlank { audioCodecFallback },
                                 option.container,
                             )
                         }

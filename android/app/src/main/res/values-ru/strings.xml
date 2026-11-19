@@ -143,7 +143,7 @@
     <string name="mini_player_open">Открыть</string>
     <string name="download_loading_formats">Поиск доступных форматов…</string>
     <string name="download_no_formats">Нет прямых форматов, подходящих под эти параметры. Попробуйте изменить ограничения загрузки.</string>
-    <string name="download_video_format">%1$dp · %2$d FPS · %3$s · %4$s</string>
+    <string name="download_video_format">%1$dp · %2$d FPS · %3$s + %4$s · %5$s</string>
     <string name="download_audio_format">%1$s · %2$s кбит/с · %3$s</string>
     <string name="download_pending">Ожидает загрузки</string>
     <string name="download_running">Загружается</string>
