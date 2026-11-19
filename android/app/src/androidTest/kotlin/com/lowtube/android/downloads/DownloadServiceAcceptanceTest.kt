@@ -295,45 +295,108 @@ class DownloadServiceAcceptanceTest {
     @Test
     fun foregroundJobPausesAtRangeCapAndResumesFromPartialOffset() {
         runBlocking {
-        assumeTrue(
-            "Service acceptance is opt-in; pass -e runDownloadServiceAcceptance true",
-            InstrumentationRegistry.getArguments().getString("runDownloadServiceAcceptance") == "true",
-        )
-        val context = ApplicationProvider.getApplicationContext<Context>()
-        val video = VideoItem("aqz-KE-bpKQ", "Big Buck Bunny", duration = "9:56", url = "https://www.youtube.com/watch?v=aqz-KE-bpKQ")
-        val option = InnerTubeSearchRepository(context).resolveDownloadOptions(video, DownloadStreamPreferences(), audioOnly = false).first()
-        assertTrue(option.stream.isMuxed)
-        assertTrue(Uri.parse(option.stream.uri).getQueryParameter("n").isNullOrBlank())
+            assumeTrue(
+                "Service acceptance is opt-in; pass -e runDownloadServiceAcceptance true",
+                InstrumentationRegistry.getArguments().getString("runDownloadServiceAcceptance") == "true",
+            )
+            val context = ApplicationProvider.getApplicationContext<Context>()
+            val dbName = "lowtube-service-acceptance-${System.currentTimeMillis()}.db"
+            val partial = File(context.cacheDir, "$dbName.part")
+            val server = RangeResumeLoopbackServer(resourceBytes = CHUNK_BYTES * 4, expectedRequests = 2)
+            val store = DownloadJobStore(context, dbName)
+            val video = VideoItem("fixture", "Bounded resume fixture", duration = "—", url = "https://www.youtube.com/watch?v=fixture")
+            val videoJson = JSONObject().put("id", video.id).put("title", video.title).put("url", video.url).toString()
+            val id = store.insert(
+                videoJson,
+                "bounded-resume-test",
+                false,
+                "bounded-fixture.mp4",
+                "video/mp4",
+                "LowTube acceptance test",
+                partial.absolutePath,
+                CHUNK_BYTES,
+            )
+            try {
+                server.start()
+                startService(context, dbName, testStreamUrl = server.url)
+                val first = waitForTerminalAttempt(store, id)
+                assertEquals("First bounded request did not pause: ${first.reason}", DownloadStatus.PAUSED, first.status)
+                assertEquals(CHUNK_BYTES, first.downloadedBytes)
+                assertEquals(CHUNK_BYTES, partial.length())
+                waitForServiceStopped(context)
 
-        val dbName = "lowtube-service-acceptance-${System.currentTimeMillis()}.db"
-        val partial = File(context.cacheDir, "$dbName.part")
-        val store = DownloadJobStore(context, dbName)
-        val videoJson = JSONObject().put("id", video.id).put("title", video.title).put("url", video.url).toString()
-        val id = store.insert(videoJson, option.key, false, "bounded-${video.id}.mp4", option.stream.mimeType, option.stream.userAgent, partial.absolutePath, CHUNK_BYTES)
-        try {
-            startService(context, dbName)
-            val first = waitForTerminalAttempt(store, id)
-            assertEquals("First bounded request did not pause: ${first.reason}", DownloadStatus.PAUSED, first.status)
-            assertEquals(CHUNK_BYTES, first.downloadedBytes)
-            assertEquals(CHUNK_BYTES, partial.length())
-            waitForServiceStopped(context)
-
-            store.update(id, DownloadStatus.PENDING)
-            startService(context, dbName)
-            val resumed = waitForTerminalAttempt(store, id)
-            assertEquals("Resumed bounded request did not pause: ${resumed.reason}", DownloadStatus.PAUSED, resumed.status)
-            assertEquals(CHUNK_BYTES * 2, resumed.downloadedBytes)
-            assertEquals(CHUNK_BYTES * 2, partial.length())
-            assertTrue("The service test must leave only a bounded partial file", partial.length() <= CHUNK_BYTES * 2)
-            Log.i(TAG, "serviceResumeStatus=${resumed.status}, bytes=${resumed.downloadedBytes}, total=${resumed.totalBytes}")
-        } finally {
-            context.stopService(Intent(context, DownloadService::class.java))
-            partial.delete()
-            store.remove(id)
-            store.close()
-            context.deleteDatabase(dbName)
-            (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(NOTIFICATION_ID)
+                store.update(id, DownloadStatus.PENDING)
+                startService(context, dbName, testStreamUrl = server.url)
+                val resumed = waitForTerminalAttempt(store, id)
+                assertEquals("Resumed bounded request did not pause: ${resumed.reason}", DownloadStatus.PAUSED, resumed.status)
+                assertEquals(CHUNK_BYTES * 2, resumed.downloadedBytes)
+                assertEquals(CHUNK_BYTES * 2, partial.length())
+                assertEquals(
+                    listOf("bytes=0-${CHUNK_BYTES - 1}", "bytes=${CHUNK_BYTES}-${CHUNK_BYTES * 2 - 1}"),
+                    synchronized(server.rangeHeaders) { server.rangeHeaders.toList() },
+                )
+                assertTrue("The service test must leave only a bounded partial file", partial.length() <= CHUNK_BYTES * 2)
+                assertTrue("Both bounded requests did not close", server.awaitClientClosed())
+                waitForServiceStopped(context)
+                Log.i(TAG, "serviceResumeStatus=${resumed.status}, bytes=${resumed.downloadedBytes}, total=${resumed.totalBytes}")
+            } finally {
+                context.stopService(Intent(context, DownloadService::class.java))
+                server.close()
+                partial.delete()
+                store.remove(id)
+                store.close()
+                context.deleteDatabase(dbName)
+                (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(NOTIFICATION_ID)
+            }
         }
+    }
+
+    @Test
+    fun pausedTransferRetainsLocalizedTerminalNotification() {
+        runBlocking {
+            assumeTrue(
+                "Paused notification acceptance is opt-in; pass -e runDownloadPausedNotificationAcceptance true",
+                InstrumentationRegistry.getArguments().getString("runDownloadPausedNotificationAcceptance") == "true",
+            )
+            val context = ApplicationProvider.getApplicationContext<Context>()
+            val dbName = "lowtube-paused-notification-${System.currentTimeMillis()}.db"
+            val partial = File(context.cacheDir, "$dbName.part")
+            val server = RangeResumeLoopbackServer(resourceBytes = 128L)
+            val store = DownloadJobStore(context, dbName)
+            val video = VideoItem("fixture", "Pause notification fixture", duration = "—", url = "https://www.youtube.com/watch?v=fixture")
+            val videoJson = JSONObject().put("id", video.id).put("title", video.title).put("url", video.url).toString()
+            val chunkBytes = 16L
+            val id = store.insert(
+                videoJson,
+                "pause-notification-test",
+                false,
+                "pause-fixture.mp4",
+                "video/mp4",
+                "LowTube acceptance test",
+                partial.absolutePath,
+                maxBytesPerAttempt = chunkBytes,
+            )
+            try {
+                server.start()
+                startService(context, dbName, testStreamUrl = server.url)
+                val paused = waitForTerminalAttempt(store, id)
+                assertEquals(DownloadStatus.PAUSED, paused.status)
+                assertEquals(chunkBytes, paused.downloadedBytes)
+                assertEquals(chunkBytes, partial.length())
+                assertTrue("Pause fixture did not receive the bounded Range request", server.awaitClientClosed())
+                waitForServiceStopped(context)
+                assertTerminalNotificationText(context, R.string.download_paused_resume)
+            } finally {
+                context.stopService(Intent(context, DownloadService::class.java))
+                server.close()
+                partial.delete()
+                store.remove(id)
+                store.close()
+                context.deleteDatabase(dbName)
+                val notifications = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                notifications.cancel(NOTIFICATION_ID)
+                notifications.cancel(DownloadService.TERMINAL_NOTIFICATION_ID)
+            }
         }
     }
 
@@ -619,6 +682,7 @@ class DownloadServiceAcceptanceTest {
                 assertTrue("Published file contents differ from the bounded source", expectedBytes.contentEquals(publishedBytes))
                 assertTrue("Publication server did not observe the client close", server.awaitClientClosed())
                 waitForServiceStopped(context)
+                assertTerminalNotificationText(context, R.string.download_complete)
                 DownloadFileStore(context).deletePublished(resultUri)
                 val stillAvailable = runCatching {
                     if (resultUri.scheme == "file") File(resultUri.path.orEmpty()).exists()
@@ -636,6 +700,43 @@ class DownloadServiceAcceptanceTest {
                 store.close()
                 context.deleteDatabase(dbName)
                 (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(NOTIFICATION_ID)
+            }
+        }
+    }
+
+    @Test
+    fun failedTransferRetainsLocalizedTerminalNotification() {
+        runBlocking {
+            assumeTrue(
+                "Failure notification acceptance is opt-in; pass -e runDownloadFailureNotificationAcceptance true",
+                InstrumentationRegistry.getArguments().getString("runDownloadFailureNotificationAcceptance") == "true",
+            )
+            val context = ApplicationProvider.getApplicationContext<Context>()
+            val dbName = "lowtube-failure-notification-${System.currentTimeMillis()}.db"
+            val partial = File(context.cacheDir, "$dbName.part")
+            val server = FailingResponseServer()
+            val store = DownloadJobStore(context, dbName)
+            val video = VideoItem("fixture", "Failure notification fixture", duration = "—", url = "https://www.youtube.com/watch?v=fixture")
+            val videoJson = JSONObject().put("id", video.id).put("title", video.title).put("url", video.url).toString()
+            val id = store.insert(videoJson, "failure-notification-test", false, "failure-fixture.mp4", "video/mp4", "LowTube acceptance test", partial.absolutePath)
+            try {
+                server.start()
+                startService(context, dbName, testStreamUrl = server.url)
+                val failed = waitForTerminalAttempt(store, id)
+                assertEquals("HTTP failure did not mark the bounded job failed", DownloadStatus.FAILED, failed.status)
+                assertTrue("Failure fixture did not receive the request", server.awaitRequest())
+                waitForServiceStopped(context)
+                assertTerminalNotificationText(context, R.string.download_failed)
+            } finally {
+                context.stopService(Intent(context, DownloadService::class.java))
+                server.close()
+                partial.delete()
+                store.remove(id)
+                store.close()
+                context.deleteDatabase(dbName)
+                val notifications = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                notifications.cancel(NOTIFICATION_ID)
+                notifications.cancel(DownloadService.TERMINAL_NOTIFICATION_ID)
             }
         }
     }
@@ -970,5 +1071,40 @@ class DownloadServiceAcceptanceTest {
         const val POLL_MS = 100L
         const val NOTIFICATION_ID = 4207
         const val TAG = "LowTubeDownloadService"
+    }
+
+    private class FailingResponseServer : AutoCloseable {
+        private val server = ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))
+        private val requestReceived = CountDownLatch(1)
+        private var thread: Thread? = null
+        val url: String get() = "http://127.0.0.1:${server.localPort}/failure-test.mp4"
+
+        fun start() {
+            thread = Thread({
+                try {
+                    server.accept().use { socket ->
+                        socket.soTimeout = 10_000
+                        val input = BufferedReader(InputStreamReader(socket.getInputStream()))
+                        while (true) {
+                            val line = input.readLine() ?: break
+                            if (line.isEmpty()) break
+                        }
+                        val output = socket.getOutputStream()
+                        output.write("HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".toByteArray())
+                        output.flush()
+                        requestReceived.countDown()
+                    }
+                } catch (_: Exception) {
+                    requestReceived.countDown()
+                }
+            }, "LowTube-FailedDownloadAcceptanceServer").apply { isDaemon = true; start() }
+        }
+
+        fun awaitRequest(): Boolean = requestReceived.await(5, TimeUnit.SECONDS)
+
+        override fun close() {
+            runCatching { server.close() }
+            thread?.interrupt()
+        }
     }
 }
