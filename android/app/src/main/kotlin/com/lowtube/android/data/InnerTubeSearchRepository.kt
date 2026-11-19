@@ -108,14 +108,55 @@ class InnerTubeSearchRepository(context: Context? = null) {
             operationMutex.withLock {
                 throwIfCoolingDown()
                 configure(language)
+                val source = when {
+                    continuation.isNullOrBlank() -> RECOMMENDATION_HOME_SOURCE
+                    continuation.startsWith(RECOMMENDATION_HOME_CONTINUATION_PREFIX) -> RECOMMENDATION_HOME_SOURCE
+                    continuation.startsWith(RECOMMENDATION_TOPIC_CONTINUATION_PREFIX) -> RECOMMENDATION_TOPIC_SOURCE
+                    else -> RECOMMENDATION_TOPIC_SOURCE
+                }
+                val continuationToken = when {
+                    continuation.isNullOrBlank() -> ""
+                    continuation.startsWith(RECOMMENDATION_HOME_CONTINUATION_PREFIX) -> continuation.removePrefix(RECOMMENDATION_HOME_CONTINUATION_PREFIX)
+                    continuation.startsWith(RECOMMENDATION_TOPIC_CONTINUATION_PREFIX) -> continuation.removePrefix(RECOMMENDATION_TOPIC_CONTINUATION_PREFIX)
+                    else -> continuation
+                }
                 val body = JSONObject().put("context", context(language))
-                if (continuation.isNullOrBlank()) body.put("query", discoveryQuery(topic, discoveryLanguage))
-                else body.put("continuation", continuation)
-                val root = JSONObject(request("/youtubei/v1/search?prettyPrint=false", body.toString(), true))
+                val endpoint: String
+                if (source == RECOMMENDATION_HOME_SOURCE) {
+                    endpoint = "/youtubei/v1/browse?prettyPrint=false"
+                    if (continuationToken.isBlank()) body.put("browseId", YOUTUBE_HOME_BROWSE_ID)
+                    else body.put("continuation", continuationToken)
+                } else {
+                    endpoint = "/youtubei/v1/search?prettyPrint=false"
+                    if (continuationToken.isBlank()) body.put("query", discoveryQuery(topic, discoveryLanguage))
+                    else body.put("continuation", continuationToken)
+                }
+                val root = JSONObject(request(endpoint, body.toString(), true))
                 root.optJSONObject("responseContext")?.optString("visitorData")?.takeIf(String::isNotBlank)?.let { visitorData = it }
-                parseSearchPage(root)
+                val page = parseSearchPage(root)
+                if (source == RECOMMENDATION_HOME_SOURCE && continuationToken.isBlank() && page.items.isEmpty()) {
+                    return@withLock topicRecommendations(language, topic, discoveryLanguage, null)
+                }
+                val prefix = if (source == RECOMMENDATION_HOME_SOURCE) RECOMMENDATION_HOME_CONTINUATION_PREFIX
+                    else RECOMMENDATION_TOPIC_CONTINUATION_PREFIX
+                page.copy(continuation = page.continuation?.let { prefix + it })
             }
         }
+
+    private fun topicRecommendations(
+        language: String,
+        topic: String,
+        discoveryLanguage: String,
+        continuation: String?,
+    ): SearchPage {
+        val body = JSONObject().put("context", context(language))
+        if (continuation.isNullOrBlank()) body.put("query", discoveryQuery(topic, discoveryLanguage))
+        else body.put("continuation", continuation)
+        val root = JSONObject(request("/youtubei/v1/search?prettyPrint=false", body.toString(), true))
+        root.optJSONObject("responseContext")?.optString("visitorData")?.takeIf(String::isNotBlank)?.let { visitorData = it }
+        val page = parseSearchPage(root)
+        return page.copy(continuation = page.continuation?.let { RECOMMENDATION_TOPIC_CONTINUATION_PREFIX + it })
+    }
 
     private fun discoveryQuery(topic: String, discoveryLanguage: String): String {
         val cleanTopic = topic.trim().take(200).ifBlank { "science and technology" }
@@ -1757,6 +1798,11 @@ class InnerTubeSearchRepository(context: Context? = null) {
         private const val MAX_RESPONSE_BYTES = 8 * 1024 * 1024
         private const val MAX_PAGE_ITEMS = 100
         private const val MAX_JSON_DEPTH = 80
+        private const val YOUTUBE_HOME_BROWSE_ID = "FEwhat_to_watch"
+        private const val RECOMMENDATION_HOME_SOURCE = "youtube-home"
+        private const val RECOMMENDATION_TOPIC_SOURCE = "topic-search"
+        private const val RECOMMENDATION_HOME_CONTINUATION_PREFIX = "lowtube:home:"
+        private const val RECOMMENDATION_TOPIC_CONTINUATION_PREFIX = "lowtube:topic:"
         private const val MAX_DIAGNOSTIC_RESPONSE_FIELDS = 8
         private const val MAX_COOLDOWN_SECONDS = 86_400L
         private const val MAX_URL_RECOVERY_ATTEMPTS = 8
