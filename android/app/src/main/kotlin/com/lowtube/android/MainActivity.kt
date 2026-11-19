@@ -414,18 +414,23 @@ class MainActivity : ComponentActivity() {
 
   private fun accountAuthorizationError(failure: Throwable): String {
     val apiFailure = failure as? ApiException
-    return if (apiFailure?.statusCode == CommonStatusCodes.DEVELOPER_ERROR) {
-      getString(R.string.account_oauth_not_configured)
-    } else {
-      getString(R.string.account_sign_in_failed)
+    return when (apiFailure?.statusCode) {
+      CommonStatusCodes.DEVELOPER_ERROR -> getString(R.string.account_oauth_not_configured)
+      CommonStatusCodes.CANCELED -> googleAuthorizationCancelledMessage(failure)
+      else -> getString(R.string.account_sign_in_failed)
     }
   }
 
   private fun googleAuthorizationCancelledMessage(failure: Throwable?): String {
     val details = GoogleAuthorizationDiagnostics.collect(this)
     val result = (failure as? ApiException)?.let { "ApiException ${it.statusCode}" } ?: "RESULT_CANCELED"
+    val message = if (details.provider.equals("microG", ignoreCase = true)) {
+      R.string.account_authorization_cancelled_microg_diagnostic
+    } else {
+      R.string.account_authorization_cancelled_diagnostic
+    }
     return getString(
-      R.string.account_authorization_cancelled_diagnostic,
+      message,
       result,
       details.provider,
       details.providerVersion.ifBlank { "unknown" },
