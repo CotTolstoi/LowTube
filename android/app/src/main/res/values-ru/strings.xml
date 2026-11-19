@@ -231,6 +231,9 @@
     <string name="playback_sign_in_required">Войдите в YouTube, чтобы посмотреть это видео.</string>
     <string name="resolving_stream">Поиск доступного потока…</string>
     <string name="play">Воспроизвести</string>
+    <string name="move_video_up_accessibility">Переместить %1$s выше</string>
+    <string name="move_video_down_accessibility">Переместить %1$s ниже</string>
+    <string name="remove_video_from_playlist_accessibility">Убрать %1$s из плейлиста</string>
     <string name="playback">Воспроизведение</string>
     <string name="resume_from_last_position">Возобновлять с последней позиции</string>
     <string name="auto_recover_playback">Автоматически восстанавливать прерванное воспроизведение (до 2 попыток)</string>

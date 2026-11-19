@@ -231,6 +231,9 @@
     <string name="playback_sign_in_required">Увійдіть у YouTube, щоб переглянути це відео.</string>
     <string name="resolving_stream">Пошук доступного потоку…</string>
     <string name="play">Відтворити</string>
+    <string name="move_video_up_accessibility">Перемістити %1$s вище</string>
+    <string name="move_video_down_accessibility">Перемістити %1$s нижче</string>
+    <string name="remove_video_from_playlist_accessibility">Прибрати %1$s зі списку відтворення</string>
     <string name="playback">Відтворення</string>
     <string name="resume_from_last_position">Продовжувати з останньої позиції</string>
     <string name="auto_recover_playback">Автоматично відновлювати перерване відтворення (до 2 спроб)</string>

@@ -6,9 +6,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.assertHasClickAction
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasContentDescription
 import androidx.test.core.app.ApplicationProvider
 import com.lowtube.android.R
 import com.lowtube.android.data.LocalLibraryRepository
@@ -114,6 +120,53 @@ class LocalPlaylistPlaybackActionTest {
             composeTestRule.waitForIdle()
             assertTrue(repository.playlists().isEmpty())
             composeTestRule.onNodeWithText(resources.getString(R.string.library_empty)).assertExists()
+        } finally {
+            repository.close()
+            context.deleteDatabase(databaseName)
+        }
+    }
+
+    @Test
+    fun reordersAndRemovesPlaylistItemsThroughLibraryUi() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val resources: Resources = context.resources
+        val databaseName = "playlist-items-${System.currentTimeMillis()}.db"
+        val repository = LocalLibraryRepository(context, databaseName)
+        val playlistId = repository.createPlaylist("Playlist item actions")
+        repository.addVideo(playlistId, video("video000001", "First item"))
+        repository.addVideo(playlistId, video("video000002", "Second item"))
+        try {
+            composeTestRule.setContent {
+                MaterialTheme {
+                    LibraryScreen(
+                        repository = repository,
+                        accountEmail = "",
+                        refreshRevision = 0,
+                        onBack = {},
+                        onPlay = {},
+                        onPlayPlaylist = {},
+                        onPickAudio = {},
+                        onPlayLocalAudio = {},
+                        onRemoveLocalAudio = {},
+                        onAddToQueue = {},
+                        onBrowseChannel = {},
+                        onAddChannel = {},
+                    )
+                }
+            }
+
+            composeTestRule.onAllNodesWithText("Playlist item actions").get(0).performClick()
+            val moveDownDescription = resources.getString(R.string.move_video_down_accessibility, "First item")
+            composeTestRule.onNodeWithTag(LIBRARY_LIST_TEST_TAG).performScrollToNode(hasContentDescription(moveDownDescription))
+            composeTestRule.onNodeWithContentDescription(moveDownDescription).assertIsDisplayed().assertHasClickAction().performClick()
+            composeTestRule.waitForIdle()
+            assertEquals(listOf("video000002", "video000001"), repository.videos(playlistId).map { it.id })
+
+            val removeDescription = resources.getString(R.string.remove_video_from_playlist_accessibility, "Second item")
+            composeTestRule.onNodeWithTag(LIBRARY_LIST_TEST_TAG).performScrollToNode(hasContentDescription(removeDescription))
+            composeTestRule.onNodeWithContentDescription(removeDescription).assertIsDisplayed().assertHasClickAction().performClick()
+            composeTestRule.waitForIdle()
+            assertEquals(listOf("video000001"), repository.videos(playlistId).map { it.id })
         } finally {
             repository.close()
             context.deleteDatabase(databaseName)

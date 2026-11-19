@@ -511,6 +511,12 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
         )
     }
 
+    fun removeVideo(playlistId: String, videoId: String): Boolean = writableDatabase.delete(
+        "playlist_items",
+        "row_id=(SELECT row_id FROM playlist_items WHERE playlist_id=? AND video_id=? ORDER BY position, row_id LIMIT 1)",
+        arrayOf(playlistId, videoId),
+    ) > 0
+
     fun localizeWatchLater(displayName: String) {
         writableDatabase.execSQL("UPDATE playlists SET name=? WHERE id=?", arrayOf<Any>(cleanName(displayName), WATCH_LATER_ID))
     }
@@ -751,6 +757,23 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
         } finally {
             db.endTransaction()
         }
+    }
+
+    fun moveVideo(playlistId: String, videoId: String, offset: Int): Boolean {
+        require(offset == -1 || offset == 1)
+        val rows = ArrayList<Pair<Long, String>>()
+        readableDatabase.rawQuery(
+            "SELECT row_id, video_id FROM playlist_items WHERE playlist_id=? ORDER BY position, row_id",
+            arrayOf(playlistId),
+        ).use { cursor ->
+            while (cursor.moveToNext()) rows += cursor.getLong(0) to cursor.getString(1)
+        }
+        val fromIndex = rows.indexOfFirst { it.second == videoId }
+        if (fromIndex !in rows.indices) return false
+        val toIndex = fromIndex + offset
+        if (toIndex !in rows.indices) return false
+        moveVideo(playlistId, fromIndex, toIndex)
+        return true
     }
 
     private fun cleanName(name: String): String = name.trim().take(100).also {

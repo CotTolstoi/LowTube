@@ -41,8 +41,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.lowtube.android.R
@@ -147,7 +150,7 @@ fun LibraryScreen(
         )
     }) { padding ->
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
+            modifier = Modifier.fillMaxSize().padding(padding).testTag(LIBRARY_LIST_TEST_TAG),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -307,9 +310,9 @@ fun LibraryScreen(
                     LibraryVideoRow(
                         video = video,
                         onPlay = { onPlay(video) },
-                        onMoveUp = { if (index > 0) { repository.moveVideo(playlist.id, index, index - 1); refresh++ } },
-                        onMoveDown = { if (index < videos.lastIndex) { repository.moveVideo(playlist.id, index, index + 1); refresh++ } },
-                        onRemove = { repository.removeVideo(playlist.id, index); refresh++ },
+                        onMoveUp = { if (repository.moveVideo(playlist.id, video.id, -1)) refresh++ },
+                        onMoveDown = { if (repository.moveVideo(playlist.id, video.id, 1)) refresh++ },
+                        onRemove = { if (repository.removeVideo(playlist.id, video.id)) refresh++ },
                     )
                 }
             }
@@ -591,6 +594,9 @@ fun LibraryScreen(
 
 @Composable
 private fun LibraryVideoRow(video: VideoItem, onPlay: () -> Unit, onMoveUp: () -> Unit, onMoveDown: () -> Unit, onRemove: () -> Unit) {
+    val moveUpDescription = stringResource(R.string.move_video_up_accessibility, video.title)
+    val moveDownDescription = stringResource(R.string.move_video_down_accessibility, video.title)
+    val removeDescription = stringResource(R.string.remove_video_from_playlist_accessibility, video.title)
     Card(Modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
             Column(Modifier.weight(1f)) {
@@ -599,9 +605,9 @@ private fun LibraryVideoRow(video: VideoItem, onPlay: () -> Unit, onMoveUp: () -
             }
             Column {
                 TextButton(onClick = onPlay) { Text(stringResource(R.string.play)) }
-                TextButton(onClick = onMoveUp) { Text("↑") }
-                TextButton(onClick = onMoveDown) { Text("↓") }
-                TextButton(onClick = onRemove) { Text(stringResource(R.string.remove)) }
+                TextButton(onClick = onMoveUp, modifier = Modifier.semantics { contentDescription = moveUpDescription }) { Text("↑") }
+                TextButton(onClick = onMoveDown, modifier = Modifier.semantics { contentDescription = moveDownDescription }) { Text("↓") }
+                TextButton(onClick = onRemove, modifier = Modifier.semantics { contentDescription = removeDescription }) { Text(stringResource(R.string.remove)) }
             }
         }
     }
@@ -672,3 +678,5 @@ private fun YouTubePlaylistVideoRow(video: VideoItem, onPlay: () -> Unit, onQueu
         }
     }
 }
+
+internal const val LIBRARY_LIST_TEST_TAG = "lowtube-library-list"
