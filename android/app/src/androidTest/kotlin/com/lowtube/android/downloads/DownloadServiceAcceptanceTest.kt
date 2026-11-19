@@ -49,6 +49,69 @@ import java.util.concurrent.TimeUnit
 @RunWith(AndroidJUnit4::class)
 class DownloadServiceAcceptanceTest {
     @Test
+    fun audioJobDecodesAndPublishesMp3ThroughForegroundQueue() {
+        runBlocking {
+            assumeTrue(
+                "MP3 service acceptance is opt-in; pass -e runMp3DownloadAcceptance true",
+                InstrumentationRegistry.getArguments().getString("runMp3DownloadAcceptance") == "true",
+            )
+            val context = ApplicationProvider.getApplicationContext<Context>()
+            val storagePermissionAvailable = Build.VERSION.SDK_INT > 28 ||
+                (context.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
+                    context.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
+            assumeTrue("Android 6 publication acceptance requires already-granted storage permission", storagePermissionAvailable)
+
+            val audioBytes = InstrumentationRegistry.getInstrumentation().context.assets
+                .open("com/lowtube/android/downloads/mux_audio_track.mp4").use { it.readBytes() }
+            val dbName = "lowtube-mp3-download-${System.currentTimeMillis()}.db"
+            val partial = File(context.cacheDir, "$dbName.part")
+            val publishedCopy = File(context.cacheDir, "$dbName-published.mp3")
+            val server = FixedAudioHttpServer(audioBytes)
+            val store = DownloadJobStore(context, dbName)
+            val video = VideoItem("fixture", "AAC to MP3 fixture", duration = "1", url = "https://www.youtube.com/watch?v=fixture")
+            val videoJson = JSONObject().put("id", video.id).put("title", video.title).put("url", video.url).toString()
+            var id = 0L
+            var publishedUri: Uri? = null
+            try {
+                id = store.insert(
+                    videoJson,
+                    "aac-to-mp3-acceptance",
+                    true,
+                    "lowtube-mp3-${System.currentTimeMillis()}.mp3",
+                    "audio/mpeg",
+                    "LowTube MP3 service acceptance",
+                    partial.absolutePath,
+                    transcodeMp3 = true,
+                    targetAudioBitrateKbps = 192,
+                )
+                server.start()
+                startService(context, dbName, testStreamUrl = server.url)
+                val result = waitForTerminalAttempt(store, id)
+                assertEquals("Foreground MP3 job failed: ${result.reason}", DownloadStatus.SUCCESSFUL, result.status)
+                assertTrue("Completed MP3 job lost its transcode setting", result.transcodeMp3)
+                publishedUri = Uri.parse(result.localUri)
+                context.contentResolver.openInputStream(publishedUri!!)?.use { input -> publishedCopy.outputStream().use(input::copyTo) }
+                    ?: error("Published MP3 could not be opened.")
+                val header = publishedCopy.inputStream().use { byteArrayOf(it.read().toByte(), it.read().toByte()) }
+                assertTrue("Published MP3 should contain encoded audio", publishedCopy.length() > 1_000L)
+                assertTrue("Published file should begin with an MPEG audio frame", header[0].toInt() and 0xff == 0xff && header[1].toInt() and 0xe0 == 0xe0)
+                waitForServiceStopped(context)
+            } finally {
+                context.stopService(Intent(context, DownloadService::class.java))
+                server.close()
+                partial.delete()
+                publishedCopy.delete()
+                publishedUri?.let { runCatching { DownloadFileStore(context).deletePublished(it) } }
+                if (id > 0L) store.remove(id)
+                store.close()
+                context.deleteDatabase(dbName)
+                (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(NOTIFICATION_ID)
+                (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(DownloadService.TERMINAL_NOTIFICATION_ID)
+            }
+        }
+    }
+
+    @Test
     fun boundedTransportAcceptsResolvedNQueryParameter() {
         runBlocking {
             val context = ApplicationProvider.getApplicationContext<Context>()
@@ -1207,6 +1270,30 @@ class DownloadServiceAcceptanceTest {
         companion object {
             const val TOTAL_BYTES = 128L
         }
+    }
+
+    private class FixedAudioHttpServer(private val bytes: ByteArray) : AutoCloseable {
+        private val server = ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))
+        private var thread: Thread? = null
+        val url: String get() = "http://127.0.0.1:${server.localPort}/audio-fixture.mp4"
+
+        fun start() {
+            thread = Thread({
+                try {
+                    server.accept().use { socket ->
+                        socket.soTimeout = 10_000
+                        val input = BufferedReader(InputStreamReader(socket.getInputStream()))
+                        while (true) { val line = input.readLine() ?: break; if (line.isEmpty()) break }
+                        val output = socket.getOutputStream()
+                        output.write("HTTP/1.1 200 OK\r\nContent-Type: audio/mp4\r\nContent-Length: ${bytes.size}\r\nConnection: close\r\n\r\n".toByteArray())
+                        output.write(bytes)
+                        output.flush()
+                    }
+                } catch (_: Exception) { }
+            }, "LowTube-Mp3AcceptanceServer").apply { isDaemon = true; start() }
+        }
+
+        override fun close() { runCatching { server.close() }; thread?.interrupt() }
     }
 
     private companion object {
