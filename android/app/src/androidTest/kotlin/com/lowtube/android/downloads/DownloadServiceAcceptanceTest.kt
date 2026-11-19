@@ -17,6 +17,7 @@ import androidx.core.content.ContextCompat
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.lowtube.android.AppLocale
 import com.lowtube.android.R
 import com.lowtube.android.data.DownloadJobStore
 import com.lowtube.android.data.DownloadStreamPreferences
@@ -359,43 +360,52 @@ class DownloadServiceAcceptanceTest {
                 InstrumentationRegistry.getArguments().getString("runDownloadPausedNotificationAcceptance") == "true",
             )
             val context = ApplicationProvider.getApplicationContext<Context>()
-            val dbName = "lowtube-paused-notification-${System.currentTimeMillis()}.db"
-            val partial = File(context.cacheDir, "$dbName.part")
-            val server = RangeResumeLoopbackServer(resourceBytes = 128L)
-            val store = DownloadJobStore(context, dbName)
-            val video = VideoItem("fixture", "Pause notification fixture", duration = "—", url = "https://www.youtube.com/watch?v=fixture")
-            val videoJson = JSONObject().put("id", video.id).put("title", video.title).put("url", video.url).toString()
-            val chunkBytes = 16L
-            val id = store.insert(
-                videoJson,
-                "pause-notification-test",
-                false,
-                "pause-fixture.mp4",
-                "video/mp4",
-                "LowTube acceptance test",
-                partial.absolutePath,
-                maxBytesPerAttempt = chunkBytes,
-            )
+            val originalLanguage = AppLocale.language(context)
             try {
-                server.start()
-                startService(context, dbName, testStreamUrl = server.url)
-                val paused = waitForTerminalAttempt(store, id)
-                assertEquals(DownloadStatus.PAUSED, paused.status)
-                assertEquals(chunkBytes, paused.downloadedBytes)
-                assertEquals(chunkBytes, partial.length())
-                assertTrue("Pause fixture did not receive the bounded Range request", server.awaitClientClosed())
-                waitForServiceStopped(context)
-                assertTerminalNotificationText(context, R.string.download_paused_resume)
+                for (language in listOf("en", "uk", "ru")) {
+                    AppLocale.setLanguage(context, language)
+                    val dbName = "lowtube-paused-notification-$language-${System.currentTimeMillis()}.db"
+                    val partial = File(context.cacheDir, "$dbName.part")
+                    val server = RangeResumeLoopbackServer(resourceBytes = 128L)
+                    val store = DownloadJobStore(context, dbName)
+                    val video = VideoItem("fixture", "Pause notification fixture", duration = "—", url = "https://www.youtube.com/watch?v=fixture")
+                    val videoJson = JSONObject().put("id", video.id).put("title", video.title).put("url", video.url).toString()
+                    val chunkBytes = 16L
+                    val id = store.insert(
+                        videoJson,
+                        "pause-notification-test",
+                        false,
+                        "pause-fixture.mp4",
+                        "video/mp4",
+                        "LowTube acceptance test",
+                        partial.absolutePath,
+                        maxBytesPerAttempt = chunkBytes,
+                    )
+                    try {
+                        server.start()
+                        startService(context, dbName, testStreamUrl = server.url)
+                        val paused = waitForTerminalAttempt(store, id)
+                        assertEquals("Pause status failed for $language", DownloadStatus.PAUSED, paused.status)
+                        assertEquals(chunkBytes, paused.downloadedBytes)
+                        assertEquals(chunkBytes, partial.length())
+                        assertTrue("Pause fixture did not receive the bounded Range request", server.awaitClientClosed())
+                        waitForServiceStopped(context)
+                        assertTerminalNotificationText(context, R.string.download_paused_resume)
+                    } finally {
+                        context.stopService(Intent(context, DownloadService::class.java))
+                        server.close()
+                        partial.delete()
+                        store.remove(id)
+                        store.close()
+                        context.deleteDatabase(dbName)
+                        val notifications = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                        notifications.cancel(NOTIFICATION_ID)
+                        notifications.cancel(DownloadService.TERMINAL_NOTIFICATION_ID)
+                    }
+                }
             } finally {
-                context.stopService(Intent(context, DownloadService::class.java))
-                server.close()
-                partial.delete()
-                store.remove(id)
-                store.close()
-                context.deleteDatabase(dbName)
-                val notifications = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-                notifications.cancel(NOTIFICATION_ID)
-                notifications.cancel(DownloadService.TERMINAL_NOTIFICATION_ID)
+                AppLocale.setLanguage(context, originalLanguage)
+                AppLocale.wrap(context)
             }
         }
     }
@@ -828,20 +838,21 @@ class DownloadServiceAcceptanceTest {
             return null
         }
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val localized = AppLocale.wrap(context)
         val notification = notificationManager.activeNotifications
             .firstOrNull { it.id == NOTIFICATION_ID }
             ?.notification
         assertTrue("Foreground download notification was not posted", notification != null)
         assertEquals(
-            context.getString(R.string.downloads),
+            localized.getString(R.string.downloads),
             notification?.extras?.getCharSequence(Notification.EXTRA_TITLE)?.toString(),
         )
         if (Build.VERSION.SDK_INT >= 26) {
             val channel = notificationManager.getNotificationChannel("lowtube_downloads")
-            assertEquals(context.getString(R.string.downloads), channel?.name?.toString())
+            assertEquals(localized.getString(R.string.downloads), channel?.name?.toString())
         }
         val cancelAction = notification?.actions.orEmpty().firstOrNull {
-            it.title?.toString() == context.getString(R.string.cancel_download)
+            it.title?.toString() == localized.getString(R.string.cancel_download)
         }
         assertTrue("Foreground download notification is missing the Cancel action", cancelAction?.actionIntent != null)
         return cancelAction?.actionIntent
@@ -854,6 +865,7 @@ class DownloadServiceAcceptanceTest {
             Log.i(TAG, "terminalNotificationCheck=skipped; POST_NOTIFICATIONS is not granted")
             return
         }
+        val localized = AppLocale.wrap(context)
         val activeNotifications = (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
             .activeNotifications
         val notification = activeNotifications
@@ -865,12 +877,12 @@ class DownloadServiceAcceptanceTest {
             activeNotifications.any { it.id == NOTIFICATION_ID },
         )
         assertEquals(
-            context.getString(expectedText),
+            localized.getString(expectedText),
             notification?.extras?.getCharSequence(Notification.EXTRA_TEXT)?.toString(),
         )
         assertFalse(
             "Terminal download notification still has a Cancel action",
-            notification?.actions.orEmpty().any { it.title?.toString() == context.getString(R.string.cancel_download) },
+            notification?.actions.orEmpty().any { it.title?.toString() == localized.getString(R.string.cancel_download) },
         )
     }
 
