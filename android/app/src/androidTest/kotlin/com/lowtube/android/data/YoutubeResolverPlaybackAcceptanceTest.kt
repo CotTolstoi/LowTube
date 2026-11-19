@@ -28,6 +28,8 @@ import com.lowtube.android.ui.playback.PlaybackResumePolicy
 import com.lowtube.android.ui.playback.PlaybackSeekPolicy
 import com.lowtube.android.ui.playback.externalSubtitleConfiguration
 import com.lowtube.android.ui.playback.replaceExternalSubtitle
+import com.lowtube.android.ui.playback.trackOptions
+import com.lowtube.android.ui.playback.updateTrackOverride
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -203,6 +205,48 @@ class YoutubeResolverPlaybackAcceptanceTest {
                 assertNull(failure)
                 assertTrue("External subtitles were not exposed as a text track", player.currentTracks.groups.any {
                     it.type == C.TRACK_TYPE_TEXT && (0 until it.length).any(it::isTrackSupported)
+                })
+                val subtitleOptions = trackOptions(player.currentTracks, C.TRACK_TYPE_TEXT, player, "Subtitle")
+                assertTrue("The playback controls did not expose a supported subtitle choice", subtitleOptions.isNotEmpty())
+                updateTrackOverride(player, C.TRACK_TYPE_TEXT, null, disable = true)
+                withTimeout(10_000) {
+                    while (player.currentTracks.groups.any { group ->
+                            group.type == C.TRACK_TYPE_TEXT && (0 until group.length).any(group::isTrackSelected)
+                        }
+                    ) delay(50)
+                }
+                assertTrue("Subtitle Off left a text track selected", player.currentTracks.groups.none { group ->
+                    group.type == C.TRACK_TYPE_TEXT && (0 until group.length).any(group::isTrackSelected)
+                })
+                updateTrackOverride(player, C.TRACK_TYPE_TEXT, subtitleOptions.first())
+                withTimeout(10_000) {
+                    while (player.currentTracks.groups.none { group ->
+                            group.type == C.TRACK_TYPE_TEXT && (0 until group.length).any(group::isTrackSelected)
+                        }
+                    ) delay(50)
+                }
+                assertTrue("The selected subtitle track was not enabled", player.currentTracks.groups.any { group ->
+                    group.type == C.TRACK_TYPE_TEXT && (0 until group.length).any(group::isTrackSelected)
+                })
+                updateTrackOverride(player, C.TRACK_TYPE_TEXT, null, disable = true)
+                withTimeout(10_000) {
+                    while (player.currentTracks.groups.any { group ->
+                            group.type == C.TRACK_TYPE_TEXT && (0 until group.length).any(group::isTrackSelected)
+                        }
+                    ) delay(50)
+                }
+                assertTrue("Subtitle Off left a text track selected", player.currentTracks.groups.none { group ->
+                    group.type == C.TRACK_TYPE_TEXT && (0 until group.length).any(group::isTrackSelected)
+                })
+                updateTrackOverride(player, C.TRACK_TYPE_TEXT, null)
+                withTimeout(10_000) {
+                    while (player.currentTracks.groups.none { group ->
+                            group.type == C.TRACK_TYPE_TEXT && (0 until group.length).any(group::isTrackSelected)
+                        }
+                    ) delay(50)
+                }
+                assertTrue("Subtitle Auto did not restore an available text track", player.currentTracks.groups.any { group ->
+                    group.type == C.TRACK_TYPE_TEXT && (0 until group.length).any(group::isTrackSelected)
                 })
                 assertTrue("Adding subtitles lost the current media position", player.currentPosition >= beforeAttach - 1_000)
                 withTimeout(10_000) {

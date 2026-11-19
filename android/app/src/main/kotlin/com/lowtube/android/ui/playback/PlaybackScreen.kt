@@ -1060,7 +1060,7 @@ internal fun ChannelFollowControl(isFollowing: Boolean, onClick: () -> Unit) {
     }
 }
 
-private data class TrackOption(
+internal data class TrackOption(
     val group: androidx.media3.common.TrackGroup,
     val index: Int,
     val label: String,
@@ -1242,7 +1242,7 @@ private fun applyPlaybackStreamPreferences(
     player.trackSelectionParameters = trackParameters.build()
 }
 
-private fun trackOptions(tracks: Tracks, type: Int, player: Player, genericTrackLabel: String): List<TrackOption> =
+internal fun trackOptions(tracks: Tracks, type: Int, player: Player, genericTrackLabel: String): List<TrackOption> =
     tracks.groups.flatMap { group ->
         if (group.type != type) return@flatMap emptyList()
         (0 until group.length).mapNotNull { index ->
@@ -1257,7 +1257,7 @@ private fun trackOptions(tracks: Tracks, type: Int, player: Player, genericTrack
         }
     }.distinctBy { it.group to it.index }
 
-private fun updateTrackOverride(player: Player?, type: Int, option: TrackOption?, disable: Boolean = false) {
+internal fun updateTrackOverride(player: Player?, type: Int, option: TrackOption?, disable: Boolean = false) {
     player ?: return
     val builder = player.trackSelectionParameters.buildUpon().clearOverridesOfType(type)
     if (option != null) builder.setOverrideForType(TrackSelectionOverride(option.group, listOf(option.index)))
