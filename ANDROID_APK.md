@@ -8,8 +8,8 @@ This branch publishes the latest available Android development build.
 - Build type: debug; signed with the Android debug certificate (v1/v2 verified)
 - Build tools: AGP 9.2.0, Gradle 9.4.1; Kotlin metadata rewrite warning resolved
 - Updated: 2026-11-19
-- Source revision: `ea333f53dab1438c07012302c70d00a82441b39e`
-- SHA-256: `1C3C083A4F64816AB66F10023E23B2D6C279A39F16FC73898613A2D692A4BD04`
+- Source revision: `433323b`
+- SHA-256: `EEC0BF334F05DCBBE1539CB0F3EEAC3A9923F11C8D4FFC78CD2C424481A193A2`
 - Resolver: bounded direct-format resolution supports verified Android/WEB/iOS/MWEB fallback and the verified MWEB signature-helper path; audio-only downloads retain the Android VR fallback. The VR fallback is not used for video playback or video downloads.
 - Account: Profile uses the system Google account picker, Google AuthorizationClient and a bounded OpenID UserInfo request. YouTube subscription changes use subscriptions.insert/delete and request the `youtube` account-management scope only when the signed-in user taps Subscribe/Unsubscribe; access tokens are not persisted. Runtime OAuth acceptance still requires the owner-registered Android OAuth client, enabled YouTube Data API, and user consent.
 - Account profile: the OpenID picture URL is accepted only from HTTPS `lh3.googleusercontent.com` or `lh4.googleusercontent.com`, bounded to 2,048 characters, rendered with an initial fallback and removed from local preferences on sign-out. The build was installed/launched, but real account/photo rendering still awaits the owner OAuth client and consent.
@@ -20,6 +20,7 @@ This branch publishes the latest available Android development build.
 - Downloads UI: incomplete jobs retain percentage and byte progress while paused, failed or cancelled; small files show B/KiB. Paused jobs offer Retry and a correctly labeled Remove action. Empty state and Back action are covered. The cached subscriptions list now renders all stored items (up to the repository bound of 3,000), without the former UI cap of 30. Separate AVC/AAC MP4 tracks can now be selected and are muxed by Android without transcoding.
 - Page size: Settings supports a persistent visible result page size from 1 to 250 (default 25); the value is included in the allowlisted PC settings JSON transfer. Search and For You reveal loaded results in this many-item increment. YouTube still controls server continuation page sizes; live scrolling through multiple continuation pages remains open for acceptance.
 - For You filter: the selected All/Videos/Shorts/Live filter is stored locally and restored across app/process restarts; unknown stored values fall back to All. It is a local presentation preference and does not change network queries or account data. Build/install/launch succeeded; explicit filter persistence UI acceptance remains open.
+- Playback session: the last playable YouTube video and queue-row ID are stored locally with bounded canonical metadata; cold launch restores the mini-player without auto-starting playback. Resume time continues to come from local watch history. Signed stream URLs and account credentials are not stored. Build/install/launch succeeded; process-death restoration acceptance remains open.
 - Localization: the discovery language fallback now resolves through the EN/UK/RU catalogs; the wider visible-string audit is still in progress.
 - Navigation: the four primary destinations use tintable Android vector icons for Search, For you, Subscriptions and Profile; no extra icon library was added.
 - Missing thumbnails: if a YouTube video/Shorts/live renderer omits its thumbnail, the UI builds the standard `i.ytimg.com` URL only from a validated 11-character video ID. Playlist and malformed IDs are excluded.
