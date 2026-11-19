@@ -284,3 +284,5 @@
 19.11.2026 01:43 UTC, Redmi Note 8 / Android13 API33 після встановлення APK із download resolver fix: офіційний 5 s sampler, Home idle, MainActivity foreground — CPU 0% одного ядра, PSS 120,5 MiB, RSS 207,2 MiB, peak RSS 231,7 MiB, RAM 3 713 MiB / доступно 1 436 MiB. Відео й downloads не запускалися; короткий idle sample, не benchmark.
 
 19.11.2026 01:49 UTC, Android6/API23 x86_64 AVD, production Android/WEB client comparison for dQw4w9WgXcQ: three player requests, resolver CPU 2 134 ms / wall 3 619 ms, AndroidJUnitRunner PSS 27 733→47 556 KiB. No Media3, CDN Range or playback; short opt-in metadata/resolver diagnostic, not benchmark.
+
+19.11.2026 03:52 UTC, Redmi Note 8 / Android13 API33, resolver Range acceptance: video itag 18 (360p, video/mp4) and audio itag 258 (audio/mp4) отримали HTTP 206 і рівно 65 536 bytes кожен. Test CPU 1 649 ms / wall 2 719 ms; PSS 131 369→160 040 KiB, RSS 192 932→226 624 KiB. Повний файл не завантажувався, Media3 не запускався. Після повторного встановлення APK та повернення MainActivity: sampler 5 s — CPU 0%, PSS 123,4 MiB, RSS 208 MiB, peak RSS 232,1 MiB, RAM 3 713 MiB / доступно 1 422 MiB; idle sample, не benchmark.
