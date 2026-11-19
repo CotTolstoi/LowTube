@@ -6,9 +6,11 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -29,6 +31,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -41,6 +44,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
@@ -113,7 +118,7 @@ fun LibraryScreen(
     var feedJob by remember { mutableStateOf<Job?>(null) }
     var feedRefreshResult by remember { mutableStateOf<SubscriptionFeedRefresh?>(null) }
     var feedRefreshFailed by remember { mutableStateOf(false) }
-    var selectedId by remember { mutableStateOf<String?>(null) }
+    var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
     val selected = playlists.firstOrNull { it.id == selectedId }
     val videos = remember(refresh, selectedId) { selectedId?.let(repository::videos).orEmpty() }
     var editTarget by remember { mutableStateOf<LocalPlaylist?>(null) }
@@ -150,8 +155,14 @@ fun LibraryScreen(
             actions = { TextButton(onClick = { editTarget = null; editName = ""; error = null; showEditDialog = true }) { Text(stringResource(R.string.new_playlist)) } },
         )
     }) { padding ->
+        BoxWithConstraints(Modifier.fillMaxSize().padding(padding)) {
+        val windowConfiguration = LocalConfiguration.current
+        val density = LocalDensity.current
+        val availableWidthDp = maxWidth.value * density.density / (windowConfiguration.densityDpi / 160f)
+        val useTwoPane = availableWidthDp >= 800f
+        Row(Modifier.fillMaxSize()) {
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding).testTag(LIBRARY_LIST_TEST_TAG),
+            modifier = Modifier.weight(if (useTwoPane) 0.42f else 1f).fillMaxHeight().testTag(LIBRARY_LIST_TEST_TAG),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -183,7 +194,12 @@ fun LibraryScreen(
             if (playlists.isEmpty()) item { Text(stringResource(R.string.library_empty), color = MaterialTheme.colorScheme.onSurfaceVariant) }
             items(playlists, key = { "playlist:${it.id}" }) { playlist ->
                 Card(
-                    modifier = Modifier.fillMaxWidth().clickable { selectedId = playlist.id },
+                    modifier = Modifier.fillMaxWidth().clickable {
+                        selectedId = playlist.id
+                        selectedYouTubePlaylist = null
+                        youtubePlaylistVideos = emptyList()
+                        youtubePlaylistVideosMessage = ""
+                    },
                     colors = androidx.compose.material3.CardDefaults.cardColors(
                         containerColor = if (playlist.id == selectedId) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
                     ),
@@ -230,6 +246,7 @@ fun LibraryScreen(
                         }
                         TextButton(
                             onClick = {
+                                selectedId = null
                                 selectedYouTubePlaylist = playlist
                                 youtubePlaylistVideos = emptyList()
                                 youtubePlaylistVideosMessage = ""
@@ -248,7 +265,7 @@ fun LibraryScreen(
                 }
             }
 
-            selectedYouTubePlaylist?.let { playlist ->
+            if (!useTwoPane) selectedYouTubePlaylist?.let { playlist ->
                 item(key = "youtube-playlist-content:${playlist.id}") {
                     Column(Modifier.fillMaxWidth().padding(top = 12.dp)) {
                         Row(
@@ -287,7 +304,7 @@ fun LibraryScreen(
                 }
             }
 
-            selected?.let { playlist ->
+            if (!useTwoPane) selected?.let { playlist ->
                 item {
                     Column(Modifier.fillMaxWidth().padding(top = 12.dp)) {
                         Text(playlist.name, style = MaterialTheme.typography.titleLarge)
@@ -484,6 +501,32 @@ fun LibraryScreen(
             }
             if (error != null) item { Text(error.orEmpty(), color = MaterialTheme.colorScheme.error) }
         }
+        if (useTwoPane) {
+            VerticalDivider(Modifier.fillMaxHeight())
+            LibrarySelectionPane(
+                playlist = selected,
+                playlistVideos = videos,
+                youtubePlaylist = selectedYouTubePlaylist,
+                youtubePlaylistVideos = youtubePlaylistVideos,
+                youtubePlaylistVideosBusy = youtubePlaylistVideosBusy,
+                youtubePlaylistVideosMessage = youtubePlaylistVideosMessage,
+                onCloseYouTubePlaylist = { selectedYouTubePlaylist = null; youtubePlaylistVideos = emptyList() },
+                onPlayPlaylist = onPlayPlaylist,
+                onAddToQueue = onAddToQueue,
+                onAddVideoUrl = { playlistId ->
+                    addVideoPlaylistId = playlistId
+                    videoUrlInput = ""
+                    videoUrlError = null
+                    showAddVideoUrlDialog = true
+                },
+                onMoveVideo = { playlistId, video, delta -> if (repository.moveVideo(playlistId, video.id, delta)) refresh++ },
+                onRemoveVideo = { playlistId, video -> if (repository.removeVideo(playlistId, video.id)) refresh++ },
+                onPlayVideo = onPlay,
+                modifier = Modifier.weight(0.58f).fillMaxHeight().testTag(LIBRARY_DETAIL_PANE_TEST_TAG),
+            )
+        }
+        }
+        }
     }
 
     if (showEditDialog) {
@@ -499,7 +542,11 @@ fun LibraryScreen(
             confirmButton = {
                 Button(onClick = {
                     try {
-                        if (editTarget == null) selectedId = repository.createPlaylist(editName)
+                        if (editTarget == null) {
+                            selectedId = repository.createPlaylist(editName)
+                            selectedYouTubePlaylist = null
+                            youtubePlaylistVideos = emptyList()
+                        }
                         else repository.renamePlaylist(editTarget!!.id, editName)
                         editTarget = null
                         showEditDialog = false
@@ -611,6 +658,100 @@ fun LibraryScreen(
 }
 
 @Composable
+private fun LibrarySelectionPane(
+    playlist: LocalPlaylist?,
+    playlistVideos: List<VideoItem>,
+    youtubePlaylist: YouTubePlaylist?,
+    youtubePlaylistVideos: List<VideoItem>,
+    youtubePlaylistVideosBusy: Boolean,
+    youtubePlaylistVideosMessage: String,
+    onCloseYouTubePlaylist: () -> Unit,
+    onPlayPlaylist: (List<VideoItem>) -> Unit,
+    onAddToQueue: (List<VideoItem>) -> Unit,
+    onAddVideoUrl: (String) -> Unit,
+    onMoveVideo: (String, VideoItem, Int) -> Unit,
+    onRemoveVideo: (String, VideoItem) -> Unit,
+    onPlayVideo: (VideoItem) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    when {
+        playlist != null -> LazyColumn(
+            modifier = modifier,
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            item {
+                Column(Modifier.fillMaxWidth()) {
+                    Text(playlist.name, style = MaterialTheme.typography.titleLarge)
+                    TextButton(onClick = { onAddVideoUrl(playlist.id) }) { Text(stringResource(R.string.add_video_url)) }
+                    if (playlistVideos.isNotEmpty()) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            TextButton(onClick = { onPlayPlaylist(playlistVideos) }) { Text(stringResource(R.string.play_all)) }
+                            TextButton(onClick = { onAddToQueue(playlistVideos) }) { Text(stringResource(R.string.add_playlist_to_queue)) }
+                        }
+                    }
+                }
+            }
+            if (playlistVideos.isEmpty()) item {
+                Text(stringResource(R.string.playlist_empty), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            items(playlistVideos.indices.toList(), key = { "${playlist.id}:$it:${playlistVideos[it].id}" }) { index ->
+                val video = playlistVideos[index]
+                LibraryVideoRow(
+                    video = video,
+                    onPlay = { onPlayVideo(video) },
+                    onMoveUp = { onMoveVideo(playlist.id, video, -1) },
+                    onMoveDown = { onMoveVideo(playlist.id, video, 1) },
+                    onRemove = { onRemoveVideo(playlist.id, video) },
+                )
+            }
+        }
+
+        youtubePlaylist != null -> LazyColumn(
+            modifier = modifier,
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            item {
+                Column(Modifier.fillMaxWidth()) {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(youtubePlaylist.title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                        TextButton(onClick = onCloseYouTubePlaylist) { Text(stringResource(R.string.close)) }
+                    }
+                    Text(stringResource(R.string.youtube_playlist_video_count, youtubePlaylist.videoCount), style = MaterialTheme.typography.bodySmall)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(onClick = { onPlayPlaylist(youtubePlaylistVideos.filter { it.kind != "unavailable" }) }, enabled = youtubePlaylistVideos.any { it.kind != "unavailable" }) {
+                            Text(stringResource(R.string.play_all))
+                        }
+                        TextButton(onClick = { onAddToQueue(youtubePlaylistVideos.filter { it.kind != "unavailable" }) }, enabled = youtubePlaylistVideos.any { it.kind != "unavailable" }) {
+                            Text(stringResource(R.string.add_playlist_to_queue))
+                        }
+                    }
+                }
+            }
+            if (youtubePlaylistVideosBusy) item { androidx.compose.material3.LinearProgressIndicator(Modifier.fillMaxWidth()) }
+            if (youtubePlaylistVideosMessage.isNotBlank()) item {
+                Text(youtubePlaylistVideosMessage, color = MaterialTheme.colorScheme.error)
+            }
+            if (!youtubePlaylistVideosBusy && youtubePlaylistVideos.isEmpty() && youtubePlaylistVideosMessage.isBlank()) item {
+                Text(stringResource(R.string.youtube_playlist_empty), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            items(youtubePlaylistVideos, key = { "youtube-playlist-video:${youtubePlaylist.id}:${it.id}" }) { video ->
+                YouTubePlaylistVideoRow(video, onPlay = { onPlayVideo(video) }, onQueue = { onAddToQueue(listOf(video)) })
+            }
+        }
+
+        else -> Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(stringResource(R.string.select_library_playlist), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
 private fun LibraryVideoRow(video: VideoItem, onPlay: () -> Unit, onMoveUp: () -> Unit, onMoveDown: () -> Unit, onRemove: () -> Unit) {
     val moveUpDescription = stringResource(R.string.move_video_up_accessibility, video.title)
     val moveDownDescription = stringResource(R.string.move_video_down_accessibility, video.title)
@@ -698,3 +839,4 @@ private fun YouTubePlaylistVideoRow(video: VideoItem, onPlay: () -> Unit, onQueu
 }
 
 internal const val LIBRARY_LIST_TEST_TAG = "lowtube-library-list"
+internal const val LIBRARY_DETAIL_PANE_TEST_TAG = "lowtube-library-detail-pane"

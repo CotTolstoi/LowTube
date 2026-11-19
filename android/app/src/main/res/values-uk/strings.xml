@@ -88,6 +88,7 @@
     <string name="youtube_playlist_empty">У цьому плейлисті немає доступних відео.</string>
     <string name="close">Закрити</string>
     <string name="library_empty">Локальних плейлистів поки немає.</string>
+    <string name="select_library_playlist">Виберіть плейлист, щоб переглянути його вміст.</string>
     <string name="local_audio">Локальне аудіо</string>
     <string name="add_audio_files">Додати аудіо</string>
     <string name="local_audio_empty">Виберіть аудіофайли на пристрої, щоб додати їх сюди.</string>

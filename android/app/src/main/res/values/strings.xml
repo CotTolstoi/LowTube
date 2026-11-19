@@ -88,6 +88,7 @@
     <string name="youtube_playlist_empty">This playlist has no available videos.</string>
     <string name="close">Close</string>
     <string name="library_empty">No local playlists yet.</string>
+    <string name="select_library_playlist">Select a playlist to view its contents.</string>
     <string name="local_audio">Local audio</string>
     <string name="add_audio_files">Add audio</string>
     <string name="local_audio_empty">Choose audio files from your device to add them here.</string>
