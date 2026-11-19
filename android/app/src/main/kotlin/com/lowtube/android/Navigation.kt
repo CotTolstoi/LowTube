@@ -45,6 +45,7 @@ import com.lowtube.android.model.VideoItem
 import com.lowtube.android.model.QueueEntry
 import com.lowtube.android.model.DownloadFormatOption
 import com.lowtube.android.model.LocalAudioTrack
+import com.lowtube.android.model.LocalVideoSource
 import com.lowtube.android.model.YouTubeSubscription
 import com.lowtube.android.model.YouTubePlaylist
 import com.lowtube.android.ui.library.LibraryScreen
@@ -174,6 +175,7 @@ fun MainNavigation(
     var selectedLocalAudio by rememberSaveable(stateSaver = localAudioTrackSaver) {
         mutableStateOf(restoredPlaybackSession?.localAudioTrack)
     }
+    var selectedLocalVideoSource by remember { mutableStateOf(restoredPlaybackSession?.localVideoSource) }
     var selectedQueueRowId by rememberSaveable { mutableStateOf(restoredPlaybackSession?.queueRowId) }
     var playbackRequestId by rememberSaveable { mutableLongStateOf(0L) }
     var advancingQueue by remember { mutableStateOf(false) }
@@ -225,9 +227,9 @@ fun MainNavigation(
     var preloadNext by remember(context) { mutableStateOf(preferences.getBoolean("playback_preload_next", true)) }
     var feedRefreshPreset by remember(context) { mutableIntStateOf(preferences.getInt("feed_refresh_preset", 1).coerceIn(0, 2)) }
     var pageSize by remember(context) { mutableIntStateOf(preferences.getInt("page_size", 25).coerceIn(1, 250)) }
-    LaunchedEffect(selectedVideo, selectedQueueRowId, selectedLocalAudio) {
+    LaunchedEffect(selectedVideo, selectedQueueRowId, selectedLocalAudio, selectedLocalVideoSource) {
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-            playbackSessionStore.save(selectedVideo, selectedQueueRowId, selectedLocalAudio)
+            playbackSessionStore.save(selectedVideo, selectedQueueRowId, selectedLocalAudio, selectedLocalVideoSource)
         }
     }
     LaunchedEffect(library, libraryRevision, feedRefreshPreset) {
@@ -277,6 +279,7 @@ fun MainNavigation(
                     }
                     selectedQueueRowId = next.rowId
                     selectedLocalAudio = null
+                    selectedLocalVideoSource = null
                     selectedVideo = next.video
                     playbackRequestId++
                     break
@@ -451,6 +454,7 @@ fun MainNavigation(
                         shortsSessionIndex = -1
                         selectedQueueRowId = null
                         selectedLocalAudio = null
+                        selectedLocalVideoSource = null
                         selectedVideo = video
                         playbackRequestId++
                         backStack.add(Player)
@@ -460,6 +464,7 @@ fun MainNavigation(
                         shortsSessionIndex = shortsSession.indexOfFirst { it.id == video.id }
                         selectedQueueRowId = null
                         selectedLocalAudio = null
+                        selectedLocalVideoSource = null
                         selectedVideo = video
                         playbackRequestId++
                         backStack.add(Player)
@@ -628,6 +633,7 @@ fun MainNavigation(
                         shortsSessionIndex = -1
                         selectedQueueRowId = null
                         selectedLocalAudio = null
+                        selectedLocalVideoSource = null
                         selectedVideo = video
                         playbackRequestId++
                         backStack.add(Player)
@@ -640,6 +646,7 @@ fun MainNavigation(
                                     queueRevision++
                                     selectedQueueRowId = null
                                     selectedLocalAudio = null
+                                    selectedLocalVideoSource = null
                                     shortsSession = emptyList()
                                     shortsSessionIndex = -1
                                     selectedVideo = first
@@ -655,6 +662,7 @@ fun MainNavigation(
                         shortsSessionIndex = -1
                         selectedQueueRowId = null
                         selectedLocalAudio = track
+                        selectedLocalVideoSource = null
                         selectedVideo = VideoItem(
                             id = "local:${track.uri}",
                             title = track.title,
@@ -701,6 +709,7 @@ fun MainNavigation(
                         shortsSessionIndex = -1
                         selectedQueueRowId = entry.rowId
                         selectedLocalAudio = null
+                        selectedLocalVideoSource = null
                         selectedVideo = entry.video
                         playbackRequestId++
                         backStack.add(Player)
@@ -751,6 +760,20 @@ fun MainNavigation(
                             refresh()
                         }
                     },
+                    onPlayInLowTube = { id ->
+                        runCatching { downloads.playableVideo(id) }
+                            .onSuccess { downloaded ->
+                                shortsSession = emptyList()
+                                shortsSessionIndex = -1
+                                selectedQueueRowId = null
+                                selectedLocalAudio = null
+                                selectedVideo = downloaded.video
+                                selectedLocalVideoSource = downloaded.source
+                                playbackRequestId++
+                                backStack.add(Player)
+                            }
+                            .onFailure { Toast.makeText(context, it.message ?: context.getString(R.string.action_failed), Toast.LENGTH_LONG).show() }
+                    },
                     onOpen = { id ->
                         runCatching { downloads.open(id) }
                             .onFailure { Toast.makeText(context, it.message ?: context.getString(R.string.action_failed), Toast.LENGTH_LONG).show() }
@@ -769,6 +792,7 @@ fun MainNavigation(
                     isFollowing = video.channelId in followedChannels || (pendingYouTubeSubscriptionChanges[video.channelId] ?: (video.channelId in youtubeFollowedChannels)),
                     onToggleFollow = toggleFollowChannel,
                     localAudioTrack = selectedLocalAudio,
+                    localVideoSource = selectedLocalVideoSource,
                     library = library,
                     playbackPreferences = playbackPreferences,
                     playbackSpeed = playbackSpeed,
@@ -786,6 +810,7 @@ fun MainNavigation(
                         library.removeQueueEntry(entry.rowId)
                         selectedQueueRowId = null
                         selectedLocalAudio = null
+                        selectedLocalVideoSource = null
                         selectedVideo = entry.video
                         queueRevision++
                     },
@@ -802,7 +827,7 @@ fun MainNavigation(
                         shortsSessionIndex = -1
                         val previous = library.previousWatchedVideo(video.id)
                         if (previous == null) Toast.makeText(context, R.string.no_previous_video, Toast.LENGTH_SHORT).show()
-                        else { selectedQueueRowId = null; selectedLocalAudio = null; selectedVideo = previous; playbackRequestId++ }
+                        else { selectedQueueRowId = null; selectedLocalAudio = null; selectedLocalVideoSource = null; selectedVideo = previous; playbackRequestId++ }
                     },
                     onPlaybackSpeedChanged = { updated ->
                         playbackSpeed = updated.coerceIn(0.25f, 2f)
@@ -819,6 +844,7 @@ fun MainNavigation(
                         if (target != null && target.kind == "shorts") {
                             selectedQueueRowId = null
                             selectedLocalAudio = null
+                            selectedLocalVideoSource = null
                             selectedVideo = target
                             shortsSessionIndex = targetIndex
                             playbackRequestId++

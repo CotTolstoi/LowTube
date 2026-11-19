@@ -178,6 +178,7 @@
     <string name="refresh">Refresh</string>
     <string name="retry">Retry</string>
     <string name="open_download">Open</string>
+    <string name="play_download_in_lowtube">Play in LowTube</string>
     <string name="added_to_queue">Added to queue</string>
     <string name="add_playlist_to_queue">Add all to queue</string>
     <string name="play_all">Play all</string>

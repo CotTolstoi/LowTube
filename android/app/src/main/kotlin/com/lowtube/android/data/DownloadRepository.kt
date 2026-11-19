@@ -13,6 +13,8 @@ import com.lowtube.android.model.DownloadFormatOption
 import com.lowtube.android.model.DownloadJob
 import com.lowtube.android.model.DownloadRecord
 import com.lowtube.android.model.DownloadStatus
+import com.lowtube.android.model.DownloadedVideo
+import com.lowtube.android.model.LocalVideoSource
 import com.lowtube.android.model.VideoItem
 import org.json.JSONObject
 import java.io.File
@@ -170,6 +172,49 @@ class DownloadRepository private constructor(
         appContext.startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(uri, mime).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK))
     }
 
+    fun playableVideo(id: Long): DownloadedVideo {
+        if (id >= OWN_ID_BASE) {
+            val job = jobs.get(id) ?: throw IllegalStateException("This LowTube download no longer exists.")
+            if (job.status != DownloadStatus.SUCCESSFUL || job.audioOnly || job.localUri.isBlank()) {
+                throw IllegalStateException("Only completed video downloads can play in LowTube.")
+            }
+            val video = decodeVideo(job.videoJson)
+                ?: throw IllegalStateException("The original video details for this download are unavailable.")
+            return DownloadedVideo(video, localVideoSource(job.localUri, job.mimeType))
+        }
+
+        if (preferences.getBoolean(audioOnlyKey(id), false)) {
+            throw IllegalStateException("Only completed video downloads can play in LowTube.")
+        }
+        val cursor = manager.query(DownloadManager.Query().setFilterById(id))
+            ?: throw IllegalStateException("This download could not be opened.")
+        val successful = cursor.use {
+            it.moveToFirst() && it.getInt(it.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS)) == DownloadManager.STATUS_SUCCESSFUL
+        }
+        if (!successful) throw IllegalStateException("Only completed video downloads can play in LowTube.")
+        val video = storedLegacyVideo(id)
+            ?: throw IllegalStateException("The original video details for this download are unavailable.")
+        val uri = manager.getUriForDownloadedFile(id)?.toString()
+            ?: throw IllegalStateException("This downloaded file is no longer available.")
+        val mimeType = preferences.getString(mimeKey(id), "application/octet-stream").orEmpty()
+        return DownloadedVideo(video, localVideoSource(uri, mimeType))
+    }
+
+    private fun localVideoSource(rawUri: String, mimeType: String): LocalVideoSource {
+        require(mimeType.startsWith("video/")) { "Only downloaded video files can play in LowTube." }
+        val storedUri = Uri.parse(rawUri)
+        val playbackUri = when (storedUri.scheme) {
+            "content" -> storedUri
+            "file" -> {
+                val file = File(storedUri.path.orEmpty())
+                require(file.isFile) { "This downloaded file is no longer available." }
+                FileProvider.getUriForFile(appContext, appContext.packageName + ".fileprovider", file)
+            }
+            else -> throw IllegalStateException("This downloaded file has an unsupported location.")
+        }
+        return LocalVideoSource(playbackUri.toString(), mimeType)
+    }
+
     private fun legacyRecords(): List<DownloadRecord> {
         val ids = trackedIds()
         if (ids.isEmpty()) return emptyList()
@@ -208,6 +253,10 @@ class DownloadRepository private constructor(
     private fun videoTitle(json: String) = runCatching { JSONObject(json).optString("title", "LowTube download") }.getOrDefault("LowTube download")
     private fun storedLegacyVideo(id: Long): VideoItem? = runCatching {
         val root = JSONObject(preferences.getString(videoKey(id), null) ?: return null)
+        VideoItem(root.getString("id"), root.getString("title"), root.optString("channel"), root.optString("channelId"), root.optString("published"), root.optString("duration", "—"), root.optString("kind", "video"), root.optString("liveStatus"), root.optString("thumbnailUrl"), root.getString("url"))
+    }.getOrNull()
+    private fun decodeVideo(json: String): VideoItem? = runCatching {
+        val root = JSONObject(json)
         VideoItem(root.getString("id"), root.getString("title"), root.optString("channel"), root.optString("channelId"), root.optString("published"), root.optString("duration", "—"), root.optString("kind", "video"), root.optString("liveStatus"), root.optString("thumbnailUrl"), root.getString("url"))
     }.getOrNull()
     private fun videoKey(id: Long) = "download_video_$id"

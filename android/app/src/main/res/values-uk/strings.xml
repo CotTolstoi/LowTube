@@ -178,6 +178,7 @@
     <string name="refresh">Оновити</string>
     <string name="retry">Повторити</string>
     <string name="open_download">Відкрити</string>
+    <string name="play_download_in_lowtube">Відтворити в LowTube</string>
     <string name="added_to_queue">Додано до черги</string>
     <string name="add_playlist_to_queue">Усе до черги</string>
     <string name="play_all">Відтворити все</string>

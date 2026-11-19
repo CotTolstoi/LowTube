@@ -70,6 +70,7 @@ import com.lowtube.android.data.InnerTubeSearchRepository
 import com.lowtube.android.data.LocalLibraryRepository
 import com.lowtube.android.data.PlaybackStreamPreferences
 import com.lowtube.android.model.LocalAudioTrack
+import com.lowtube.android.model.LocalVideoSource
 import com.lowtube.android.model.QueueEntry
 import com.lowtube.android.model.ResolvedVideoStream
 import com.lowtube.android.model.VideoItem
@@ -95,6 +96,7 @@ fun PlaybackScreen(
     isFollowing: Boolean,
     onToggleFollow: (VideoItem) -> Boolean,
     localAudioTrack: LocalAudioTrack?,
+    localVideoSource: LocalVideoSource? = null,
     library: LocalLibraryRepository,
     playbackPreferences: PlaybackStreamPreferences,
     playbackSpeed: Float,
@@ -251,7 +253,7 @@ fun PlaybackScreen(
             }
         }
     }
-    val errorListener = remember(video.id, playbackRequestId, localAudioTrack?.uri, playbackPreferences.audioOnly, autoNext, onPlaybackReady, onAdvanceQueue, onPreloadedQueueEntryStarted) {
+    val errorListener = remember(video.id, playbackRequestId, localAudioTrack?.uri, localVideoSource?.uri, playbackPreferences.audioOnly, autoNext, onPlaybackReady, onAdvanceQueue, onPreloadedQueueEntryStarted) {
         object : Player.Listener {
             override fun onTracksChanged(tracks: Tracks) {
                 val active = controller ?: return
@@ -346,7 +348,7 @@ fun PlaybackScreen(
                         latestAutoRecover,
                         recoveryAttempts,
                         error.errorCode,
-                    ) || localAudioTrack != null || recoveryJob?.isActive == true
+                ) || localAudioTrack != null || localVideoSource != null || recoveryJob?.isActive == true
                 ) return
 
                 val activeController = controller ?: return
@@ -458,7 +460,7 @@ fun PlaybackScreen(
         }
     }
 
-    DisposableEffect(controller, video.id, playbackRequestId, localAudioTrack?.uri) {
+    DisposableEffect(controller, video.id, playbackRequestId, localAudioTrack?.uri, localVideoSource?.uri) {
         onDispose {
             onPictureInPictureEligibilityChanged(false)
             recoveryJob?.cancel()
@@ -476,7 +478,7 @@ fun PlaybackScreen(
         }
     }
 
-    LaunchedEffect(controller, video.id, playbackRequestId, localAudioTrack?.uri, resumePlayback) {
+    LaunchedEffect(controller, video.id, playbackRequestId, localAudioTrack?.uri, localVideoSource?.uri, resumePlayback) {
         val activeController = controller ?: return@LaunchedEffect
         loading = true
         message = null
@@ -500,7 +502,7 @@ fun PlaybackScreen(
             var stream: ResolvedVideoStream? = null
             var resolutionRetries = 0
             PlaybackDecoderDiagnostics.clear(context)
-            if (localAudioTrack == null) {
+            if (localAudioTrack == null && localVideoSource == null) {
                 while (stream == null) {
                     stream = try {
                         repository.resolvePlayback(video, playbackPreferences)
@@ -531,6 +533,15 @@ fun PlaybackScreen(
                     .setExtras(Bundle().apply { putLong(PLAYBACK_REQUEST_ID_EXTRA, playbackRequestId) }).build()
                 MediaItem.Builder().setUri(localAudioTrack.uri).setMimeType(localAudioTrack.mimeType)
                     .setMediaMetadata(metadata).build()
+            } else if (localVideoSource != null) {
+                val metadata = MediaMetadata.Builder().setTitle(video.title)
+                    .setArtist(video.channel)
+                    .setExtras(Bundle().apply { putLong(PLAYBACK_REQUEST_ID_EXTRA, playbackRequestId) }).build()
+                MediaItem.Builder().setMediaId(video.id)
+                    .setUri(localVideoSource.uri)
+                    .setMimeType(localVideoSource.mimeType)
+                    .setMediaMetadata(metadata)
+                    .build()
             } else remoteMediaItem(
                 stream!!,
                 externalAudioUri.takeIf(String::isNotBlank)?.let(Uri::parse)?.let { externalAudioConfiguration(context, it) },
@@ -781,10 +792,10 @@ fun PlaybackScreen(
             Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            if (playbackPreferences.audioOnly || localAudioTrack != null) {
+            if ((playbackPreferences.audioOnly && localVideoSource == null) || localAudioTrack != null) {
                 Text(stringResource(R.string.audio_only_playback), style = MaterialTheme.typography.titleMedium)
             }
-            if (!playbackPreferences.audioOnly && localAudioTrack == null) controller?.let { activeController ->
+            if ((localVideoSource != null || !playbackPreferences.audioOnly) && localAudioTrack == null) controller?.let { activeController ->
                 AndroidView(
                     modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f),
                     factory = { viewContext: Context -> PlayerView(viewContext).apply { player = activeController; useController = true } },
@@ -810,7 +821,7 @@ fun PlaybackScreen(
                 TextButton(onClick = onPreviousVideo, enabled = !loading) { Text(stringResource(R.string.previous_video)) }
                 if (hasQueuedItems) TextButton(onClick = onAdvanceQueue, enabled = !loading) { Text(stringResource(R.string.next_in_queue)) }
             }
-            if (localAudioTrack == null && !playbackPreferences.audioOnly) {
+            if (localAudioTrack == null && (localVideoSource != null || !playbackPreferences.audioOnly)) {
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(stringResource(R.string.playback_diagnostics), style = MaterialTheme.typography.titleSmall)
                     Text(

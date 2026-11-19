@@ -19,6 +19,8 @@ data class YouTubePlaylist(
 )
 
 data class LocalAudioTrack(val uri: String, val title: String, val mimeType: String, val addedAt: Long)
+data class LocalVideoSource(val uri: String, val mimeType: String)
+data class DownloadedVideo(val video: VideoItem, val source: LocalVideoSource)
 
 data class QueueEntry(val rowId: Long, val video: VideoItem, val continuation: String = "")
 

@@ -35,7 +35,13 @@ import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DownloadsScreen(repository: DownloadRepository, onBack: () -> Unit, onRetry: (Long, () -> Unit) -> Unit, onOpen: (Long) -> Unit) {
+fun DownloadsScreen(
+    repository: DownloadRepository,
+    onBack: () -> Unit,
+    onRetry: (Long, () -> Unit) -> Unit,
+    onPlayInLowTube: (Long) -> Unit = {},
+    onOpen: (Long) -> Unit,
+) {
     var refresh by remember { mutableIntStateOf(0) }
     var retryingIds by remember { mutableStateOf(emptySet<Long>()) }
     val records = remember(refresh) { repository.records() }
@@ -79,6 +85,7 @@ fun DownloadsScreen(repository: DownloadRepository, onBack: () -> Unit, onRetry:
                             refresh++
                         },
                         retrying = record.id in retryingIds,
+                        onPlayInLowTube = { onPlayInLowTube(record.id) },
                         onOpen = { onOpen(record.id) },
                         onRetry = {
                             if (record.id !in retryingIds) {
@@ -97,7 +104,14 @@ fun DownloadsScreen(repository: DownloadRepository, onBack: () -> Unit, onRetry:
 }
 
 @Composable
-internal fun DownloadRow(record: DownloadRecord, retrying: Boolean, onOpen: () -> Unit, onRemove: () -> Unit, onRetry: () -> Unit) {
+internal fun DownloadRow(
+    record: DownloadRecord,
+    retrying: Boolean,
+    onPlayInLowTube: () -> Unit = {},
+    onOpen: () -> Unit,
+    onRemove: () -> Unit,
+    onRetry: () -> Unit,
+) {
     val status = when (record.status) {
         DownloadStatus.PENDING -> stringResource(R.string.download_pending)
         DownloadStatus.RUNNING -> stringResource(R.string.download_running)
@@ -135,6 +149,9 @@ internal fun DownloadRow(record: DownloadRecord, retrying: Boolean, onOpen: () -
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                 if (record.status == DownloadStatus.SUCCESSFUL) {
+                    if (record.mimeType.startsWith("video/")) {
+                        TextButton(onClick = onPlayInLowTube) { Text(stringResource(R.string.play_download_in_lowtube)) }
+                    }
                     TextButton(onClick = onOpen) { Text(stringResource(R.string.open_download)) }
                 }
                 if (record.status == DownloadStatus.FAILED || record.status == DownloadStatus.CANCELLED || record.status == DownloadStatus.PAUSED) {
