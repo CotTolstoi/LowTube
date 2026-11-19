@@ -431,6 +431,7 @@ fun SettingsScreen(
                                 buffer = playbackBufferPreferences,
                                 resourceSample = resourceSample,
                                 downloadJobs = downloadJobs,
+                                playbackFailure = PlaybackDecoderDiagnostics.readFailure(decoderPreferences),
                             ),
                         )
                         val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as ClipboardManager

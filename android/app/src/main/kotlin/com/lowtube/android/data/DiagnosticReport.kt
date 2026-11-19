@@ -1,6 +1,7 @@
 package com.lowtube.android.data
 
 import com.lowtube.android.playback.PlaybackDecoderDiagnostics
+import com.lowtube.android.playback.PlaybackFailureSnapshot
 import com.lowtube.android.playback.VideoDecoderSnapshot
 import com.lowtube.android.model.DownloadRecord
 import com.lowtube.android.model.DownloadStatus
@@ -16,6 +17,7 @@ internal data class DiagnosticReportSnapshot(
     val buffer: PlaybackBufferPreferences,
     val resourceSample: ResourceUsageSample?,
     val downloadJobs: DownloadJobCounts? = null,
+    val playbackFailure: PlaybackFailureSnapshot = PlaybackFailureSnapshot(),
 )
 
 internal data class DownloadJobCounts(
@@ -85,6 +87,12 @@ internal object DiagnosticReportFormatter {
                 "${snapshot.buffer.memoryLimitMiB} MiB target, ${snapshot.buffer.backBufferMiB} MiB back buffer, " +
                 "${snapshot.buffer.startupSeconds}s startup",
         )
+        if (snapshot.playbackFailure.errorCodeName.isBlank()) {
+            appendLine("Last playback error: none recorded")
+        } else {
+            val status = snapshot.playbackFailure.httpStatusCode?.let { ", HTTP $it" }.orEmpty()
+            appendLine("Last playback error: ${snapshot.playbackFailure.errorCodeName}$status")
+        }
         val jobs = snapshot.downloadJobs
         if (jobs == null) {
             appendLine("Download jobs: unavailable")

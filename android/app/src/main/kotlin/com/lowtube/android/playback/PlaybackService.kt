@@ -9,6 +9,7 @@ import android.net.Uri
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
@@ -55,6 +56,10 @@ class PlaybackService : MediaSessionService() {
         }
         player.addAnalyticsListener(PlaybackDecoderDiagnostics.analyticsListener(this))
         player.addListener(object : Player.Listener {
+            override fun onPlayerError(error: PlaybackException) {
+                PlaybackDecoderDiagnostics.recordFailure(this@PlaybackService, error)
+            }
+
             override fun onPlaybackStateChanged(playbackState: Int) {
                 if (playbackState == Player.STATE_BUFFERING) removeFutureItems(player)
             }

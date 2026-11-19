@@ -1,6 +1,7 @@
 package com.lowtube.android.data
 
 import com.lowtube.android.playback.PlaybackDecoderDiagnostics
+import com.lowtube.android.playback.PlaybackFailureSnapshot
 import com.lowtube.android.playback.VideoDecoderSnapshot
 import com.lowtube.android.model.DownloadRecord
 import com.lowtube.android.model.DownloadStatus
@@ -79,6 +80,26 @@ class DiagnosticReportFormatterTest {
         assertFalse(report.contains("AbCdEfGhI12"))
         assertFalse(report.contains("content://"))
         assertFalse(report.contains("file:///"))
+    }
+
+    @Test
+    fun reportIncludesOnlyPlaybackErrorCodeAndHttpStatus() {
+        val report = DiagnosticReportFormatter.format(
+            DiagnosticReportSnapshot(
+                appVersion = "dev",
+                androidRelease = "13",
+                androidApi = 33,
+                deviceModel = "Test",
+                decoder = VideoDecoderSnapshot(),
+                buffer = PlaybackBufferPreferences(),
+                resourceSample = null,
+                playbackFailure = PlaybackFailureSnapshot("ERROR_CODE_IO_BAD_HTTP_STATUS", 403),
+            ),
+        )
+
+        assertTrue(report.contains("Last playback error: ERROR_CODE_IO_BAD_HTTP_STATUS, HTTP 403"))
+        assertFalse(report.contains("https://"))
+        assertFalse(report.contains("watch?v="))
     }
 
     private fun downloadRecord(status: Int, title: String, uri: String) = DownloadRecord(
