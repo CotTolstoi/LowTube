@@ -90,8 +90,19 @@ class MainActivity : ComponentActivity() {
     if (pendingGoogleProfileSignIn) {
       pendingGoogleProfileSignIn = false
       if (result.resultCode != RESULT_OK) {
+        val authorizationFailure = result.data?.let { data ->
+          runCatching { Identity.getAuthorizationClient(this).getAuthorizationResultFromIntent(data) }
+        }
+        val authorization = authorizationFailure?.getOrNull()
+        if (authorization?.accessToken?.isNotBlank() == true) {
+          useGoogleProfileAuthorization(authorization)
+          return@registerForActivityResult
+        }
         googleSignInBusy = false
-        googleAccountMessage = getString(R.string.account_authorization_cancelled)
+        val failure = authorizationFailure?.exceptionOrNull()
+        googleAccountMessage = if (failure != null &&
+          (failure !is ApiException || failure.statusCode != CommonStatusCodes.CANCELED)
+        ) accountAuthorizationError(failure) else getString(R.string.account_authorization_cancelled)
         return@registerForActivityResult
       }
       try {
