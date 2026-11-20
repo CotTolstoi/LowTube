@@ -223,6 +223,7 @@
     <string name="clear_history_confirm">Clear all local watch history and saved resume positions?</string>
     <string name="watched">Watched</string>
     <string name="now_playing">Now playing</string>
+    <string name="start_over">Start over</string>
     <string name="playback_speed">Playback speed</string>
     <string name="seek_backward_10_seconds">Seek backward 10 seconds</string>
     <string name="seek_forward_10_seconds">Seek forward 10 seconds</string>

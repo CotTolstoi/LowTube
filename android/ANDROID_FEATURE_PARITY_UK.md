@@ -52,6 +52,8 @@
 
 ## Медіаплеєр
 
+20.11.2026: додано Android-еквівалент Windows `Start over`. PlaybackScreen скидає незавершену history position та seeks підготовлений Media3 item на 0, залишає картку в локальній історії й не запускає відтворення самостійно. `PlaybackStartOverAcceptanceTest` пройшов на Android6/API23 AVD, Android13/API33 AVD та фізичному Android13/API33 з 8-секундним беззвучним WAV: близько 0,5 s playback, pause, UI action, position 0; відео не запускалося, мережевих запитів не було, медіачас <120 s.
+
 20.11.2026, YouTube captions: `captionTracks` із player response проходять сувору URL-перевірку, отримують WebVTT-формат і передаються в Media3 на playback та resumption. Три parser acceptance тести пройшли на API23. Публічний ролик `PRU2ShMzQRg` перевірено production resolver → remote MediaItem → вибір English auto-caption → cue → видимий текст у прикріпленому PlayerView: 1/1 на API23 AVD і 1/1 на фізичному Android13/API33, обидва кліпи обмежено 30 s, cue близько 8.5 s; UI acceptance вимагав щонайменше 20 видимих пікселів. Пристрій — `TrebleDroid vanilla`, Redmi Note 8 не підтверджений. Це один fixture, не універсальна гарантія для відео, мов чи клієнтів.
 
 - [x] Публічні YouTube subtitle tracks отримуються з watch/player response, показуються як Media3 text tracks, можуть бути вибрані й реально рендеряться; resumption MediaItem зберігає їх конфігурацію. Обидва target API пройшли bounded live acceptance; actual account/region/client variation лишається відкритою.

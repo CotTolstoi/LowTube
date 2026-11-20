@@ -46,6 +46,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -879,6 +880,17 @@ fun PlaybackScreen(
             if (localAudioTrack == null) androidx.compose.foundation.layout.Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TextButton(onClick = onPreviousVideo, enabled = !loading) { Text(stringResource(R.string.previous_video)) }
                 if (hasQueuedItems) TextButton(onClick = onAdvanceQueue, enabled = !loading) { Text(stringResource(R.string.next_in_queue)) }
+                TextButton(
+                    modifier = Modifier.testTag(PLAYBACK_START_OVER_TEST_TAG),
+                    enabled = !loading && controller?.currentMediaItem != null,
+                    onClick = {
+                        controller?.let { active ->
+                            library.resetWatchProgress(watchedVideo.id)
+                            active.seekTo(0L)
+                            message = null
+                        }
+                    },
+                ) { Text(stringResource(R.string.start_over)) }
             }
             if (localAudioTrack == null && (localVideoSource != null || !playbackPreferences.audioOnly)) {
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -1267,3 +1279,5 @@ internal fun updateTrackOverride(player: Player?, type: Int, option: TrackOption
     if (disable) builder.setTrackTypeDisabled(type, true) else builder.setTrackTypeDisabled(type, false)
     player.trackSelectionParameters = builder.build()
 }
+
+internal const val PLAYBACK_START_OVER_TEST_TAG = "lowtube-playback-start-over"

@@ -1,5 +1,7 @@
 # LowTube Android — ціль і план перенесення
 
+20.11.2026: перенесено Windows-дію `Start over` у Android PlaybackScreen: вона скидає збережену resume position поточного відео й перемотує вже підготовлений Media3 item на 0 без видалення рядка watch history та без автоматичного запуску. `PlaybackStartOverAcceptanceTest` пройшов 1/1 на API23 AVD, API33 AVD і підключеному Android13/API33: silent WAV, ~0,5 s local playback, pause, натискання кнопки, позиція 0 та history row збережений. Медіачас лишався нижче 2 хв; YouTube і мережа не використовувалися.
+
 20.11.2026: у телефонному first-run setup кнопки Skip setup та Save and continue закріплені під окремою прокручуваною областю налаштувань, тож завершити/пропустити налаштування можна без прокрутки до її кінця. `compactLayoutKeepsSetupActionsVisibleWhilePreferencesScroll` пройшов на Android6/API23 AVD, Android13/API33 AVD і підключеному Android13/API33; screenshot після встановлення підтвердив видимі кнопки й відсутність контенту під sticky footer. Незавершені вибори setup на фізичному пристрої не змінювалися.
 
 20.11.2026: Library локальної історії прийняла UI-дії видалення одного watched-progress запису та підтвердженого очищення всіх записів/позицій resume. Новий `WatchHistoryActionsTest` пройшов на Android6/API23 AVD, Android13/API33 AVD і підключеному Android13/API33; тест використовує тільки ізольовану БД, без плеєра чи мережі. Для продовження лишається окреме acceptance реальної ненульової resume position та process death.

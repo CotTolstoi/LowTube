@@ -735,6 +735,16 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
         writableDatabase.delete("watch_history", "video_id=?", arrayOf(videoId))
     }
 
+    fun resetWatchProgress(videoId: String) {
+        if (!VIDEO_ID.matches(videoId)) return
+        val values = ContentValues().apply {
+            put("position_ms", 0L)
+            put("complete", 0)
+            put("updated_at", System.currentTimeMillis())
+        }
+        writableDatabase.update("watch_history", values, "video_id=?", arrayOf(videoId))
+    }
+
     fun clearWatchHistory() {
         writableDatabase.delete("watch_history", null, null)
     }
