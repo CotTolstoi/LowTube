@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -245,12 +246,14 @@ internal fun FirstRunSetupScreen(
     Scaffold(
         topBar = { TopAppBar(title = { Text(stringResource(R.string.onboarding_title)) }) },
     ) { insets ->
-        BoxWithConstraints(Modifier.fillMaxSize().padding(insets)) {
+        BoxWithConstraints(Modifier.fillMaxSize().padding(insets), contentAlignment = Alignment.TopCenter) {
             val configuration = LocalConfiguration.current
             val density = LocalDensity.current
             val availableWidthDp = maxWidth.value * density.density / (configuration.densityDpi / 160f)
             if (availableWidthDp >= FIRST_RUN_WIDE_LAYOUT_MIN_DP) {
-                Column(Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 12.dp)) {
+                Column(
+                    Modifier.widthIn(max = 1280.dp).fillMaxWidth().fillMaxHeight().padding(horizontal = 24.dp, vertical = 12.dp),
+                ) {
                     Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
                         Column(
                             Modifier.weight(1f).fillMaxSize().verticalScroll(rememberScrollState()),

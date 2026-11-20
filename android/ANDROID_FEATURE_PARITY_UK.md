@@ -259,3 +259,8 @@ Playback acceptance test opt-in і за замовчуванням пропус�
 ## Shorts PiP playback acceptance — 2026-11-20
 
 Локальне portrait-відтворення через реальний MainActivity → PlaybackScreen → Media3 → system PiP шлях пройшло на API33 AVD і підключеному Android13/API33 (по 1/1). Тест перескладає наявний локальний AVC test asset з rotation metadata 90°, перевіряє aspect ratio PiP 9:16 і зупиняється до кінця fixture тривалістю ≤5 s та нижче 120 s. Мережа й YouTube-контент не використовувалися. Це підтверджує локальний portrait/PiP шлях; live YouTube Shorts і ширше покриття пристроїв лишаються відкритими.
+
+
+## Широкі Settings і first-run setup — 2026-11-20
+
+Вміст на wide windows обмежений 1280 dp і центрований; дві колонки Settings/setup прокручуються окремо, а дії setup закріплені внизу. На API33 AVD вручну переглянуто обидва екрани при 2400×1600 px / 240 dpi (1600 dp): ширина контенту лишилася 1280 dp. Це AVD-візуальна перевірка, не фізичний планшет.

@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -195,12 +196,16 @@ fun SettingsScreen(
         }
     }
     Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.settings)) }, navigationIcon = { TextButton(onClick = onBack) { Text(stringResource(R.string.back)) } }) }) { padding ->
-        BoxWithConstraints(Modifier.fillMaxSize().padding(padding)) {
+        BoxWithConstraints(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
         val configuration = LocalConfiguration.current
         val density = LocalDensity.current
         val availableWidthDp = maxWidth.value * density.density / (configuration.densityDpi / 160f)
         SettingsAdaptiveColumns(
-            modifier = Modifier.fillMaxSize(),
+            modifier = if (availableWidthDp >= 800f) {
+                Modifier.widthIn(max = 1280.dp).fillMaxWidth().fillMaxHeight()
+            } else {
+                Modifier.fillMaxSize()
+            },
             useTwoColumns = availableWidthDp >= 800f,
             leftContent = {
             Text(stringResource(R.string.appearance), style = MaterialTheme.typography.titleMedium)

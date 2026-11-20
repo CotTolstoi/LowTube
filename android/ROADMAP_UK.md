@@ -698,3 +698,8 @@ Successful audio-only downloads now expose `Play in LowTube` alongside the exist
 ## Shorts PiP playback acceptance — 2026-11-20
 
 PlaybackPictureInPictureAcceptanceTest#activePortraitShortsMakesActivityEligibleAndEntersPortraitSystemPip створив локальний portrait MP4 із наявного AVC test asset з rotation metadata 90°, перевірив орієнтацію і тривалість ≤5 s, після чого пройшов production MainActivity → PlaybackScreen → Media3 → system PiP шлях із 9:16 параметрами. Тест пройшов 1/1 на API33 AVD і 1/1 на підключеному Android13/API33; media position просунулася та лишилася до кінця fixture і нижче 120 s; мережа не використовувалася. Це підтверджує локальне portrait-відтворення та PiP geometry, не YouTube Shorts resolver чи загальну якість усіх відео. Після тесту LowTube повернуто на передній план. Idle snapshot після 8 s: PSS 104 670 KiB, RSS 203 799 KiB, swap PSS 489 KiB; RAM total/available 3 802 500/1 696 536 KiB. `dumpsys cpuinfo` не вивів рядок LowTube, CPU невизначений. Система повідомляє TrebleDroid vanilla; Redmi Note 8 не підтверджено; це одиничний snapshot, не benchmark.
+
+
+## Планшетна ширина налаштувань і setup — 2026-11-20
+
+Wide Settings і first-run setup тепер обмежують центральну область до 1280 dp і центрують її, лишаючи незалежне прокручування двох колонок; телефонний режим без двох колонок не змінювався. Візуально переглянуто обидва екрани на API33 AVD при 2400×1600 px / 240 dpi (1600 dp ширини): максимальна ширина області — 1280 dp, колонки не розтягуються до країв, setup Save/Skip лишається закріпленим унизу. Фізичний планшет не перевірявся. На фізичному Android13/API33 після встановлення LowTube залишився top-resumed; AVD було повернуто до початкових розміру/щільності.
