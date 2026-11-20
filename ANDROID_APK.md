@@ -1,12 +1,12 @@
-## Current artifact (2026-11-20, source revision 1760d1b)
+## Current artifact (2026-11-20, source revision b539924)
 
 - File: `LowTube-Android-debug-0.1.0.apk`; version `0.1.0-android-dev` (version code 1); minimum Android 6.0 (API 23).
 - Build type: installable debug APK, signed with the Android debug certificate; not a production-signed release.
-- Source revision: `1760d1b` (`feat/android-first-run-setup`); classifies `audio/*` items as music for Android audio focus/media session, while video remains movie content. Audio-only MIME is preserved for resolver streams.
+- Source revision: `b539924` (`feat/android-first-run-setup`). `PlaybackScreen` reapplies the saved 0.25x–2x speed when reconnecting to an already active Media3 item/session.
 - APK size: 25759871 bytes.
-- SHA-256: `E57E31BBA01E4F379C90695EFA8121E2DE6D9461E69F7238CA96DDAA0968AE96`.
-- `:app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest --offline --no-configuration-cache` succeeded. Opt-in `LocalAudioPlaybackAcceptanceTest` passed on API23 AVD, API33 AVD, and the connected Android API33 system: MediaSession exposed Music content type and a synthetic local WAV advanced at least 500 ms, with playback capped below 120 s. This tested local audio only; it did not verify audible output or network/video playback.
-- Installed on the connected Android API33 system; MainActivity is top-resumed. Idle point sample: CPU 0%, PSS 106238 KiB, RSS 202175 KiB, swap PSS 511 KiB, total/available RAM 3802500/1617168 KiB. This is a single point sample, not a benchmark. System reports `TrebleDroid vanilla`; Redmi Note 8 hardware identity is unverified.
+- SHA-256: `61EFDD2BF8C862FA1B22F910E039093942077B2C16BD447A8ED3BD15EFF04B90`.
+- `:app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest --offline --no-configuration-cache` succeeded. `PlaybackSpeedPolicyAcceptanceTest` passed 1/1 on API23 AVD, API33 AVD, and the connected Android API33 system without starting playback. Opt-in `LocalAudioPlaybackAcceptanceTest` passed 1/1 on the same three environments: MediaSession reported Music content type, accepted 1.5x speed, and advanced a synthetic local WAV for at least 500 ms; the test stopped below 120 s and restored the previous speed. Audible output and video/YouTube playback were not tested.
+- Installed on the connected Android API33 system; MainActivity is top-resumed. Five-second idle point sample: PSS 106384 KiB, RSS 202351 KiB, swap PSS 508 KiB, total/available RAM 3802500/1703988 KiB. `dumpsys cpuinfo` had no LowTube process row in this sample. This is not a benchmark. System reports `TrebleDroid vanilla`; Redmi Note 8 hardware identity is unverified.
 ## Previous artifact details (source revision 52c984e; historical)
 
 - Built from Android development branch `feat/android-first-run-setup` at source commit `52c984e`; the APK includes the SAF download-folder option in first-run setup and centralized persistable-grant cleanup. Unit and instrumentation test sources are not packaged in the APK.
