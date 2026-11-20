@@ -254,3 +254,8 @@ Playback acceptance test opt-in і за замовчуванням пропус�
 ## Resolver signature coverage — bounded MWEB acceptance
 
 19.11.2026: production MWEB signatureCipher path confirmed on API23 and API33 AVDs for public fixtures `dQw4w9WgXcQ` and `9bZkp7q19f0`; Android/WEB/IOS/Android-VR fallbacks were exhausted, the aligned MWEB player script transformed itag 18, and each bounded CDN Range returned HTTP 206 / 65,536 bytes. A first API33 request returned 403; a retry and both fixture checks then passed. This does not establish all player-script variants, all formats, PO/client tokens, or playback. The generic `www` player-bundle probe is distinct from the aligned MWEB script used for this fallback.
+
+
+## Shorts PiP playback acceptance — 2026-11-20
+
+Локальне portrait-відтворення через реальний MainActivity → PlaybackScreen → Media3 → system PiP шлях пройшло на API33 AVD і підключеному Android13/API33 (по 1/1). Тест перескладає наявний локальний AVC test asset з rotation metadata 90°, перевіряє aspect ratio PiP 9:16 і зупиняється до кінця fixture тривалістю ≤5 s та нижче 120 s. Мережа й YouTube-контент не використовувалися. Це підтверджує локальний portrait/PiP шлях; live YouTube Shorts і ширше покриття пристроїв лишаються відкритими.

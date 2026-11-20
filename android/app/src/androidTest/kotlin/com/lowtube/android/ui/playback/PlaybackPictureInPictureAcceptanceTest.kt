@@ -2,6 +2,10 @@ package com.lowtube.android.ui.playback
 
 import android.content.ComponentName
 import android.content.Context
+import android.media.MediaCodec
+import android.media.MediaExtractor
+import android.media.MediaFormat
+import android.media.MediaMuxer
 import android.net.Uri
 import android.os.Build
 import android.widget.FrameLayout
@@ -33,6 +37,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.File
+import java.nio.ByteBuffer
 
 @RunWith(AndroidJUnit4::class)
 class PlaybackPictureInPictureAcceptanceTest {
@@ -40,7 +45,20 @@ class PlaybackPictureInPictureAcceptanceTest {
     val compose = createAndroidComposeRule<MainActivity>()
 
     @Test
-    fun activeLocalVideoMakesActivityEligibleAndEntersSystemPip() = runBlocking {
+    fun activeLocalVideoMakesActivityEligibleAndEntersLandscapeSystemPip() = runBlocking {
+        activeLocalVideoMakesActivityEligibleAndEntersSystemPip("video", 16, 9)
+    }
+
+    @Test
+    fun activePortraitShortsMakesActivityEligibleAndEntersPortraitSystemPip() = runBlocking {
+        activeLocalVideoMakesActivityEligibleAndEntersSystemPip("shorts", 9, 16)
+    }
+
+    private suspend fun activeLocalVideoMakesActivityEligibleAndEntersSystemPip(
+        kind: String,
+        expectedWidth: Int,
+        expectedHeight: Int,
+    ) {
         assumeTrue("System Picture-in-Picture requires Android 8.0/API26", Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 
         val context = ApplicationProvider.getApplicationContext<Context>()
@@ -59,7 +77,8 @@ class PlaybackPictureInPictureAcceptanceTest {
             assumeTrue("Refusing to replace an existing MediaSession item", false)
         }
 
-        val videoFile = File(context.cacheDir, "lowtube-pip-${System.currentTimeMillis()}.webm")
+        val isShorts = kind == "shorts"
+        val videoFile = File(context.cacheDir, "lowtube-pip-${System.currentTimeMillis()}.${if (isShorts) "mp4" else "webm"}")
         val databaseName = "lowtube-pip-${System.currentTimeMillis()}.db"
         val library = LocalLibraryRepository(context, databaseName)
         val pipEligible = java.util.concurrent.atomic.AtomicBoolean(false)
@@ -69,11 +88,12 @@ class PlaybackPictureInPictureAcceptanceTest {
             title = "PiP acceptance local video",
             channel = "LowTube acceptance fixture",
             duration = "0:05",
-            kind = "video",
+            kind = kind,
             url = "https://www.youtube.com/watch?v=$VIDEO_ID",
         )
         try {
-            InstrumentationRegistryProvider.copyVp8Fixture(videoFile)
+            if (isShorts) InstrumentationRegistryProvider.copyPortraitMp4Fixture(videoFile)
+            else InstrumentationRegistryProvider.copyVp8Fixture(videoFile)
             val sourceUri: Uri = FileProvider.getUriForFile(context, context.packageName + ".fileprovider", videoFile)
             compose.activity.runOnUiThread {
                 compose.activity.setContentView(ComposeView(compose.activity).apply {
@@ -85,7 +105,7 @@ class PlaybackPictureInPictureAcceptanceTest {
                                 isFollowing = false,
                                 onToggleFollow = { false },
                                 localAudioTrack = null,
-                                localVideoSource = LocalVideoSource(sourceUri.toString(), "video/webm"),
+                                localVideoSource = LocalVideoSource(sourceUri.toString(), if (isShorts) "video/mp4" else "video/webm"),
                                 library = library,
                                 playbackPreferences = PlaybackStreamPreferences(),
                                 playbackSpeed = 1f,
@@ -128,8 +148,8 @@ class PlaybackPictureInPictureAcceptanceTest {
             })
             val pipParams = readPipParams(compose.activity)
             val aspectRatio = pipParams.aspectRatio ?: throw AssertionError("PiP aspect ratio is missing")
-            assertEquals("Ordinary video should keep a landscape PiP window", 16, aspectRatio.numerator)
-            assertEquals("Ordinary video should keep a landscape PiP window", 9, aspectRatio.denominator)
+            assertEquals("PiP must use the aspect ratio for the selected content kind", expectedWidth, aspectRatio.numerator)
+            assertEquals("PiP must use the aspect ratio for the selected content kind", expectedHeight, aspectRatio.denominator)
 
             withContext(Dispatchers.Main.immediate) { invokeLeaveHint(compose.activity) }
             compose.waitUntil(5_000) { compose.activity.isInPictureInPictureMode }
@@ -185,4 +205,60 @@ private object InstrumentationRegistryProvider {
             .open("com/lowtube/android/downloads/webm_vp8_vorbis.webm")
             .use { input -> destination.outputStream().use(input::copyTo) }
     }
+
+    fun copyPortraitMp4Fixture(destination: File) {
+        val instrumentation = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
+        val source = File(destination.parentFile, "${destination.nameWithoutExtension}-source.mp4")
+        val extractor = MediaExtractor()
+        var muxer: MediaMuxer? = null
+        var muxerStarted = false
+        try {
+            instrumentation.context.assets.open("com/lowtube/android/downloads/mux_fixture.mp4").use { input ->
+                source.outputStream().use(input::copyTo)
+            }
+            extractor.setDataSource(source.absolutePath)
+            val videoTrack = (0 until extractor.trackCount).first { index ->
+                extractor.getTrackFormat(index).getString(MediaFormat.KEY_MIME) == "video/avc"
+            }
+            val format = extractor.getTrackFormat(videoTrack)
+            extractor.selectTrack(videoTrack)
+            val outputMuxer = MediaMuxer(destination.absolutePath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
+            muxer = outputMuxer
+            val outputTrack = outputMuxer.addTrack(format)
+            outputMuxer.setOrientationHint(90)
+            outputMuxer.start()
+            muxerStarted = true
+            val buffer = ByteBuffer.allocateDirect(2 * 1024 * 1024)
+            val info = MediaCodec.BufferInfo()
+            while (true) {
+                buffer.clear()
+                val size = extractor.readSampleData(buffer, 0)
+                if (size < 0 || extractor.sampleTime >= FIXTURE_DURATION_MS * 1000L) break
+                info.set(0, size, extractor.sampleTime, extractor.sampleFlags)
+                outputMuxer.writeSampleData(outputTrack, buffer, info)
+                if (!extractor.advance()) break
+            }
+            outputMuxer.stop()
+            muxerStarted = false
+            val portrait = MediaExtractor()
+            try {
+                portrait.setDataSource(destination.absolutePath)
+                val portraitTrack = (0 until portrait.trackCount).first { index ->
+                    portrait.getTrackFormat(index).getString(MediaFormat.KEY_MIME) == "video/avc"
+                }
+                val portraitFormat = portrait.getTrackFormat(portraitTrack)
+                assertEquals("The Shorts fixture must contain portrait rotation metadata", 90, portraitFormat.getInteger(MediaFormat.KEY_ROTATION))
+                assertTrue("The portrait fixture must remain shorter than two minutes", portraitFormat.getLong(MediaFormat.KEY_DURATION) in 1L..120_000_000L)
+            } finally {
+                portrait.release()
+            }
+        } finally {
+            if (muxerStarted) runCatching { muxer?.stop() }
+            runCatching { muxer?.release() }
+            extractor.release()
+            source.delete()
+        }
+    }
+
+    private const val FIXTURE_DURATION_MS = 5_000L
 }
