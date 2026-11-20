@@ -41,6 +41,7 @@ import com.lowtube.android.data.DownloadStreamPreferences
 import com.lowtube.android.data.UiScaleOptions
 import com.lowtube.android.data.DownloadRepository
 import com.lowtube.android.data.InnerTubeSearchRepository
+import com.lowtube.android.data.YouTubeAccountHistoryHttpException
 import com.lowtube.android.data.SubscriptionFeedRefreshScheduler
 import com.lowtube.android.downloads.DownloadDestination
 import com.lowtube.android.model.VideoItem
@@ -211,8 +212,13 @@ fun MainNavigation(
                             } else {
                                 context.getString(R.string.youtube_history_loaded, youtubeHistoryItems.size)
                             }
-                        }.onFailure {
-                            youtubeHistoryMessage = context.getString(R.string.youtube_history_failed)
+                        }.onFailure { failure ->
+                            val message = when ((failure as? YouTubeAccountHistoryHttpException)?.statusCode) {
+                                400, 401, 403 -> R.string.youtube_history_authorization_failed
+                                429, 503 -> R.string.youtube_history_rate_limited
+                                else -> R.string.youtube_history_failed
+                            }
+                            youtubeHistoryMessage = context.getString(message)
                         }
                     }
                 }

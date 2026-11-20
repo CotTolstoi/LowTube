@@ -52,6 +52,9 @@ internal class YouTubeAccountHistoryRepository(
             .header("Accept", "application/json")
             .header("Origin", "https://www.youtube.com")
             .header("Referer", "https://www.youtube.com/")
+            .header("X-Origin", "https://www.youtube.com")
+            .header("X-Goog-AuthUser", "0")
+            .header("X-Youtube-Bootstrap-Logged-In", "true")
             .header("X-Youtube-Client-Name", "1")
             .header("X-Youtube-Client-Version", configuration.clientVersion)
             .apply { if (configuration.visitorData.isNotBlank()) header("X-Goog-Visitor-Id", configuration.visitorData) }
@@ -175,11 +178,7 @@ internal class YouTubeAccountHistoryRepository(
         val fetchedAtMs: Long = 0L,
     )
 
-    private fun historyHttpError(status: Int): IOException = when (status) {
-        401, 403 -> IOException("YouTube did not accept account-history authorization (HTTP $status). Verify Google consent and retry.")
-        429, 503 -> IOException("YouTube temporarily limited account-history requests (HTTP $status). Retry later.")
-        else -> IOException("YouTube account-history request failed (HTTP $status).")
-    }
+    private fun historyHttpError(status: Int): IOException = YouTubeAccountHistoryHttpException(status)
 
     private companion object {
         const val YOUTUBE_HOST = "www.youtube.com"
@@ -197,3 +196,11 @@ internal class YouTubeAccountHistoryRepository(
         const val USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
     }
 }
+
+internal class YouTubeAccountHistoryHttpException(val statusCode: Int) : IOException(
+    when (statusCode) {
+        400, 401, 403 -> "YouTube did not accept authorization for its experimental account-history endpoint (HTTP $statusCode)."
+        429, 503 -> "YouTube temporarily limited account-history requests (HTTP $statusCode)."
+        else -> "YouTube account-history request failed (HTTP $statusCode)."
+    },
+)

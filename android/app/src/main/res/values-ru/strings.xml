@@ -42,6 +42,8 @@
     <string name="youtube_history_loaded">Из истории YouTube загружено видео: %1$d.</string>
     <string name="youtube_history_empty">YouTube не вернул видео из истории просмотров.</string>
     <string name="youtube_history_failed">Не удалось загрузить историю YouTube. Проверьте разрешение аккаунта и повторите попытку.</string>
+    <string name="youtube_history_authorization_failed">YouTube не принял доступ к экспериментальному endpoint истории. Проверьте согласие на доступ только для чтения и повторите попытку; Google может изменить этот частный endpoint.</string>
+    <string name="youtube_history_rate_limited">YouTube временно ограничил запросы истории. Подождите и повторите попытку.</string>
     <string name="youtube_sync_success">Синхронизировано каналов из аккаунта YouTube: %1$d.</string>
     <string name="youtube_sync_failed">Не удалось синхронизировать подписки YouTube. Попробуйте ещё раз.</string>
     <string name="youtube_unsubscribe_not_available">Этот канал добавлен через аккаунт YouTube. Отписка через LowTube пока недоступна.</string>

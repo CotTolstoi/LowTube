@@ -42,6 +42,8 @@
     <string name="youtube_history_loaded">Loaded %1$d videos from YouTube history.</string>
     <string name="youtube_history_empty">YouTube returned no watch-history videos.</string>
     <string name="youtube_history_failed">Could not load YouTube watch history. Check account permission and try again.</string>
+    <string name="youtube_history_authorization_failed">YouTube did not accept access to its experimental history endpoint. Check read-only consent and retry; Google may change this private endpoint.</string>
+    <string name="youtube_history_rate_limited">YouTube temporarily limited history requests. Wait a little, then retry.</string>
     <string name="youtube_sync_success">Synced %1$d channels from your YouTube account.</string>
     <string name="youtube_sync_failed">Could not sync YouTube subscriptions. Try again.</string>
     <string name="youtube_unsubscribe_not_available">This channel is subscribed through your YouTube account. Remote unsubscribe is not available yet.</string>
