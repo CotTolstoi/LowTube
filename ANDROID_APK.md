@@ -1,12 +1,12 @@
-## Current artifact (2026-11-20, source revision 89ee743)
+## Current artifact (2026-11-20, source revision ddf10f4)
 
-- File: `LowTube-Android-debug-0.1.1.apk`; version `0.1.1-android-dev` (version code 2); minimum Android 6.0 (API 23).
+- File: `LowTube-Android-debug-0.1.2.apk`; version `0.1.2-android-dev` (version code 3); minimum Android 6.0 (API 23).
 - Build type: installable debug APK signed with the Android debug certificate; not a production-signed release.
-- Source revision: `89ee743` (`build: increment android debug apk version`), including `c932ae3` which limits automatic playback retries for HTTP errors to 408 and 5xx; permanent 403/404 responses are surfaced without repeated extraction.
-- Build: `:app:assembleDebug` succeeded offline for armeabi-v7a, arm64-v8a, and x86_64. `PlaybackRecoveryPolicyTest` passed. Bounded resolver/player acceptance passed 1/1 on API23 AVD, API33 AVD, and connected Android13/API33; each uses a 12-second first clip and asserts playback remains below 120 seconds.
-- Installed on the connected Android13/API33 device; `MainActivity` is top-resumed. Five-second idle point sample: CPU 0% in this sample, PSS 117668 KiB, RSS 213763 KiB, swap PSS 476 KiB, device RAM 3802500/1773040 KiB total/available. Not a benchmark. The system identifies as TrebleDroid vanilla; Redmi Note 8 identity is unverified.
-- APK size: 24441008 bytes.
-- SHA-256: `6565EBAF510D62CBE9BE70AF645EE424213D5F058274B5ADD07EFAFD436AEFF7`.
+- Source revision: `ddf10f4`, including `30e6f86` which adds landscape fullscreen playback for regular videos.
+- Build: `:app:assembleDebug --offline --no-configuration-cache` succeeded for armeabi-v7a, arm64-v8a, and x86_64. `PlaybackFullscreenAcceptanceTest#landscapeFullscreenCanBeEnteredAndExitedWithoutLosingTheMediaSession` passed 1/1 on API23 AVD, API33 AVD, and the connected Android13/API33 system using a local 5-second WebM fixture; media position remained below 120 seconds. The Activity requested landscape and fullscreen enter/exit worked, but all tested display configurations remained portrait, so actual system rotation is not verified.
+- Installed over the existing app on the connected Android13/API33 system without clearing data; `MainActivity` is top-resumed. Eight-second idle point sample: PSS 120286 KiB, RSS 216291 KiB, swap PSS 510 KiB, device RAM 3802500/1777500 KiB total/available; `dumpsys cpuinfo` did not report the process. Not a benchmark. The system identifies as TrebleDroid vanilla; Redmi Note 8 identity is unverified.
+- APK size: 24458324 bytes.
+- SHA-256: `14CE4C20E4CC6073516FB3C485E895BB90232BE76E490B152CD6D964002286DD`.
 ## Previous artifact details (source revision 52c984e; historical)
 
 - Built from Android development branch `feat/android-first-run-setup` at source commit `52c984e`; the APK includes the SAF download-folder option in first-run setup and centralized persistable-grant cleanup. Unit and instrumentation test sources are not packaged in the APK.
