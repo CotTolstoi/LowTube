@@ -1084,7 +1084,9 @@ internal fun remoteMediaItem(
         .setUri(stream.uri)
         .setMediaMetadata(itemMetadata)
         .setSubtitleConfigurations(youtubeCaptionConfigurations(stream.youtubeCaptionTracks))
-    if (stream.isDashManifest || stream.mimeType.contains("dash", ignoreCase = true)) {
+    if (stream.isAudioOnly) {
+        builder.setMimeType(stream.mimeType)
+    } else if (stream.isDashManifest || stream.mimeType.contains("dash", ignoreCase = true)) {
         builder.setMimeType(MimeTypes.APPLICATION_MPD)
     } else if (stream.isHlsManifest || stream.mimeType.contains("mpegurl", ignoreCase = true)) {
         builder.setMimeType(MimeTypes.APPLICATION_M3U8)

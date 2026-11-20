@@ -6,7 +6,6 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.net.Uri
-import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
@@ -61,18 +60,13 @@ class PlaybackService : MediaSessionService() {
         settings = preferences
         val preloadEnabled = preferences.getBoolean(PREF_PRELOAD_NEXT, true) &&
             preferences.getBoolean(PREF_AUTO_NEXT, true)
+        var activeAudioContentType = PlaybackAudioAttributesPolicy.contentType(null)
         val player = ExoPlayer.Builder(this)
             .setMediaSourceFactory(ExternalAudioMediaSourceFactory(DefaultMediaSourceFactory(dataSourceFactory)))
             .setLoadControl(createPlaybackLoadControl(this))
             .build().apply {
             configurePlaybackPreload(this, preloadEnabled)
-            setAudioAttributes(
-                AudioAttributes.Builder()
-                    .setUsage(C.USAGE_MEDIA)
-                    .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
-                    .build(),
-                true,
-            )
+            setAudioAttributes(PlaybackAudioAttributesPolicy.audioAttributes(null), true)
             setHandleAudioBecomingNoisy(true)
         }
         player.addAnalyticsListener(PlaybackDecoderDiagnostics.analyticsListener(this))
@@ -86,6 +80,11 @@ class PlaybackService : MediaSessionService() {
             }
 
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                val contentType = PlaybackAudioAttributesPolicy.contentType(mediaItem?.localConfiguration?.mimeType)
+                if (contentType != activeAudioContentType) {
+                    activeAudioContentType = contentType
+                    player.setAudioAttributes(PlaybackAudioAttributesPolicy.audioAttributes(mediaItem?.localConfiguration?.mimeType), true)
+                }
                 PlaybackDecoderDiagnostics.clear(this@PlaybackService)
             }
         })
@@ -244,7 +243,9 @@ class PlaybackService : MediaSessionService() {
         val resolved = requireNotNull(stream) { "A playable stream was not resolved." }
         builder.setUri(resolved.uri)
         builder.setSubtitleConfigurations(youtubeCaptionConfigurations(resolved.youtubeCaptionTracks))
-        if (resolved.isDashManifest || resolved.mimeType.contains("dash", ignoreCase = true)) {
+        if (resolved.isAudioOnly) {
+            builder.setMimeType(resolved.mimeType)
+        } else if (resolved.isDashManifest || resolved.mimeType.contains("dash", ignoreCase = true)) {
             builder.setMimeType(MimeTypes.APPLICATION_MPD)
         } else if (resolved.isHlsManifest || resolved.mimeType.contains("mpegurl", ignoreCase = true)) {
             builder.setMimeType(MimeTypes.APPLICATION_M3U8)

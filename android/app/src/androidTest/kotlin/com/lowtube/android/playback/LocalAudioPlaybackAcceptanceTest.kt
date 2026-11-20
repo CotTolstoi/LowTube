@@ -1,5 +1,6 @@
 package com.lowtube.android.playback
 
+import android.content.ComponentName
 import android.content.Context
 import android.os.Debug
 import android.os.Process
@@ -10,6 +11,8 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.session.MediaController
+import androidx.media3.session.SessionToken
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -22,6 +25,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
@@ -38,6 +42,58 @@ import kotlin.math.sin
 /** Runs only after the local Media3 source path changes; the synthetic audio is stopped after <2 s. */
 @RunWith(AndroidJUnit4::class)
 class LocalAudioPlaybackAcceptanceTest {
+    @Test
+    fun mediaSessionUsesMusicAudioAttributesForLocalAudioAndPlaysBriefly() = runBlocking {
+        assumeTrue(
+            "Pass -e runLocalAudioPlaybackAcceptance true after a player-source change",
+            InstrumentationRegistry.getArguments().getString("runLocalAudioPlaybackAcceptance") == "true",
+        )
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val audioFile = File(context.cacheDir, "lowtube-service-audio-${System.currentTimeMillis()}.wav")
+        writeWaveFile(audioFile, durationSeconds = 6)
+        val contentUri = FileProvider.getUriForFile(context, context.packageName + ".fileprovider", audioFile)
+        val controllerFuture = MediaController.Builder(
+            context,
+            SessionToken(context, ComponentName(context, PlaybackService::class.java)),
+        ).buildAsync()
+        val controller = withContext(kotlinx.coroutines.Dispatchers.Main.immediate) {
+            withTimeout(20_000) {
+                while (!controllerFuture.isDone) delay(50)
+                controllerFuture.get()
+            }
+        }
+        try {
+            withContext(kotlinx.coroutines.Dispatchers.Main.immediate) {
+                controller.pause()
+                controller.clearMediaItems()
+                controller.setMediaItem(MediaItem.Builder().setMediaId("local-audio-focus-fixture").setUri(contentUri)
+                    .setMimeType("audio/wav").build())
+                controller.prepare()
+                withTimeout(15_000) {
+                    while (controller.playbackState != Player.STATE_READY) delay(50)
+                }
+                assertEquals(
+                    "Local audio should use the Android music content type",
+                    PlaybackAudioAttributesPolicy.contentType("audio/wav"),
+                    controller.audioAttributes.contentType,
+                )
+                controller.play()
+                withTimeout(10_000) {
+                    while (!controller.isPlaying || controller.currentPosition < 500) delay(50)
+                }
+                assertTrue("Service audio acceptance must stop before two minutes", controller.currentPosition < 120_000)
+                controller.pause()
+            }
+        } finally {
+            withContext(kotlinx.coroutines.Dispatchers.Main.immediate) {
+                controller.stop()
+                controller.clearMediaItems()
+                MediaController.releaseFuture(controllerFuture)
+            }
+            audioFile.delete()
+        }
+    }
+
     @Test
     fun playsLocalContentUriAndAdvancesBriefly() = runBlocking {
         assumeTrue(
