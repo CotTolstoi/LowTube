@@ -2,15 +2,16 @@
 
 This branch publishes the latest available Android development build.
 
-## Current artifact (2026-11-20, source revision ce33024)
+## Current artifact (2026-11-20, source revision dd9926f)
 
 - File: `LowTube-Android-debug-0.1.0.apk`; version `0.1.0-android-dev` (version code 1); minimum Android 6.0 (API 23).
 - Build type: installable debug APK, signed with the Android debug certificate; not a production-signed release.
-- Source revision: `ce33024` (`feat/android-first-run-setup`).
+- Source revision: `dd9926f` (`feat/android-first-run-setup`); runtime sources are unchanged from `ce33024`, while this revision adds test and roadmap updates.
 - APK size: 25759871 bytes.
 - SHA-256: `CB676D16E027D80B3090F501E65A066461033D0850A5B8BE53FD8B04BBEFC448`.
 - `:app:assembleDebug :app:assembleDebugAndroidTest --offline --no-configuration-cache` succeeded. The expanded first-run setup exposes independent playback/download resolution, H.264 and FPS limits, playback audio-only, source audio bitrate, UI scale, language, theme, and download-folder choice; values write to the preferences consumed by playback and downloads. On API23, `FirstRunSetupScreenTest` passed 3/3 compact tests, `FirstRunSetupPreferencesTest` 1/1, and the wide 960 dp setup test 1/1. On the connected Android13/API33 device, compact UI and preference persistence each passed 1/1. Queue and Downloads adaptive-grid acceptance from source revision `3dc698f` passed on API23 compact/wide and API33 compact; no video playback or stream resolver was started for these UI checks.
-- Installed on the connected Android13/API33 system; `MainActivity` is top-resumed. One post-test point sample: CPU process entry was not listed in `dumpsys cpuinfo`, PSS 102511 KiB, RSS 200791 KiB, swap PSS 495 KiB, total/available RAM 3802500/1710796 KiB. This is not a benchmark. The system reports `TrebleDroid vanilla`; Redmi Note 8 hardware is not verified.
+- `MainScreenTest#setupCanBeReopenedFromSettingsAndSavesStreamPreferences` passed 1/1 on API23 and 1/1 on the connected API33 device. It reopened setup from Settings, saved playback/download preferences, and restored the original preference values; no video playback was started.
+- Installed on the connected Android13/API33 system; `MainActivity` is top-resumed. Latest post-test point sample: CPU process entries were 0%, PSS 103000 KiB, RSS 200743 KiB, swap PSS 495 KiB, total/available RAM 3802500/1674852 KiB. This is not a benchmark. The system reports `TrebleDroid vanilla`; Redmi Note 8 hardware is not verified.
 ## Previous artifact details (source revision 52c984e; historical)
 
 - Built from Android development branch `feat/android-first-run-setup` at source commit `52c984e`; the APK includes the SAF download-folder option in first-run setup and centralized persistable-grant cleanup. Unit and instrumentation test sources are not packaged in the APK.
