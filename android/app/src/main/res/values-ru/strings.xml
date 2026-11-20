@@ -28,7 +28,7 @@
     <string name="account_picker_cancelled_diagnostic">Выбор аккаунта Google завершён до начала авторизации (код %1$d). Провайдер: %2$s %3$s; API авторизации: %4$s. Повторите попытку и завершите выбор аккаунта.</string>
     <string name="account_authorization_cancelled">Окно авторизации Google закрыто. Если вы его не закрывали, проверьте Android OAuth client для пакета com.lowtube.android и SHA-1 сертификата подписи этого APK.</string>
     <string name="account_authorization_cancelled_diagnostic">Авторизация Google не завершена (%1$s). Служба: %2$s %3$s; API авторизации: %4$s. Для OAuth зарегистрируйте пакет %5$s с SHA‑1 сертификата подписи %6$s. Повторите попытку, если вы закрыли окно Google.</string>
-    <string name="account_authorization_cancelled_microg_diagnostic">Авторизация Google вернула %1$s от microG %3$s. Служба авторизации присутствует, но это не подтверждает полную поддержку OAuth. Проверьте Android OAuth-клиент LowTube для пакета %5$s и SHA‑1 подписи %6$s; повторите попытку, если закрыли окно.</string>
+    <string name="account_authorization_cancelled_microg_diagnostic">Авторизация Google вернула %1$s от microG %3$s. LowTube не получил токен профиля, поэтому аккаунт не подключен. Наличие службы авторизации не подтверждает поддержку этого OAuth-запроса. Проверьте Android OAuth client LowTube для пакета %5$s и SHA‑1 подписи %6$s; повторите попытку после исправления провайдера или OAuth-настроек.</string>
     <string name="account_authorization_api_available">доступен</string>
     <string name="account_authorization_api_not_detected">не обнаружен</string>
     <string name="account_profile_local_note">Данные аккаунта Google хранятся только на этом устройстве. Доступ к данным YouTube требует отдельного разрешения.</string>
