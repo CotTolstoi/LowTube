@@ -1,12 +1,12 @@
-## Current artifact (2026-11-20, source revision 4b824a6)
+## Current artifact (2026-11-20, source revision 7c92102)
 
 - File: `LowTube-Android-debug-0.1.0.apk`; version `0.1.0-android-dev` (version code 1); minimum Android 6.0 (API 23).
 - Build type: installable debug APK, signed with the Android debug certificate; not a production-signed release.
-- Source revision: `4b824a6` (`feat/android-first-run-setup`). Includes API23 VP8/Vorbis WebM muxing, compact first-run actions, `Start over` history reset, and centralized Picture-in-Picture eligibility based on active video playback. The PiP policy unit test passed; system PiP runtime controls are not verified by this build.
+- Source revision: `7c92102` (`feat/android-first-run-setup`). Includes API23 VP8/Vorbis WebM muxing, compact first-run actions, `Start over` history reset, and Media3 PiP eligibility with 9:16 Shorts / 16:9 regular-video windows. PiP runtime and short local playback acceptance passed on an API33 AVD and connected Android13/API33; system PiP controls, vertical-video rendering, and API26 runtime remain unverified.
 - APK size: 25664463 bytes.
-- SHA-256: `3ABF52C29640F15FF6DFD187A21143AC1033676E22E69F6A51C1B852A080226A`.
-- `:app:testDebugUnitTest --tests com.lowtube.android.ui.playback.PlaybackPictureInPicturePolicyTest :app:assembleDebug :app:assembleDebugAndroidTest --offline --no-configuration-cache` succeeded. The policy test passed 1/1, requiring READY + playing + current item and excluding local audio/audio-only. This is a state-policy check, not a system PiP runtime test.
-- Installed on the connected Android API33 system; MainActivity is top-resumed on first-run setup, and user selections were left untouched. Six-second idle point sample: CPU 0% in the short `dumpsys cpuinfo` sample; PSS 107690 KiB, RSS 203703 KiB, swap PSS 508 KiB, total/available RAM 3802500/1784760 KiB. This is not a benchmark. System reports `TrebleDroid vanilla`; Redmi Note 8 hardware identity is unverified.
+- SHA-256: `7B8D3129548DFA5A6F843C765A626634CECFAFADB9D9B224BC51C7F705B89C1B`.
+- `:app:testDebugUnitTest --tests com.lowtube.android.ui.playback.PlaybackPictureInPicturePolicyTest :app:assembleDebug :app:assembleDebugAndroidTest --offline --no-configuration-cache` succeeded; PiP policy tests passed 2/2. `PictureInPictureSystemAcceptanceTest` passed on API33 AVD and connected Android13/API33, asserting 9:16 Shorts parameters and system PiP entry. `PlaybackPictureInPictureAcceptanceTest` passed on both targets with real Media3 playback and regular-video 16:9 PiP; the local CC0 WebM fixture stayed below 5 seconds.
+- Installed on the connected Android API33 system; MainActivity is top-resumed on first-run setup, and user selections were left untouched. Eight-second idle point sample: PSS 104557 KiB, RSS 203723 KiB, swap PSS 490 KiB, total/available RAM 3802500/1674496 KiB. `dumpsys cpuinfo` showed only the instrumentation process at 0%, with no LowTube process row; app CPU is undetermined. This is not a benchmark. System reports `TrebleDroid vanilla`; Redmi Note 8 hardware identity is unverified.
 ## Previous artifact details (source revision 52c984e; historical)
 
 - Built from Android development branch `feat/android-first-run-setup` at source commit `52c984e`; the APK includes the SAF download-folder option in first-run setup and centralized persistable-grant cleanup. Unit and instrumentation test sources are not packaged in the APK.
