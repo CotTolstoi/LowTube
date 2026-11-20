@@ -1,12 +1,12 @@
-## Current artifact (2026-11-20, source revision 04586ea)
+## Current artifact (2026-11-20, source revision 4b824a6)
 
 - File: `LowTube-Android-debug-0.1.0.apk`; version `0.1.0-android-dev` (version code 1); minimum Android 6.0 (API 23).
 - Build type: installable debug APK, signed with the Android debug certificate; not a production-signed release.
-- Source revision: `04586ea` (`feat/android-first-run-setup`). Separate AVC/AAC MP4 and WebM track downloads use platform/Media3 muxing without re-encoding. API23 VP8/Vorbis uses Media3 `WebmMuxer`, avoiding the Android 6 native `WebmWriter` crash; API24+ additionally offers VP9 and API29+ Opus. Compact first-run setup pins Skip/Save actions. PlaybackScreen now has `Start over`, which seeks the current item to zero and clears its saved resume position while retaining the history row.
+- Source revision: `4b824a6` (`feat/android-first-run-setup`). Includes API23 VP8/Vorbis WebM muxing, compact first-run actions, `Start over` history reset, and centralized Picture-in-Picture eligibility based on active video playback. The PiP policy unit test passed; system PiP runtime controls are not verified by this build.
 - APK size: 25664463 bytes.
-- SHA-256: `C27CF1C79F181AE2DE728E0A51A0CCAE095A6F216999AA4902A8C334229F6D06`.
-- `:app:connectedDebugAndroidTest '-Pandroid.testInstrumentationRunnerArguments.class=com.lowtube.android.ui.playback.PlaybackStartOverAcceptanceTest' --offline --no-configuration-cache` succeeded. `PlaybackStartOverAcceptanceTest` passed 1/1 on Android 6/API23 AVD, Android 13/API33 AVD, and connected Android API33. The test advanced a silent local WAV about 0.5 s, then verified Start over seeks to 0, clears resume state and keeps the history row; no YouTube or network was used, and the media position stayed below two minutes. Locale parity also passed with 359 EN/UK/RU resources each.
-- Installed on the connected Android API33 system; MainActivity is top-resumed on first-run setup, and user selections were left untouched. Five-second idle point sample: PSS 106507 KiB, RSS 202371 KiB, swap PSS 508 KiB, total/available RAM 3802500/1772196 KiB. `dumpsys cpuinfo` had no LowTube process row in this sample. This is not a benchmark. System reports `TrebleDroid vanilla`; Redmi Note 8 hardware identity is unverified.
+- SHA-256: `3ABF52C29640F15FF6DFD187A21143AC1033676E22E69F6A51C1B852A080226A`.
+- `:app:testDebugUnitTest --tests com.lowtube.android.ui.playback.PlaybackPictureInPicturePolicyTest :app:assembleDebug :app:assembleDebugAndroidTest --offline --no-configuration-cache` succeeded. The policy test passed 1/1, requiring READY + playing + current item and excluding local audio/audio-only. This is a state-policy check, not a system PiP runtime test.
+- Installed on the connected Android API33 system; MainActivity is top-resumed on first-run setup, and user selections were left untouched. Six-second idle point sample: CPU 0% in the short `dumpsys cpuinfo` sample; PSS 107690 KiB, RSS 203703 KiB, swap PSS 508 KiB, total/available RAM 3802500/1784760 KiB. This is not a benchmark. System reports `TrebleDroid vanilla`; Redmi Note 8 hardware identity is unverified.
 ## Previous artifact details (source revision 52c984e; historical)
 
 - Built from Android development branch `feat/android-first-run-setup` at source commit `52c984e`; the APK includes the SAF download-folder option in first-run setup and centralized persistable-grant cleanup. Unit and instrumentation test sources are not packaged in the APK.
