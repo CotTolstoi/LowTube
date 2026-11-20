@@ -1,12 +1,12 @@
-## Current artifact (2026-11-20, source revision ddf10f4)
+## Current artifact (2026-11-20, source revision 85204c4)
 
-- File: `LowTube-Android-debug-0.1.2.apk`; version `0.1.2-android-dev` (version code 3); minimum Android 6.0 (API 23).
+- File: `LowTube-Android-debug-0.1.3.apk`; version `0.1.3-android-dev` (version code 4); minimum Android 6.0 (API 23).
 - Build type: installable debug APK signed with the Android debug certificate; not a production-signed release.
-- Source revision: `ddf10f4`, including `30e6f86` which adds landscape fullscreen playback for regular videos.
-- Build: `:app:assembleDebug --offline --no-configuration-cache` succeeded for armeabi-v7a, arm64-v8a, and x86_64. `PlaybackFullscreenAcceptanceTest#landscapeFullscreenCanBeEnteredAndExitedWithoutLosingTheMediaSession` passed 1/1 on API23 AVD, API33 AVD, and the connected Android13/API33 system using a local 5-second WebM fixture; media position remained below 120 seconds. The Activity requested landscape and fullscreen enter/exit worked, but all tested display configurations remained portrait, so actual system rotation is not verified.
-- Installed over the existing app on the connected Android13/API33 system without clearing data; `MainActivity` is top-resumed. Eight-second idle point sample: PSS 120286 KiB, RSS 216291 KiB, swap PSS 510 KiB, device RAM 3802500/1777500 KiB total/available; `dumpsys cpuinfo` did not report the process. Not a benchmark. The system identifies as TrebleDroid vanilla; Redmi Note 8 identity is unverified.
-- APK size: 24458324 bytes.
-- SHA-256: `14CE4C20E4CC6073516FB3C485E895BB90232BE76E490B152CD6D964002286DD`.
+- Source revision: `85204c4` on local task branch `codex/android-voice-search-release`.
+- Build: `:app:assembleDebug --offline --no-configuration-cache` succeeded for armeabi-v7a, arm64-v8a, and x86_64. No tests were run for this publication. The build includes localized voice search using the system RecognizerIntent. API33 AVD has a speech-recognition handler; the default API23 AVD does not, so LowTube shows a localized unavailable message there. Voice-search UI runtime acceptance was not run.
+- The APK was not installed during this publication; the connected Android device is unavailable in ADB. No playback or download was started.
+- APK size: 24503687 bytes.
+- SHA-256: `21354A408D930B0DC690FE4CF5D4FE43E984BD9A70B2CA1FF276EB89CF2D2A69`.
 ## Previous artifact details (source revision 52c984e; historical)
 
 - Built from Android development branch `feat/android-first-run-setup` at source commit `52c984e`; the APK includes the SAF download-folder option in first-run setup and centralized persistable-grant cleanup. Unit and instrumentation test sources are not packaged in the APK.
