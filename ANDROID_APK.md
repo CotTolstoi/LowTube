@@ -1,12 +1,13 @@
-## Current artifact (2026-11-20, source revision 85204c4)
+## Current artifact (2026-11-20, source revision a4d0484)
 
-- File: `LowTube-Android-debug-0.1.3.apk`; version `0.1.3-android-dev` (version code 4); minimum Android 6.0 (API 23).
+- File: `LowTube-Android-debug-0.1.4.apk`; version `0.1.4-android-dev` (version code 5); minimum Android 6.0 (API 23).
 - Build type: installable debug APK signed with the Android debug certificate; not a production-signed release.
-- Source revision: `85204c4` on local task branch `codex/android-voice-search-release`.
-- Build: `:app:assembleDebug --offline --no-configuration-cache` succeeded for armeabi-v7a, arm64-v8a, and x86_64. No tests were run for this publication. The build includes localized voice search using the system RecognizerIntent. API33 AVD has a speech-recognition handler; the default API23 AVD does not, so LowTube shows a localized unavailable message there. Voice-search UI runtime acceptance was not run.
-- The APK was not installed during this publication; the connected Android device is unavailable in ADB. No playback or download was started.
-- APK size: 24503687 bytes.
-- SHA-256: `21354A408D930B0DC690FE4CF5D4FE43E984BD9A70B2CA1FF276EB89CF2D2A69`.
+- Source revision: `a4d0484` on local task branch `codex/android-resolver-signature-fallback`.
+- Build: `:app:assembleDebug --offline --no-configuration-cache` succeeded for armeabi-v7a, arm64-v8a, and x86_64. The signature-fallback code in this APK was playback-accepted on API23 and API33 AVDs immediately before the version-only bump: each run used a 12-second clipped first item and about one second of the next item, remaining below two minutes. This covers one public fixture and is not broad extractor compatibility proof.
+- Localized voice search uses the Android system RecognizerIntent; API33 AVD has a handler, while the default API23 AVD has none and displays the localized unavailable message. UI runtime acceptance was not run.
+- The APK was not installed on the physical Android device; it is currently absent from ADB. No playback or download was started during the final 0.1.4 build.
+- APK size: 24503692 bytes.
+- SHA-256: `CD16120905384097C6740E29DD08CD3834E1048F534EC864E34364C6FA64C0CC`.
 ## Previous artifact details (source revision 52c984e; historical)
 
 - Built from Android development branch `feat/android-first-run-setup` at source commit `52c984e`; the APK includes the SAF download-folder option in first-run setup and centralized persistable-grant cleanup. Unit and instrumentation test sources are not packaged in the APK.
