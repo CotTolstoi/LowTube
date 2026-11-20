@@ -78,11 +78,16 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import android.os.Build
+import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
 import android.net.Uri
+import android.speech.RecognizerIntent
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
@@ -220,6 +225,33 @@ fun LowTubeSearchScreen(
         focusManager.clearFocus()
     }
     val searchAction = { executeSearch(query) }
+    val voiceSearchLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val recognized = result.data
+                ?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+                ?.firstOrNull()
+                ?.trim()
+                .orEmpty()
+            if (recognized.isNotEmpty()) {
+                query = recognized
+                executeSearch(recognized)
+            }
+        }
+    }
+    val startVoiceSearch = {
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_WEB_SEARCH)
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, com.lowtube.android.AppLocale.language(context))
+            putExtra(RecognizerIntent.EXTRA_PROMPT, context.getString(R.string.voice_search_prompt))
+        }
+        try {
+            voiceSearchLauncher.launch(intent)
+        } catch (_: ActivityNotFoundException) {
+            Toast.makeText(context, R.string.voice_search_unavailable, Toast.LENGTH_LONG).show()
+        }
+    }
     val dismissDownloadDialog = {
         downloadRequestGeneration++
         downloadTarget = null
@@ -425,6 +457,14 @@ fun LowTubeSearchScreen(
                     modifier = Modifier.weight(1f).onFocusChanged { searchFocused = it.isFocused },
                     singleLine = true,
                     label = { Text(stringResource(R.string.search_hint)) },
+                    trailingIcon = {
+                        IconButton(onClick = startVoiceSearch) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_voice_search),
+                                contentDescription = stringResource(R.string.voice_search),
+                            )
+                        }
+                    },
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                     keyboardActions = KeyboardActions(onSearch = { searchAction() }),
                 )

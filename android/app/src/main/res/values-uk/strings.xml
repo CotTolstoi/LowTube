@@ -2,6 +2,9 @@
     <string name="app_name">LowTube</string>
     <string name="search_hint">Пошук відео або URL YouTube</string>
     <string name="search_action">Знайти</string>
+    <string name="voice_search">Голосовий пошук</string>
+    <string name="voice_search_prompt">Скажіть, що шукати</string>
+    <string name="voice_search_unavailable">Голосовий пошук недоступний на цьому пристрої.</string>
     <string name="recent_searches">Недавні пошуки</string>
     <string name="clear_recent_searches">Очистити</string>
     <string name="home">Головна</string>
