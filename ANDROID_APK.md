@@ -1,12 +1,12 @@
-## Current artifact (2026-11-20, source revision 45d44c2)
+## Current artifact (2026-11-20, source revision 21e5403)
 
 - File: `LowTube-Android-debug-0.1.0.apk`; version `0.1.0-android-dev` (version code 1); minimum Android 6.0 (API 23).
 - Build type: installable debug APK, signed with the Android debug certificate; not a production-signed release.
-- Source revision: `45d44c2` (`feat/android-first-run-setup`). Added native separate-track WebM downloads: Android 6 uses VP8/Vorbis; Android 7+ adds VP9; Android 10+ adds Opus. Native MediaTrackMuxer handles AVC/AAC MP4 and supported WebM track pairs.
+- Source revision: `21e5403` (`feat/android-first-run-setup`). Separate WebM track downloads are available from API24; Android 6 keeps direct single-file WebM and safely rejects separate tracks before a native `WebmWriter` crash. Native muxer supports AVC/AAC MP4 and tested VP8/Vorbis plus VP9/Opus WebM pairs.
 - APK size: 25759871 bytes.
-- SHA-256: `F0500FB5838D4C10DF03817A453B22CB9363F313A4DC578A4798BAECDF9BD49D`.
-- `:app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest --offline --no-configuration-cache` succeeded. `DownloadOptionsTest` passed 4/4 on Android 6/API23 AVD, Android 13/API33 AVD, and connected Android API33. `MediaTrackMuxerTest` passed 1/1 on each. No YouTube video playback or network download was run. WebM muxing itself still needs end-to-end acceptance with WebM fixtures; the current muxer fixture covers MP4 only.
-- Installed on the connected Android API33 system; MainActivity is top-resumed. Idle point sample after launch: PSS 27178 KiB, RSS 84568 KiB, swap PSS 701 KiB, total/available RAM 3802500/1775732 KiB. `dumpsys cpuinfo` had no LowTube process row in this sample. This is not a benchmark. System reports `TrebleDroid vanilla`; Redmi Note 8 hardware identity is unverified.
+- SHA-256: `11034CD0914A0B63F7F6207013533B06A6C40D65ABACE9444EEF8B61C54C318A`.
+- `:app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest --offline --no-configuration-cache` succeeded. `DownloadOptionsTest` passed 4/4 on Android 6/API23 AVD, Android 13/API33 AVD, and connected Android API33. `MediaTrackMuxerTest` passed: MP4 remux on all three; VP8/Vorbis and VP9/Opus WebM remux on the API33 AVD and connected API33. API23 passed the explicit safe-rejection test and skipped unsupported WebM remux. No YouTube playback or network download was run.
+- Installed on the connected Android API33 system; MainActivity is top-resumed. Idle point sample after launch: PSS 33366 KiB, RSS 90600 KiB, swap PSS 719 KiB, total/available RAM 3802500/1793784 KiB. `dumpsys cpuinfo` had no LowTube process row in this sample. This is not a benchmark. System reports `TrebleDroid vanilla`; Redmi Note 8 hardware identity is unverified.
 ## Previous artifact details (source revision 52c984e; historical)
 
 - Built from Android development branch `feat/android-first-run-setup` at source commit `52c984e`; the APK includes the SAF download-folder option in first-run setup and centralized persistable-grant cleanup. Unit and instrumentation test sources are not packaged in the APK.
