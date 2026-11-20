@@ -34,6 +34,30 @@ class PlaybackRecoveryPolicyTest {
                 true,
                 1,
                 PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS,
+                httpStatusCode = 503,
+            ),
+        )
+        assertFalse(
+            PlaybackRecoveryPolicy.shouldRetryPlayerError(
+                true,
+                0,
+                PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS,
+                httpStatusCode = 403,
+            ),
+        )
+        assertFalse(
+            PlaybackRecoveryPolicy.shouldRetryPlayerError(
+                true,
+                0,
+                PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS,
+                httpStatusCode = 404,
+            ),
+        )
+        assertFalse(
+            PlaybackRecoveryPolicy.shouldRetryPlayerError(
+                true,
+                0,
+                PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS,
             ),
         )
         assertFalse(

@@ -1,6 +1,7 @@
 package com.lowtube.android.ui.playback
 
 import androidx.media3.common.PlaybackException
+import androidx.media3.datasource.HttpDataSource
 import java.io.IOException
 import java.io.InterruptedIOException
 import java.net.ConnectException
@@ -14,8 +15,29 @@ internal object PlaybackRecoveryPolicy {
     fun shouldRetryResolution(autoRecover: Boolean, retriesUsed: Int, failure: Throwable): Boolean =
         autoRecover && retriesUsed in 0 until MAX_RETRIES && isTransientResolutionFailure(failure)
 
-    fun shouldRetryPlayerError(autoRecover: Boolean, retriesUsed: Int, errorCode: Int): Boolean =
-        autoRecover && retriesUsed in 0 until MAX_RETRIES && errorCode in RETRYABLE_PLAYER_ERRORS
+    fun shouldRetryPlayerError(
+        autoRecover: Boolean,
+        retriesUsed: Int,
+        errorCode: Int,
+        httpStatusCode: Int? = null,
+    ): Boolean {
+        if (!autoRecover || retriesUsed !in 0 until MAX_RETRIES) return false
+        return when (errorCode) {
+            PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS -> httpStatusCode?.let(::isTransientHttpStatus) == true
+            else -> errorCode in RETRYABLE_PLAYER_ERRORS
+        }
+    }
+
+    fun httpStatusCode(failure: Throwable?): Int? {
+        var current = failure
+        repeat(MAX_CAUSE_DEPTH) {
+            if (current is HttpDataSource.InvalidResponseCodeException) return current.responseCode
+            current = current?.cause
+        }
+        return null
+    }
+
+    private fun isTransientHttpStatus(statusCode: Int): Boolean = statusCode == 408 || statusCode in 500..599
 
     fun retryDelayMillis(nextAttempt: Int): Long = when (nextAttempt) {
         1 -> 1_000L

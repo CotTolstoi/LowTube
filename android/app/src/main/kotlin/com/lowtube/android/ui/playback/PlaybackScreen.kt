@@ -389,6 +389,7 @@ fun PlaybackScreen(
                         latestAutoRecover,
                         recoveryAttempts,
                         error.errorCode,
+                        PlaybackRecoveryPolicy.httpStatusCode(error.cause),
                 ) || localAudioTrack != null || localVideoSource != null || recoveryJob?.isActive == true
                 ) return
 
@@ -408,6 +409,7 @@ fun PlaybackScreen(
                                     latestAutoRecover,
                                     recoveryAttempts,
                                     currentError.errorCode,
+                                    PlaybackRecoveryPolicy.httpStatusCode(currentError.cause),
                                 )
                             ) break
                             recoveryAttempts = nextAttempt
