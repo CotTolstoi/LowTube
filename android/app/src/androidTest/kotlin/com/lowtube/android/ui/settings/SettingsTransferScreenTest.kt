@@ -7,6 +7,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
@@ -14,7 +15,6 @@ import androidx.compose.ui.test.performTextInput
 import com.lowtube.android.R
 import com.lowtube.android.data.PlaybackStreamPreferences
 import com.lowtube.android.data.ResourceUsageSampler
-import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -31,7 +31,9 @@ class SettingsTransferScreenTest {
     fun settingsUsesTwoColumnsOnlyForWideWindows() {
         showSettings()
         composeTestRule.waitForIdle()
-        val wideWindow = InstrumentationRegistry.getArguments().getString("settingsLayout") == "twoColumns"
+        val density = composeTestRule.activity.resources.displayMetrics.density
+        val availableWidthDp = composeTestRule.onRoot().fetchSemanticsNode().boundsInRoot.width / density
+        val wideWindow = availableWidthDp >= 800f
         val singleColumnCount = composeTestRule.onAllNodesWithTag(SETTINGS_SINGLE_COLUMN_TEST_TAG).fetchSemanticsNodes().size
         val leftPaneNodes = composeTestRule.onAllNodesWithTag(SETTINGS_LEFT_PANE_TEST_TAG).fetchSemanticsNodes()
         val rightPaneNodes = composeTestRule.onAllNodesWithTag(SETTINGS_RIGHT_PANE_TEST_TAG).fetchSemanticsNodes()
