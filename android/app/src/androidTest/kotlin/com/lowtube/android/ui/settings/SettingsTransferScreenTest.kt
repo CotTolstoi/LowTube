@@ -49,6 +49,9 @@ class SettingsTransferScreenTest {
 
         composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.import_settings)).assertExists()
         composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.export_settings)).assertExists()
+        composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.local_library_transfer)).assertExists()
+        composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.export_local_library)).assertExists()
+        composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.import_local_library)).assertExists()
         composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.download_settings)).assertExists()
         composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.maximum_download_quality)).assertExists()
         composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.download_h264_only)).assertExists()

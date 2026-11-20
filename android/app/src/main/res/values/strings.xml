@@ -294,6 +294,16 @@
     <string name="settings_imported">Settings imported.</string>
     <string name="settings_exported">Settings exported.</string>
     <string name="settings_transfer_error">Settings could not be read or written.</string>
+    <string name="local_library_transfer">Local library transfer</string>
+    <string name="local_library_transfer_hint">Backs up saved channels, local playlists and watch progress (up to 20,000 video records and 16 MiB). Import replaces these local collections. Account data, downloads, queue and device audio files are not included.</string>
+    <string name="export_local_library">Export local library</string>
+    <string name="import_local_library">Import local library</string>
+    <string name="local_library_import_title">Replace local library?</string>
+    <string name="local_library_import_confirmation">This replaces %1$d saved channels, %2$d playlists and %3$d watch history entries on this device. Google account data, downloads, queue and local audio files stay unchanged.</string>
+    <string name="local_library_replace">Replace</string>
+    <string name="local_library_exported">Local library exported.</string>
+    <string name="local_library_imported">Local library imported.</string>
+    <string name="local_library_transfer_error">The local library backup could not be read or written. Check that it is a valid LowTube backup under 16 MiB and 20,000 video records.</string>
     <string name="resource_usage_title">System impact</string>
     <string name="resource_usage_hint">Sample LowTube CPU, process memory and available device RAM for 5 seconds. Results stay on this device.</string>
     <string name="resource_usage_measure">Measure for 5 seconds</string>

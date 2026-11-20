@@ -25,6 +25,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
@@ -65,6 +66,8 @@ import com.lowtube.android.data.DownloadRepository
 import com.lowtube.android.data.ResourceUsageSample
 import com.lowtube.android.data.ResourceUsageSampler
 import com.lowtube.android.data.SettingsTransferRepository
+import com.lowtube.android.data.LocalLibraryRepository
+import com.lowtube.android.data.LocalLibraryTransferRepository
 import com.lowtube.android.downloads.DownloadDestination
 import com.lowtube.android.playback.PlaybackDecoderDiagnostics
 import kotlinx.coroutines.CancellationException
@@ -100,6 +103,8 @@ fun SettingsScreen(
     preloadNext: Boolean = true,
     onPreloadNextChanged: (Boolean) -> Unit = {},
     downloadRepository: DownloadRepository? = null,
+    localLibraryRepository: LocalLibraryRepository? = null,
+    onLocalLibraryChanged: () -> Unit = {},
 ) {
     val context = LocalContext.current
     var language by remember { mutableStateOf(AppLocale.language(context)) }
@@ -122,6 +127,8 @@ fun SettingsScreen(
     var diagnosticReportExportPending by remember { mutableStateOf(false) }
     var diagnosticReportExported by remember { mutableStateOf(false) }
     var pendingDiagnosticReport by remember { mutableStateOf<String?>(null) }
+    var pendingLocalLibraryImport by remember { mutableStateOf<LocalLibraryTransferRepository.Snapshot?>(null) }
+    var localLibraryTransferMessage by remember { mutableStateOf<String?>(null) }
     var downloadTreeUri by remember(context) { mutableStateOf(DownloadDestination.selectedTreeUri(context)) }
     var downloadFolderError by remember { mutableStateOf(false) }
     val transferScope = rememberCoroutineScope()
@@ -194,6 +201,62 @@ fun SettingsScreen(
                 transferMessage = context.getString(R.string.settings_imported)
             }.onFailure { transferMessage = context.getString(R.string.settings_transfer_error) }
         }
+    }
+    val exportLocalLibraryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        if (uri != null) transferScope.launch {
+            val repository = localLibraryRepository
+            val result = runCatching {
+                requireNotNull(repository) { "Local library is unavailable." }
+                val json = withContext(Dispatchers.IO) { LocalLibraryTransferRepository.encode(repository.exportLocalLibrary()) }
+                val bytes = json.toByteArray(Charsets.UTF_8)
+                require(bytes.size <= MAX_LOCAL_LIBRARY_TRANSFER_BYTES) { "Local library backup is larger than 16 MiB." }
+                withContext(Dispatchers.IO) {
+                    context.contentResolver.openOutputStream(uri)?.use { it.write(bytes) }
+                        ?: throw IOException("Could not open the selected library backup file.")
+                }
+            }
+            localLibraryTransferMessage = if (result.isSuccess) context.getString(R.string.local_library_exported)
+            else context.getString(R.string.local_library_transfer_error)
+        }
+    }
+    val importLocalLibraryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) transferScope.launch {
+            val result = runCatching {
+                val json = withContext(Dispatchers.IO) {
+                    context.contentResolver.openInputStream(uri)?.use(::readLocalLibraryTransfer)
+                        ?: throw IOException("Could not open the selected library backup file.")
+                }
+                LocalLibraryTransferRepository.decode(json)
+            }
+            result.onSuccess { pendingLocalLibraryImport = it }
+                .onFailure { localLibraryTransferMessage = context.getString(R.string.local_library_transfer_error) }
+        }
+    }
+    val pendingImport = pendingLocalLibraryImport
+    if (pendingImport != null) {
+        AlertDialog(
+            onDismissRequest = { pendingLocalLibraryImport = null },
+            title = { Text(stringResource(R.string.local_library_import_title)) },
+            text = { Text(stringResource(R.string.local_library_import_confirmation, pendingImport.channels.size, pendingImport.playlists.size, pendingImport.history.size)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    pendingLocalLibraryImport = null
+                    val repository = localLibraryRepository
+                    transferScope.launch {
+                        val result = runCatching {
+                            requireNotNull(repository) { "Local library is unavailable." }
+                            withContext(Dispatchers.IO) { repository.replaceLocalLibrary(pendingImport) }
+                        }
+                        localLibraryTransferMessage = if (result.isSuccess) context.getString(R.string.local_library_imported)
+                        else context.getString(R.string.local_library_transfer_error)
+                        if (result.isSuccess) onLocalLibraryChanged()
+                    }
+                }) { Text(stringResource(R.string.local_library_replace)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingLocalLibraryImport = null }) { Text(stringResource(R.string.cancel)) }
+            },
+        )
     }
     Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.settings)) }, navigationIcon = { TextButton(onClick = onBack) { Text(stringResource(R.string.back)) } }) }) { padding ->
         BoxWithConstraints(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
@@ -461,6 +524,20 @@ fun SettingsScreen(
             }
             transferMessage?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            Text(stringResource(R.string.local_library_transfer), style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.local_library_transfer_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                TextButton(
+                    enabled = localLibraryRepository != null,
+                    onClick = { exportLocalLibraryLauncher.launch("lowtube-library.json") },
+                ) { Text(stringResource(R.string.export_local_library)) }
+                TextButton(
+                    enabled = localLibraryRepository != null,
+                    onClick = { importLocalLibraryLauncher.launch(arrayOf("application/json", "text/plain", "*/*")) },
+                ) { Text(stringResource(R.string.import_local_library)) }
+            }
+            localLibraryTransferMessage?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             Text(stringResource(R.string.resource_usage_title), style = MaterialTheme.typography.titleMedium)
             Text(stringResource(R.string.resource_usage_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             TextButton(
@@ -696,3 +773,19 @@ private fun readSettingsTransfer(input: java.io.InputStream): String {
     }
     return output.toString(Charsets.UTF_8.name())
 }
+
+private fun readLocalLibraryTransfer(input: java.io.InputStream): String {
+    val output = ByteArrayOutputStream()
+    val buffer = ByteArray(8192)
+    var total = 0
+    while (true) {
+        val count = input.read(buffer)
+        if (count < 0) break
+        total += count
+        if (total > MAX_LOCAL_LIBRARY_TRANSFER_BYTES) throw IOException("Local library backup is larger than 16 MiB.")
+        output.write(buffer, 0, count)
+    }
+    return output.toString(Charsets.UTF_8.name())
+}
+
+private const val MAX_LOCAL_LIBRARY_TRANSFER_BYTES = 16 * 1024 * 1024

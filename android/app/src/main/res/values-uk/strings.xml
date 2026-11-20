@@ -294,6 +294,16 @@
     <string name="settings_imported">Налаштування імпортовано.</string>
     <string name="settings_exported">Налаштування експортовано.</string>
     <string name="settings_transfer_error">Не вдалося прочитати або записати налаштування.</string>
+    <string name="local_library_transfer">Перенесення локальної бібліотеки</string>
+    <string name="local_library_transfer_hint">Експортуються збережені канали, локальні плейлисти та прогрес перегляду (до 20 000 відеозаписів і 16 МіБ). Імпорт замінює ці локальні дані. Дані акаунта, завантаження, черга та аудіофайли пристрою не включаються.</string>
+    <string name="export_local_library">Експортувати бібліотеку</string>
+    <string name="import_local_library">Імпортувати бібліотеку</string>
+    <string name="local_library_import_title">Замінити локальну бібліотеку?</string>
+    <string name="local_library_import_confirmation">На цьому пристрої буде замінено %1$d збережених каналів, %2$d плейлистів і %3$d записів історії перегляду. Дані Google-акаунта, завантаження, черга та локальні аудіофайли не зміняться.</string>
+    <string name="local_library_replace">Замінити</string>
+    <string name="local_library_exported">Локальну бібліотеку експортовано.</string>
+    <string name="local_library_imported">Локальну бібліотеку імпортовано.</string>
+    <string name="local_library_transfer_error">Не вдалося прочитати або записати резервну копію бібліотеки. Перевірте формат LowTube та обмеження 16 МіБ і 20 000 відеозаписів.</string>
     <string name="resource_usage_title">Вплив на систему</string>
     <string name="resource_usage_hint">Виміряти CPU LowTube, пам’ять процесу та доступну RAM пристрою протягом 5 секунд. Результати залишаються на цьому пристрої.</string>
     <string name="resource_usage_measure">Виміряти 5 секунд</string>

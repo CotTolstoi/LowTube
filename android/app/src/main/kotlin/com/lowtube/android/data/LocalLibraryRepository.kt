@@ -366,6 +366,64 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
         }
     }
 
+    internal fun exportLocalLibrary(): LocalLibraryTransferRepository.Snapshot = LocalLibraryTransferRepository.Snapshot(
+        channels = localChannels(),
+        playlists = playlists().map { playlist ->
+            LocalLibraryTransferRepository.PlaylistSnapshot(playlist.id, playlist.name, videos(playlist.id))
+        },
+        history = watchHistory(),
+    )
+
+    /** Replaces only local channels, local playlists, and watch progress in one SQLite transaction. */
+    internal fun replaceLocalLibrary(snapshot: LocalLibraryTransferRepository.Snapshot) {
+        LocalLibraryTransferRepository.validate(snapshot)
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            db.delete("subscriptions", null, null)
+            db.delete("playlists", null, null)
+            db.delete("watch_history", null, null)
+            val addedAt = System.currentTimeMillis()
+            snapshot.channels.forEach { channel ->
+                val values = ContentValues().apply {
+                    put("channel_id", channel.id)
+                    put("title", channel.title.trim())
+                    put("url", "https://www.youtube.com/channel/${channel.id}")
+                    put("added_at", addedAt)
+                    put("category", channel.category.trim())
+                }
+                check(db.insert("subscriptions", null, values) != -1L) { "Could not import a local channel." }
+            }
+            snapshot.playlists.forEachIndexed { index, playlist ->
+                val values = ContentValues().apply {
+                    put("id", playlist.id)
+                    put("name", playlist.name.trim())
+                    put("created_at", addedAt + index)
+                }
+                check(db.insert("playlists", null, values) != -1L) { "Could not import a local playlist." }
+                playlist.videos.forEachIndexed { position, video ->
+                    val itemValues = videoValues(video).apply {
+                        put("playlist_id", playlist.id)
+                        put("position", position)
+                    }
+                    check(db.insert("playlist_items", null, itemValues) != -1L) { "Could not import a playlist video." }
+                }
+            }
+            snapshot.history.forEach { entry ->
+                val values = videoValues(entry.video).apply {
+                    put("position_ms", entry.positionMs)
+                    put("duration_ms", entry.durationMs)
+                    put("complete", if (entry.complete) 1 else 0)
+                    put("updated_at", entry.updatedAt)
+                }
+                check(db.insert("watch_history", null, values) != -1L) { "Could not import watch history." }
+            }
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+    }
+
     fun createPlaylist(name: String): String {
         val clean = cleanName(name)
         val db = writableDatabase
