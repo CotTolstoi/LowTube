@@ -320,9 +320,13 @@ fun PlaybackScreen(
 
             override fun onPlaybackStateChanged(playbackState: Int) {
                 onPictureInPictureEligibilityChanged(
-                    localAudioTrack == null && !playbackPreferences.audioOnly &&
-                        playbackState == Player.STATE_READY && controller?.isPlaying == true &&
-                        controller?.currentMediaItem != null,
+                    PlaybackPictureInPicturePolicy.isEligible(
+                        isPlaying = controller?.isPlaying == true,
+                        playbackState = playbackState,
+                        hasCurrentItem = controller?.currentMediaItem != null,
+                        hasLocalAudioTrack = localAudioTrack != null,
+                        audioOnly = playbackPreferences.audioOnly,
+                    ),
                 )
                 if (playbackState == Player.STATE_READY) {
                     controller?.duration?.takeIf { it > 0 }?.let { lastObservedDurationMs = it }
@@ -356,8 +360,13 @@ fun PlaybackScreen(
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 val active = controller
                 onPictureInPictureEligibilityChanged(
-                    isPlaying && localAudioTrack == null && !playbackPreferences.audioOnly &&
-                        active?.playbackState == Player.STATE_READY && active.currentMediaItem != null,
+                    PlaybackPictureInPicturePolicy.isEligible(
+                        isPlaying = isPlaying,
+                        playbackState = active?.playbackState ?: Player.STATE_IDLE,
+                        hasCurrentItem = active?.currentMediaItem != null,
+                        hasLocalAudioTrack = localAudioTrack != null,
+                        audioOnly = playbackPreferences.audioOnly,
+                    ),
                 )
             }
 

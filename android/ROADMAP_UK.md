@@ -687,3 +687,7 @@ Successful audio-only downloads now expose `Play in LowTube` alongside the exist
 ## Відновлення локального перегляду з історичної позиції — 2026-11-20
 
 `PlaybackResumeAtSavedPositionAcceptanceTest#media3StartsFromSavedNonzeroWatchHistoryPosition` пройшов на Android6/API23 AVD, Android13/API33 AVD і підключеному API33 Android. Тест створює ізольований SQLite запис зі збереженою позицією 6 s та 8-секундний беззвучний WAV, відкриває його через production `PlaybackScreen`/Media3 з `ResumePlayback=true`, перевіряє старт після 6 s і ставить плеєр на паузу до завершення файлу. Кожна перевірка залишилась нижче обмеження 2 хвилини; синтетична база й WAV видалені. Це підтверджує локальну Media3 resume-гілку, але не запуск YouTube-відео зі збереженої позиції, процесне відновлення цього шляху чи UI карток історії.
+
+## Політика допуску Media3 до PiP — 2026-11-20
+
+Умова готовності до Picture-in-Picture винесена в `PlaybackPictureInPicturePolicy` і використовується як для зміни playback state, так і для play/pause callback: PiP допускається лише для активного відео в READY зі встановленим media item; локальна аудіодоріжка та audio-only виключені. `PlaybackPictureInPicturePolicyTest` пройшов 1/1; `:app:assembleDebug` і `:app:assembleDebugAndroidTest` зібрані. Це unit-перевірка станів, не системне входження у PiP чи перевірка його контролів.
