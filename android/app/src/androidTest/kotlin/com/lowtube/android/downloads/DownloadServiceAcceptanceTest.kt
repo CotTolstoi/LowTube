@@ -66,7 +66,7 @@ class DownloadServiceAcceptanceTest {
             val dbName = "lowtube-mp3-download-${System.currentTimeMillis()}.db"
             val partial = File(context.cacheDir, "$dbName.part")
             val publishedCopy = File(context.cacheDir, "$dbName-published.mp3")
-            val server = FixedAudioHttpServer(audioBytes)
+            val server = FixedBodyHttpServer(audioBytes, "audio/mp4")
             val store = DownloadJobStore(context, dbName)
             val video = VideoItem("fixture", "AAC to MP3 fixture", duration = "1", url = "https://www.youtube.com/watch?v=fixture")
             val videoJson = JSONObject().put("id", video.id).put("title", video.title).put("url", video.url).toString()
@@ -100,6 +100,77 @@ class DownloadServiceAcceptanceTest {
                 context.stopService(Intent(context, DownloadService::class.java))
                 server.close()
                 partial.delete()
+                publishedCopy.delete()
+                publishedUri?.let { runCatching { DownloadFileStore(context).deletePublished(it) } }
+                if (id > 0L) store.remove(id)
+                store.close()
+                context.deleteDatabase(dbName)
+                (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(NOTIFICATION_ID)
+                (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(DownloadService.TERMINAL_NOTIFICATION_ID)
+            }
+        }
+    }
+
+    @Test
+    fun progressiveMkvDownloadRemuxesAndPublishesMatroska() {
+        runBlocking {
+            assumeTrue(
+                "MKV queue acceptance is opt-in; pass -e runMkvDownloadAcceptance true",
+                InstrumentationRegistry.getArguments().getString("runMkvDownloadAcceptance") == "true",
+            )
+            val context = ApplicationProvider.getApplicationContext<Context>()
+            val storagePermissionAvailable = Build.VERSION.SDK_INT > 28 ||
+                (context.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
+                    context.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
+            assumeTrue("Android 6 publication acceptance requires already-granted storage permission", storagePermissionAvailable)
+
+            val instrumentation = InstrumentationRegistry.getInstrumentation()
+            val sourceBytes = instrumentation.context.assets
+                .open("com/lowtube/android/downloads/mux_fixture.mp4").use { it.readBytes() }
+            assertTrue("Synthetic download fixture must stay below the 64 KiB acceptance cap", sourceBytes.size <= CHUNK_BYTES)
+            val dbName = "lowtube-mkv-download-${System.currentTimeMillis()}.db"
+            val partial = File(context.cacheDir, "$dbName.part")
+            val publishedCopy = File(context.cacheDir, "$dbName-published.mkv")
+            val server = FixedBodyHttpServer(sourceBytes, "video/mp4")
+            val store = DownloadJobStore(context, dbName)
+            val video = VideoItem("fixture", "MP4 to Matroska fixture", duration = "1", url = "https://www.youtube.com/watch?v=fixture")
+            val videoJson = JSONObject().put("id", video.id).put("title", video.title).put("url", video.url).toString()
+            var id = 0L
+            var publishedUri: Uri? = null
+            try {
+                id = store.insert(
+                    videoJson,
+                    "fixture|container=mkv",
+                    false,
+                    "lowtube-mkv-${System.currentTimeMillis()}.mkv",
+                    "video/x-matroska",
+                    "LowTube MKV service acceptance",
+                    partial.absolutePath,
+                )
+                server.start()
+                startService(context, dbName, testStreamUrl = server.url)
+                val result = waitForTerminalAttempt(store, id)
+                assertEquals("Foreground MKV job failed: ${result.reason}", DownloadStatus.SUCCESSFUL, result.status)
+                assertEquals("The MKV queue should report transferred source bytes", sourceBytes.size.toLong(), result.downloadedBytes)
+                publishedUri = Uri.parse(result.localUri)
+                assertEquals("video/x-matroska", context.contentResolver.getType(publishedUri!!))
+                context.contentResolver.openInputStream(publishedUri!!)?.use { input -> publishedCopy.outputStream().use(input::copyTo) }
+                    ?: error("Published Matroska file could not be opened.")
+                val signature = publishedCopy.inputStream().use { input -> ByteArray(4) { input.read().toByte() } }
+                assertTrue("Published file must have the Matroska EBML signature", signature.contentEquals(byteArrayOf(0x1a, 0x45, 0xdf.toByte(), 0xa3.toByte())))
+                MatroskaMedia3TestReader.assertTracksAndSamples(publishedCopy, setOf("video/avc", "audio/mp4a-latm"))
+                assertFalse("Original MP4 partial remained after successful MKV publication", partial.exists())
+                assertFalse("Temporary Matroska file remained after publication", File(partial.absolutePath + ".mkv").exists())
+                assertTrue("The HTTP client did not close after the bounded fixture response", server.awaitClientClosed())
+                waitForServiceStopped(context)
+                DownloadFileStore(context).deletePublished(publishedUri!!)
+                publishedUri = null
+                Log.i(TAG, "mkvDownloadStatus=${result.status}, sourceBytes=${sourceBytes.size}, outputBytes=${publishedCopy.length()}")
+            } finally {
+                context.stopService(Intent(context, DownloadService::class.java))
+                server.close()
+                partial.delete()
+                File(partial.absolutePath + ".mkv").delete()
                 publishedCopy.delete()
                 publishedUri?.let { runCatching { DownloadFileStore(context).deletePublished(it) } }
                 if (id > 0L) store.remove(id)
@@ -1272,10 +1343,11 @@ class DownloadServiceAcceptanceTest {
         }
     }
 
-    private class FixedAudioHttpServer(private val bytes: ByteArray) : AutoCloseable {
+    private class FixedBodyHttpServer(private val bytes: ByteArray, private val mimeType: String) : AutoCloseable {
         private val server = ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))
+        private val clientClosed = CountDownLatch(1)
         private var thread: Thread? = null
-        val url: String get() = "http://127.0.0.1:${server.localPort}/audio-fixture.mp4"
+        val url: String get() = "http://127.0.0.1:${server.localPort}/fixture"
 
         fun start() {
             thread = Thread({
@@ -1285,13 +1357,16 @@ class DownloadServiceAcceptanceTest {
                         val input = BufferedReader(InputStreamReader(socket.getInputStream()))
                         while (true) { val line = input.readLine() ?: break; if (line.isEmpty()) break }
                         val output = socket.getOutputStream()
-                        output.write("HTTP/1.1 200 OK\r\nContent-Type: audio/mp4\r\nContent-Length: ${bytes.size}\r\nConnection: close\r\n\r\n".toByteArray())
+                        output.write("HTTP/1.1 200 OK\r\nContent-Type: $mimeType\r\nContent-Length: ${bytes.size}\r\nConnection: close\r\n\r\n".toByteArray())
                         output.write(bytes)
                         output.flush()
                     }
                 } catch (_: Exception) { }
-            }, "LowTube-Mp3AcceptanceServer").apply { isDaemon = true; start() }
+                finally { clientClosed.countDown() }
+            }, "LowTube-FixedBodyAcceptanceServer").apply { isDaemon = true; start() }
         }
+
+        fun awaitClientClosed(): Boolean = clientClosed.await(5, TimeUnit.SECONDS)
 
         override fun close() { runCatching { server.close() }; thread?.interrupt() }
     }
