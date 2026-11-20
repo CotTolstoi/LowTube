@@ -703,3 +703,6 @@ PlaybackPictureInPictureAcceptanceTest#activePortraitShortsMakesActivityEligible
 ## Планшетна ширина налаштувань і setup — 2026-11-20
 
 Wide Settings і first-run setup тепер обмежують центральну область до 1280 dp і центрують її, лишаючи незалежне прокручування двох колонок; телефонний режим без двох колонок не змінювався. Візуально переглянуто обидва екрани на API33 AVD при 2400×1600 px / 240 dpi (1600 dp ширини): максимальна ширина області — 1280 dp, колонки не розтягуються до країв, setup Save/Skip лишається закріпленим унизу. Фізичний планшет не перевірявся. На фізичному Android13/API33 після встановлення LowTube залишився top-resumed; AVD було повернуто до початкових розміру/щільності.
+
+
+20.11.2026, щойно зібраний APK встановився на Android6/API23 x86_64 AVD: package com.lowtube.android, versionName 0.1.0-android-dev, versionCode 1; після запуску MainActivity була resumed. Відео не відтворювалося. Це install/launch acceptance конкретної wide-layout збірки на мінімальному API.

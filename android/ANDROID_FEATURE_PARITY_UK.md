@@ -264,3 +264,6 @@ Playback acceptance test opt-in і за замовчуванням пропус�
 ## Широкі Settings і first-run setup — 2026-11-20
 
 Вміст на wide windows обмежений 1280 dp і центрований; дві колонки Settings/setup прокручуються окремо, а дії setup закріплені внизу. На API33 AVD вручну переглянуто обидва екрани при 2400×1600 px / 240 dpi (1600 dp): ширина контенту лишилася 1280 dp. Це AVD-візуальна перевірка, не фізичний планшет.
+
+
+Мінімальний API runtime: актуальний APK встановився і запустив MainActivity на Android6/API23 x86_64 AVD (versionCode 1); video playback не запускався. Це install/launch acceptance, не повний API23 parity.
