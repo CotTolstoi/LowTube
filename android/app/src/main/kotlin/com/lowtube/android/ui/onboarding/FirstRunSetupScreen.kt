@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -268,15 +270,16 @@ internal fun FirstRunSetupScreen(
                     )
                 }
             } else {
-                Column(
-                    modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-                        .padding(horizontal = 24.dp, vertical = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    appearanceAndLanguage()
-                    playbackAndDownloads()
+                Column(Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 16.dp)) {
+                    Column(
+                        modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).clipToBounds(),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        appearanceAndLanguage()
+                        playbackAndDownloads()
+                    }
                     Row(
-                        Modifier.fillMaxWidth(),
+                        Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background).padding(top = 8.dp, bottom = 8.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                         content = actions,

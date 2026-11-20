@@ -81,6 +81,28 @@ class FirstRunSetupScreenTest {
         compose.runOnIdle { assertTrue(skipped) }
     }
 
+    @Test fun compactLayoutKeepsSetupActionsVisibleWhilePreferencesScroll() {
+        assumeTrue("Compact phone layout", compose.activity.resources.configuration.smallestScreenWidthDp < 600)
+        compose.setContent {
+            FirstRunSetupScreen(
+                language = "en",
+                uiScale = 1.0f,
+                darkTheme = true,
+                playbackPreferences = PlaybackStreamPreferences(),
+                downloadPreferences = DownloadStreamPreferences(),
+                onPreviewUiScale = {},
+                onApply = {},
+                onSkip = {},
+            )
+        }
+
+        compose.onNodeWithTag(FIRST_RUN_SKIP_TAG).assertIsDisplayed()
+        compose.onNodeWithTag(FIRST_RUN_FINISH_TAG).assertIsDisplayed()
+        compose.onNodeWithText(compose.activity.getString(R.string.playback)).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag(FIRST_RUN_SKIP_TAG).assertIsDisplayed()
+        compose.onNodeWithTag(FIRST_RUN_FINISH_TAG).assertIsDisplayed()
+    }
+
     @Test fun downloadFolderChoiceIsAvailableDuringFirstRun() {
         compose.setContent {
             FirstRunSetupScreen(
