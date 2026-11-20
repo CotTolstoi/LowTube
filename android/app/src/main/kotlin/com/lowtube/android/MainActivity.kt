@@ -26,11 +26,14 @@ import com.lowtube.android.data.GoogleAccountProfile
 import com.lowtube.android.data.GoogleAccountMessageStore
 import com.lowtube.android.data.GoogleAuthorizationDiagnostics
 import com.lowtube.android.data.GoogleProfileAvatarPolicy
+import com.lowtube.android.data.DownloadStreamPreferences
+import com.lowtube.android.data.FirstRunSetupPreferences
 import com.lowtube.android.data.YouTubeDataApiRepository
 import com.lowtube.android.data.YouTubeAccountHistoryRepository
 import com.lowtube.android.model.SearchPage
 import com.lowtube.android.model.YouTubeSubscription
 import com.lowtube.android.model.YouTubePlaylist
+import com.lowtube.android.data.PlaybackStreamPreferences
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CancellationException
@@ -230,22 +233,28 @@ class MainActivity : ComponentActivity() {
                 language = AppLocale.language(this),
                 uiScale = uiScale,
                 darkTheme = darkTheme,
-                playbackMaxHeight = getSharedPreferences("lowtube_settings", MODE_PRIVATE).getInt("playback_height", 720),
-                downloadAudioBitrateKbps = getSharedPreferences("lowtube_settings", MODE_PRIVATE)
-                  .getInt("download_audio_bitrate", com.lowtube.android.data.DownloadStreamPreferences.DEFAULT_AUDIO_BITRATE_KBPS),
+                playbackPreferences = PlaybackStreamPreferences(
+                  maxHeight = preferences.getInt("playback_height", 720),
+                  h264Only = preferences.getBoolean("playback_h264", true),
+                  fps30Only = preferences.getBoolean("playback_fps30", true),
+                  audioOnly = preferences.getBoolean("playback_audio_only", false),
+                ),
+                downloadPreferences = DownloadStreamPreferences(
+                  maxHeight = preferences.getInt("download_height", 720),
+                  h264Only = preferences.getBoolean("download_h264", true),
+                  fps30Only = preferences.getBoolean("download_fps30", false),
+                  audioBitrateKbps = preferences.getInt(
+                    "download_audio_bitrate",
+                    DownloadStreamPreferences.DEFAULT_AUDIO_BITRATE_KBPS,
+                  ),
+                ),
                 onPreviewUiScale = { uiScale = it },
-                onApply = { language, scale, dark, height, bitrate ->
-                  getSharedPreferences("lowtube_settings", MODE_PRIVATE).edit()
-                    .putBoolean("first_run_complete", true)
-                    .putBoolean("dark_theme", dark)
-                    .putFloat("ui_scale", scale)
-                    .putInt("playback_height", height)
-                    .putInt("download_audio_bitrate", bitrate)
-                    .apply()
-                  AppLocale.setLanguage(this, language)
+                onApply = { selection ->
+                  FirstRunSetupPreferences.save(preferences, selection)
+                  AppLocale.setLanguage(this, selection.language)
                   firstRunComplete = true
-                  darkTheme = dark
-                  uiScale = scale
+                  darkTheme = selection.darkTheme
+                  uiScale = selection.uiScale
                   recreate()
                 },
                 onSkip = {

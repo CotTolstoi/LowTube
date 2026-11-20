@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import com.lowtube.android.R
 import com.lowtube.android.data.PlaybackStreamPreferences
 import com.lowtube.android.data.DownloadStreamPreferences
+import com.lowtube.android.data.FirstRunSetupSelection
 import com.lowtube.android.data.UiScaleOptions
 import com.lowtube.android.downloads.DownloadDestination
 
@@ -52,19 +53,26 @@ internal fun FirstRunSetupScreen(
     language: String,
     uiScale: Float,
     darkTheme: Boolean,
-    playbackMaxHeight: Int,
-    downloadAudioBitrateKbps: Int,
+    playbackPreferences: PlaybackStreamPreferences,
+    downloadPreferences: DownloadStreamPreferences,
     onPreviewUiScale: (Float) -> Unit,
-    onApply: (language: String, uiScale: Float, darkTheme: Boolean, playbackHeight: Int, audioBitrateKbps: Int) -> Unit,
+    onApply: (FirstRunSetupSelection) -> Unit,
     onSkip: () -> Unit,
 ) {
     val context = LocalContext.current
     var selectedLanguage by remember(language) { mutableStateOf(language) }
     var selectedScale by remember(uiScale) { mutableStateOf(UiScaleOptions.normalize(uiScale)) }
     var selectedDarkTheme by remember(darkTheme) { mutableStateOf(darkTheme) }
-    var selectedHeight by remember(playbackMaxHeight) { mutableStateOf(playbackMaxHeight) }
-    var selectedBitrate by remember(downloadAudioBitrateKbps) { mutableStateOf(downloadAudioBitrateKbps) }
-    var qualityExpanded by remember { mutableStateOf(false) }
+    var selectedPlaybackHeight by remember(playbackPreferences.maxHeight) { mutableStateOf(playbackPreferences.maxHeight) }
+    var selectedPlaybackH264 by remember(playbackPreferences.h264Only) { mutableStateOf(playbackPreferences.h264Only) }
+    var selectedPlaybackFps30 by remember(playbackPreferences.fps30Only) { mutableStateOf(playbackPreferences.fps30Only) }
+    var selectedPlaybackAudioOnly by remember(playbackPreferences.audioOnly) { mutableStateOf(playbackPreferences.audioOnly) }
+    var selectedDownloadHeight by remember(downloadPreferences.maxHeight) { mutableStateOf(downloadPreferences.maxHeight) }
+    var selectedDownloadH264 by remember(downloadPreferences.h264Only) { mutableStateOf(downloadPreferences.h264Only) }
+    var selectedDownloadFps30 by remember(downloadPreferences.fps30Only) { mutableStateOf(downloadPreferences.fps30Only) }
+    var selectedBitrate by remember(downloadPreferences.audioBitrateKbps) { mutableStateOf(downloadPreferences.audioBitrateKbps) }
+    var playbackQualityExpanded by remember { mutableStateOf(false) }
+    var downloadQualityExpanded by remember { mutableStateOf(false) }
     var bitrateExpanded by remember { mutableStateOf(false) }
     var downloadTreeUri by remember(context) { mutableStateOf(DownloadDestination.selectedTreeUri(context)) }
     var downloadFolderError by remember { mutableStateOf(false) }
@@ -118,17 +126,50 @@ internal fun FirstRunSetupScreen(
     }
 
     val playbackAndDownloads: @Composable ColumnScope.() -> Unit = {
+        Text(stringResource(R.string.playback), style = MaterialTheme.typography.titleMedium)
         Text(stringResource(R.string.maximum_quality), style = MaterialTheme.typography.titleMedium)
-        TextButton(onClick = { qualityExpanded = true }) { Text(stringResource(R.string.quality_value, selectedHeight)) }
-        DropdownMenu(expanded = qualityExpanded, onDismissRequest = { qualityExpanded = false }) {
+        TextButton(
+            onClick = { playbackQualityExpanded = true },
+            modifier = Modifier.testTag(FIRST_RUN_PLAYBACK_QUALITY_TAG),
+        ) { Text(stringResource(R.string.quality_value, selectedPlaybackHeight)) }
+        DropdownMenu(expanded = playbackQualityExpanded, onDismissRequest = { playbackQualityExpanded = false }) {
             PlaybackStreamPreferences.SUPPORTED_HEIGHTS.sorted().forEach { height ->
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.quality_value, height)) },
-                    onClick = { selectedHeight = height; qualityExpanded = false },
+                    onClick = { selectedPlaybackHeight = height; playbackQualityExpanded = false },
                 )
             }
         }
+        SetupPreferenceSwitch(stringResource(R.string.h264_only), selectedPlaybackH264, FIRST_RUN_PLAYBACK_H264_TAG) {
+            selectedPlaybackH264 = it
+        }
+        SetupPreferenceSwitch(stringResource(R.string.fps_30_only), selectedPlaybackFps30, FIRST_RUN_PLAYBACK_FPS30_TAG) {
+            selectedPlaybackFps30 = it
+        }
+        SetupPreferenceSwitch(stringResource(R.string.audio_only), selectedPlaybackAudioOnly, FIRST_RUN_PLAYBACK_AUDIO_ONLY_TAG) {
+            selectedPlaybackAudioOnly = it
+        }
 
+        Text(stringResource(R.string.download_settings), style = MaterialTheme.typography.titleMedium)
+        Text(stringResource(R.string.maximum_download_quality), style = MaterialTheme.typography.titleMedium)
+        TextButton(
+            onClick = { downloadQualityExpanded = true },
+            modifier = Modifier.testTag(FIRST_RUN_DOWNLOAD_QUALITY_TAG),
+        ) { Text(stringResource(R.string.quality_value, selectedDownloadHeight)) }
+        DropdownMenu(expanded = downloadQualityExpanded, onDismissRequest = { downloadQualityExpanded = false }) {
+            PlaybackStreamPreferences.SUPPORTED_HEIGHTS.sorted().forEach { height ->
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.quality_value, height)) },
+                    onClick = { selectedDownloadHeight = height; downloadQualityExpanded = false },
+                )
+            }
+        }
+        SetupPreferenceSwitch(stringResource(R.string.download_h264_only), selectedDownloadH264, FIRST_RUN_DOWNLOAD_H264_TAG) {
+            selectedDownloadH264 = it
+        }
+        SetupPreferenceSwitch(stringResource(R.string.download_fps_30_only), selectedDownloadFps30, FIRST_RUN_DOWNLOAD_FPS30_TAG) {
+            selectedDownloadFps30 = it
+        }
         Text(stringResource(R.string.preferred_download_audio_bitrate), style = MaterialTheme.typography.titleMedium)
         TextButton(onClick = { bitrateExpanded = true }) { Text(stringResource(R.string.audio_bitrate_value, selectedBitrate)) }
         DropdownMenu(expanded = bitrateExpanded, onDismissRequest = { bitrateExpanded = false }) {
@@ -172,7 +213,27 @@ internal fun FirstRunSetupScreen(
             Text(stringResource(R.string.onboarding_skip))
         }
         Button(
-            onClick = { onApply(selectedLanguage, selectedScale, selectedDarkTheme, selectedHeight, selectedBitrate) },
+            onClick = {
+                onApply(
+                    FirstRunSetupSelection(
+                        language = selectedLanguage,
+                        uiScale = selectedScale,
+                        darkTheme = selectedDarkTheme,
+                        playback = PlaybackStreamPreferences(
+                            maxHeight = selectedPlaybackHeight,
+                            h264Only = selectedPlaybackH264,
+                            fps30Only = selectedPlaybackFps30,
+                            audioOnly = selectedPlaybackAudioOnly,
+                        ),
+                        downloads = DownloadStreamPreferences(
+                            maxHeight = selectedDownloadHeight,
+                            h264Only = selectedDownloadH264,
+                            fps30Only = selectedDownloadFps30,
+                            audioBitrateKbps = selectedBitrate,
+                        ),
+                    ),
+                )
+            },
             modifier = Modifier.testTag(FIRST_RUN_FINISH_TAG),
         ) {
             Text(stringResource(R.string.onboarding_finish))
@@ -226,7 +287,31 @@ internal fun FirstRunSetupScreen(
     }
 }
 
+@Composable
+private fun SetupPreferenceSwitch(
+    label: String,
+    checked: Boolean,
+    testTag: String,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(label, modifier = Modifier.weight(1f).padding(end = 8.dp))
+        Switch(checked = checked, onCheckedChange = onCheckedChange, modifier = Modifier.testTag(testTag))
+    }
+}
+
 private const val FIRST_RUN_WIDE_LAYOUT_MIN_DP = 800f
 
 internal const val FIRST_RUN_FINISH_TAG = "lowtube-first-run-finish"
 internal const val FIRST_RUN_SKIP_TAG = "lowtube-first-run-skip"
+internal const val FIRST_RUN_PLAYBACK_QUALITY_TAG = "lowtube-first-run-playback-quality"
+internal const val FIRST_RUN_PLAYBACK_H264_TAG = "lowtube-first-run-playback-h264"
+internal const val FIRST_RUN_PLAYBACK_FPS30_TAG = "lowtube-first-run-playback-fps30"
+internal const val FIRST_RUN_PLAYBACK_AUDIO_ONLY_TAG = "lowtube-first-run-playback-audio-only"
+internal const val FIRST_RUN_DOWNLOAD_QUALITY_TAG = "lowtube-first-run-download-quality"
+internal const val FIRST_RUN_DOWNLOAD_H264_TAG = "lowtube-first-run-download-h264"
+internal const val FIRST_RUN_DOWNLOAD_FPS30_TAG = "lowtube-first-run-download-fps30"

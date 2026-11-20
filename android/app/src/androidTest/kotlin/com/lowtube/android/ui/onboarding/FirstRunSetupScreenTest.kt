@@ -11,6 +11,9 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.lowtube.android.R
+import com.lowtube.android.data.DownloadStreamPreferences
+import com.lowtube.android.data.FirstRunSetupSelection
+import com.lowtube.android.data.PlaybackStreamPreferences
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
@@ -24,25 +27,39 @@ class FirstRunSetupScreenTest {
 
     @Test fun appliesLanguageScaleThemeAndQualityChoices() {
         var previewScale = 1.0f
-        var applied: List<Any>? = null
+        var applied: FirstRunSetupSelection? = null
         compose.setContent {
             FirstRunSetupScreen(
                 language = "en",
                 uiScale = 1.0f,
                 darkTheme = true,
-                playbackMaxHeight = 720,
-                downloadAudioBitrateKbps = 192,
+                playbackPreferences = PlaybackStreamPreferences(),
+                downloadPreferences = DownloadStreamPreferences(),
                 onPreviewUiScale = { previewScale = it },
-                onApply = { language, scale, dark, height, bitrate -> applied = listOf(language, scale, dark, height, bitrate) },
+                onApply = { applied = it },
                 onSkip = {},
             )
         }
         compose.onNodeWithText("Українська").performScrollTo().performClick()
         compose.onNodeWithText("115%").performScrollTo().performClick()
+        compose.onNodeWithTag(FIRST_RUN_PLAYBACK_H264_TAG).performScrollTo().performClick()
+        compose.onNodeWithTag(FIRST_RUN_PLAYBACK_AUDIO_ONLY_TAG).performScrollTo().performClick()
+        compose.onNodeWithTag(FIRST_RUN_DOWNLOAD_FPS30_TAG).performScrollTo().performClick()
+        compose.onNodeWithTag(FIRST_RUN_DOWNLOAD_QUALITY_TAG).performScrollTo().performClick()
+        compose.onNodeWithText("480p").performClick()
         compose.onNodeWithTag(FIRST_RUN_FINISH_TAG).performScrollTo().performClick()
         compose.runOnIdle {
             assertEquals(1.15f, previewScale)
-            assertEquals(listOf("uk", 1.15f, true, 720, 192), applied)
+            assertEquals(
+                FirstRunSetupSelection(
+                    language = "uk",
+                    uiScale = 1.15f,
+                    darkTheme = true,
+                    playback = PlaybackStreamPreferences(maxHeight = 720, h264Only = false, fps30Only = true, audioOnly = true),
+                    downloads = DownloadStreamPreferences(maxHeight = 480, h264Only = true, fps30Only = true, audioBitrateKbps = 192),
+                ),
+                applied,
+            )
         }
     }
 
@@ -53,10 +70,10 @@ class FirstRunSetupScreenTest {
                 language = "en",
                 uiScale = 1.0f,
                 darkTheme = true,
-                playbackMaxHeight = 720,
-                downloadAudioBitrateKbps = 192,
+                playbackPreferences = PlaybackStreamPreferences(),
+                downloadPreferences = DownloadStreamPreferences(),
                 onPreviewUiScale = {},
-                onApply = { _, _, _, _, _ -> error("Skip should not apply the setup draft.") },
+                onApply = { error("Skip should not apply the setup draft.") },
                 onSkip = { skipped = true },
             )
         }
@@ -70,10 +87,10 @@ class FirstRunSetupScreenTest {
                 language = "en",
                 uiScale = 1.0f,
                 darkTheme = true,
-                playbackMaxHeight = 720,
-                downloadAudioBitrateKbps = 192,
+                playbackPreferences = PlaybackStreamPreferences(),
+                downloadPreferences = DownloadStreamPreferences(),
                 onPreviewUiScale = {},
-                onApply = { _, _, _, _, _ -> },
+                onApply = {},
                 onSkip = {},
             )
         }
@@ -92,27 +109,36 @@ class FirstRunSetupScreenTest {
             "Run with -e runWideFirstRunSetup true on a window wider than 800 dp",
             InstrumentationRegistry.getArguments().getString("runWideFirstRunSetup") == "true",
         )
-        var applied: List<Any>? = null
+        var applied: FirstRunSetupSelection? = null
         compose.setContent {
             FirstRunSetupScreen(
                 language = "en",
                 uiScale = 1.0f,
                 darkTheme = true,
-                playbackMaxHeight = 720,
-                downloadAudioBitrateKbps = 192,
+                playbackPreferences = PlaybackStreamPreferences(),
+                downloadPreferences = DownloadStreamPreferences(),
                 onPreviewUiScale = {},
-                onApply = { language, scale, dark, height, bitrate -> applied = listOf(language, scale, dark, height, bitrate) },
+                onApply = { applied = it },
                 onSkip = {},
             )
         }
 
         compose.onNodeWithText(compose.activity.getString(R.string.language)).assertIsDisplayed()
-        compose.onNodeWithText(compose.activity.getString(R.string.maximum_quality)).assertIsDisplayed()
-        compose.onNodeWithText(compose.activity.getString(R.string.download_location_title)).assertIsDisplayed()
+        compose.onNodeWithText(compose.activity.getString(R.string.maximum_quality)).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag(FIRST_RUN_PLAYBACK_H264_TAG).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag(FIRST_RUN_PLAYBACK_FPS30_TAG).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag(FIRST_RUN_PLAYBACK_AUDIO_ONLY_TAG).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(compose.activity.getString(R.string.maximum_download_quality)).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag(FIRST_RUN_DOWNLOAD_H264_TAG).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag(FIRST_RUN_DOWNLOAD_FPS30_TAG).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(compose.activity.getString(R.string.download_location_title)).performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag(FIRST_RUN_SKIP_TAG).assertIsDisplayed()
         compose.onNodeWithTag(FIRST_RUN_FINISH_TAG).assertIsDisplayed().performClick()
         compose.runOnIdle {
-            assertEquals(listOf("en", 1.0f, true, 720, 192), applied)
+            assertEquals(
+                FirstRunSetupSelection("en", 1.0f, true, PlaybackStreamPreferences(), DownloadStreamPreferences()),
+                applied,
+            )
         }
     }
 }
