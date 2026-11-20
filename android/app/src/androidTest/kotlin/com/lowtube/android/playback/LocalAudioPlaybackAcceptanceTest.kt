@@ -62,6 +62,9 @@ class LocalAudioPlaybackAcceptanceTest {
                 controllerFuture.get()
             }
         }
+        val originalSpeed = withContext(kotlinx.coroutines.Dispatchers.Main.immediate) {
+            controller.playbackParameters.speed
+        }
         try {
             withContext(kotlinx.coroutines.Dispatchers.Main.immediate) {
                 controller.pause()
@@ -77,6 +80,8 @@ class LocalAudioPlaybackAcceptanceTest {
                     PlaybackAudioAttributesPolicy.contentType("audio/wav"),
                     controller.audioAttributes.contentType,
                 )
+                PlaybackSpeedPolicy.apply(controller, 1.5f)
+                assertEquals("Playback speed should be applied to the active MediaSession player", 1.5f, controller.playbackParameters.speed)
                 controller.play()
                 withTimeout(10_000) {
                     while (!controller.isPlaying || controller.currentPosition < 500) delay(50)
@@ -88,6 +93,7 @@ class LocalAudioPlaybackAcceptanceTest {
             withContext(kotlinx.coroutines.Dispatchers.Main.immediate) {
                 controller.stop()
                 controller.clearMediaItems()
+                PlaybackSpeedPolicy.apply(controller, originalSpeed)
                 MediaController.releaseFuture(controllerFuture)
             }
             audioFile.delete()

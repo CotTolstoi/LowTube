@@ -59,7 +59,6 @@ import androidx.media3.common.MimeTypes
 import androidx.media3.common.C
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
-import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.Tracks
 import androidx.media3.common.MimeTypes.VIDEO_H264
@@ -78,6 +77,7 @@ import com.lowtube.android.model.VideoItem
 import com.lowtube.android.playback.PlaybackService
 import com.lowtube.android.playback.PlaybackDecoderDiagnostics
 import com.lowtube.android.playback.PlaybackArtworkPolicy
+import com.lowtube.android.playback.PlaybackSpeedPolicy
 import com.lowtube.android.playback.EXTERNAL_AUDIO_LABEL
 import com.lowtube.android.playback.EXTERNAL_AUDIO_MIME_TYPE
 import com.lowtube.android.playback.EXTERNAL_AUDIO_URI
@@ -428,9 +428,7 @@ fun PlaybackScreen(
                             resumePositionMs = activeController.currentPosition.coerceAtLeast(resumePositionMs)
                             val pending = CompletableDeferred<PlaybackException?>()
                             recoveryCompletion = pending
-                            activeController.setPlaybackParameters(
-                                PlaybackParameters(latestPlaybackSpeed.coerceIn(0.25f, 2f)),
-                            )
+                            PlaybackSpeedPolicy.apply(activeController, latestPlaybackSpeed)
                             applyPlaybackStreamPreferences(activeController, latestPlaybackPreferences)
                             val externalAudio = externalAudioConfiguration(activeController.currentMediaItem)
                             activeController.setMediaItem(
@@ -522,6 +520,7 @@ fun PlaybackScreen(
                 )
             ) {
                 watchedVideo = video
+                PlaybackSpeedPolicy.apply(activeController, playbackSpeed)
                 loading = false
                 readyNotified = true
                 shouldResumePlayback = activeController.playWhenReady
@@ -556,7 +555,7 @@ fun PlaybackScreen(
                 watchedVideo = stream.video
                 applyPlaybackStreamPreferences(activeController, playbackPreferences)
             }
-            activeController.setPlaybackParameters(PlaybackParameters(playbackSpeed.coerceIn(0.25f, 2f)))
+            PlaybackSpeedPolicy.apply(activeController, playbackSpeed)
             val item = if (localAudioTrack != null) {
                 val metadata = MediaMetadata.Builder().setTitle(localAudioTrack.title)
                     .setExtras(Bundle().apply { putLong(PLAYBACK_REQUEST_ID_EXTRA, playbackRequestId) }).build()
@@ -915,7 +914,7 @@ fun PlaybackScreen(
                                 onClick = {
                                     speedMenuExpanded = false
                                     onPlaybackSpeedChanged(speed)
-                                    controller?.setPlaybackParameters(PlaybackParameters(speed))
+                                    controller?.let { PlaybackSpeedPolicy.apply(it, speed) }
                                 },
                             )
                         }
