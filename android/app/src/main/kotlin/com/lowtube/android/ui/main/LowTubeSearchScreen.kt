@@ -884,7 +884,13 @@ internal fun VideoCard(
                     if (unavailable) {
                         Text(stringResource(R.string.video_unavailable), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                     } else {
-                        val details = listOf(item.duration.takeIf { it != "—" }, item.published.takeIf(String::isNotBlank), item.kind.takeIf { it != "video" })
+                        val contentTypeLabel = when (item.kind) {
+                            "shorts" -> stringResource(R.string.filter_shorts)
+                            "live" -> stringResource(R.string.filter_live)
+                            "playlist" -> stringResource(R.string.playlist)
+                            else -> item.kind.takeIf { it != "video" }
+                        }
+                        val details = listOf(item.duration.takeIf { it != "—" }, item.published.takeIf(String::isNotBlank), contentTypeLabel)
                             .filterNotNull().joinToString(" · ")
                         if (details.isNotBlank()) Text(details, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                     }

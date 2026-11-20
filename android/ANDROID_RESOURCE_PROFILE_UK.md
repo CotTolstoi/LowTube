@@ -473,3 +473,5 @@
 
 
 20.11.2026, після встановлення адаптивної ширини Settings/setup, LowTube foreground на Android13/API33 TrebleDroid vanilla; Measure-ResourceUsage.ps1 -SampleSeconds 5 -State settings-wide-install-idle: CPU 0% одного ядра, PSS 105,1 MiB, RSS 191,4 MiB, peak RSS 194,3 MiB, RAM пристрою 3 713/1 656 MiB total/available. Одиничний idle sample, не benchmark; Redmi Note 8 не підтверджено.
+
+20.11.2026 03:49:55 UTC, settled idle після встановлення карток з локалізованим content type на підключеному Android13/API33 TrebleDroid vanilla: 5 s — CPU 0%, PSS 105,2 MiB, RSS 191,9 MiB, peak RSS 192,2 MiB, RAM 3 713/1 680 MiB total/available. Одиничний snapshot, не benchmark; модель Redmi Note 8 не підтверджена.

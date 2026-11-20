@@ -706,3 +706,8 @@ Wide Settings і first-run setup тепер обмежують централь�
 
 
 20.11.2026, щойно зібраний APK встановився на Android6/API23 x86_64 AVD: package com.lowtube.android, versionName 0.1.0-android-dev, versionCode 1; після запуску MainActivity була resumed. Відео не відтворювалося. Це install/launch acceptance конкретної wide-layout збірки на мінімальному API.
+
+
+## Локалізовані типи карток — 2026-11-20
+
+Картки пошуку та For you тепер показують локалізовану назву типу Shorts, Live або Playlist замість внутрішніх значень `shorts`, `live`, `playlist`; використані EN/UK/RU strings, порядок метаданих і дії картки не змінені. `:app:assembleDebug --offline --no-configuration-cache` успішна. Після встановлення на API33 AVD вручну перевірено For you → Shorts: підпис картки відображається як `Shorts`; playback не запускався. На підключеному Android13/API33 встановлено той самий APK, MainActivity лишилася top-resumed. Фізична модель системи — TrebleDroid vanilla, не підтверджений Redmi Note 8.

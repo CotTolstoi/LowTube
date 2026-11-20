@@ -267,3 +267,8 @@ Playback acceptance test opt-in і за замовчуванням пропус�
 
 
 Мінімальний API runtime: актуальний APK встановився і запустив MainActivity на Android6/API23 x86_64 AVD (versionCode 1); video playback не запускався. Це install/launch acceptance, не повний API23 parity.
+
+
+## Локалізовані типи відеокарток — 2026-11-20
+
+На картках Shorts/Live/Playlist внутрішній kind більше не відображається як сирий lowercase-текст; назви беруться з EN/UK/RU каталогу. API33 AVD вручну показав `Shorts` у For you → Shorts. Збірка успішна; playback не запускався.
