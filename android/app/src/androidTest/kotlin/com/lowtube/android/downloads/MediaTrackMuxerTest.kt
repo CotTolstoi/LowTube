@@ -4,17 +4,48 @@ import android.media.MediaCodec
 import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.media.MediaMuxer
+import android.os.Build
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
+import org.junit.Assert.fail
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.File
+import java.io.IOException
 import java.nio.ByteBuffer
 
 @RunWith(AndroidJUnit4::class)
 class MediaTrackMuxerTest {
+    @Test
+    fun android6WebmRemuxIsRejectedBeforeNativeMuxerCanCrash() {
+        assumeTrue("Android 6 guard only", Build.VERSION.SDK_INT < Build.VERSION_CODES.N)
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val directory = File(context.cacheDir, "android6-webm-mux-guard-test").apply {
+            deleteRecursively()
+            mkdirs()
+        }
+        val source = File(directory, "source.webm")
+        val output = File(directory, "must-not-be-created.webm")
+        try {
+            InstrumentationRegistry.getInstrumentation().context.assets.open(
+                "com/lowtube/android/downloads/webm_vp8_vorbis.webm",
+            ).use { input -> source.outputStream().use(input::copyTo) }
+
+            try {
+                MediaTrackMuxer.merge(source, source, output)
+                fail("Separate WebM remux should be rejected on Android 6")
+            } catch (expected: IOException) {
+                assertTrue(expected.message.orEmpty().contains("disabled on Android 6"))
+                assertTrue(!output.exists())
+            }
+        } finally {
+            directory.deleteRecursively()
+        }
+    }
+
     @Test
     fun combinesSeparateAvcAndAacMp4TracksWithoutTranscoding() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
@@ -63,7 +94,91 @@ class MediaTrackMuxerTest {
         }
     }
 
-    private fun extractTrack(source: File, destination: File, mime: String) {
+    @Test
+    fun combinesSeparateVp8AndVorbisWebmTracksWithoutTranscoding() {
+        assumeTrue("Separate WebM tracks are disabled on Android 6 after a native WebmWriter crash", Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val directory = File(context.cacheDir, "vp8-vorbis-webm-mux-test").apply {
+            deleteRecursively()
+            mkdirs()
+        }
+        val source = File(directory, "source.webm")
+        val video = File(directory, "video-only.webm")
+        val audio = File(directory, "audio-only.webm")
+        val output = File(directory, "combined.webm")
+        try {
+            InstrumentationRegistry.getInstrumentation().context.assets.open(
+                "com/lowtube/android/downloads/webm_vp8_vorbis.webm",
+            ).use { input -> source.outputStream().use(input::copyTo) }
+            extractTrack(source, video, "video/x-vnd.on2.vp8", MediaMuxer.OutputFormat.MUXER_OUTPUT_WEBM)
+            extractTrack(source, audio, "audio/vorbis", MediaMuxer.OutputFormat.MUXER_OUTPUT_WEBM)
+
+            MediaTrackMuxer.merge(video, audio, output)
+
+            assertCombined(output, setOf("video/x-vnd.on2.vp8", "audio/vorbis"))
+        } finally {
+            directory.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun combinesSeparateVp9AndOpusWebmTracksWithoutTranscoding() {
+        assumeTrue("Platform WebM VP9/Opus muxing requires Android 10+", Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val directory = File(context.cacheDir, "vp9-opus-webm-mux-test").apply {
+            deleteRecursively()
+            mkdirs()
+        }
+        val source = File(directory, "source.webm")
+        val video = File(directory, "video-only.webm")
+        val audio = File(directory, "audio-only.webm")
+        val output = File(directory, "combined.webm")
+        try {
+            InstrumentationRegistry.getInstrumentation().context.assets.open(
+                "com/lowtube/android/downloads/webm_vp9_opus.webm",
+            ).use { input -> source.outputStream().use(input::copyTo) }
+            extractTrack(source, video, "video/x-vnd.on2.vp9", MediaMuxer.OutputFormat.MUXER_OUTPUT_WEBM)
+            extractTrack(source, audio, "audio/opus", MediaMuxer.OutputFormat.MUXER_OUTPUT_WEBM)
+
+            MediaTrackMuxer.merge(video, audio, output)
+
+            assertCombined(output, setOf("video/x-vnd.on2.vp9", "audio/opus"))
+        } finally {
+            directory.deleteRecursively()
+        }
+    }
+
+    private fun assertCombined(output: File, expectedMimeTypes: Set<String>) {
+        val result = MediaExtractor()
+        try {
+            result.setDataSource(output.absolutePath)
+            assertEquals(2, result.trackCount)
+            val mimeTypes = (0 until result.trackCount)
+                .map { result.getTrackFormat(it).getString(MediaFormat.KEY_MIME) }
+                .toSet()
+            assertEquals(expectedMimeTypes, mimeTypes)
+            for (index in 0 until result.trackCount) {
+                val format = result.getTrackFormat(index)
+                assertTrue(format.getLong(MediaFormat.KEY_DURATION) > 0L)
+                result.selectTrack(index)
+            }
+            var sampleCount = 0
+            while (result.sampleTrackIndex >= 0) {
+                sampleCount++
+                if (!result.advance()) break
+            }
+            assertTrue("The combined file must contain media samples", sampleCount > 0)
+        } finally {
+            result.release()
+        }
+    }
+
+    private fun extractTrack(
+        source: File,
+        destination: File,
+        mime: String,
+        outputFormat: Int = MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4,
+    ) {
         val extractor = MediaExtractor()
         var muxer: MediaMuxer? = null
         var started = false
@@ -74,7 +189,7 @@ class MediaTrackMuxerTest {
             }
             val format = extractor.getTrackFormat(sourceTrack)
             extractor.selectTrack(sourceTrack)
-            muxer = MediaMuxer(destination.absolutePath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
+            muxer = MediaMuxer(destination.absolutePath, outputFormat)
             val outputTrack = muxer.addTrack(format)
             muxer.start()
             started = true

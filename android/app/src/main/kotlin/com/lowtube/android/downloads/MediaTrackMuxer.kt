@@ -34,6 +34,9 @@ internal object MediaTrackMuxer {
             when {
                 videoMime == "video/avc" && audioMime == "audio/mp4a-latm" -> Unit
                 videoMime == "video/x-vnd.on2.vp8" && audioMime in setOf("audio/vorbis", "audio/opus") -> {
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+                        throw IOException("Separate WebM tracks are disabled on Android 6 because its native muxer may crash.")
+                    }
                     if (audioMime == "audio/opus" && Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
                         throw IOException("Opus WebM muxing requires Android 10 or newer.")
                     }

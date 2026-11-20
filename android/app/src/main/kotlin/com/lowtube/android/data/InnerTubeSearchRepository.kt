@@ -344,7 +344,9 @@ class InnerTubeSearchRepository(context: Context? = null) {
         formats: List<PlaybackFormat>,
         preferences: DownloadStreamPreferences,
     ): List<Pair<PlaybackFormat, PlaybackFormat?>> {
-        if (preferences.h264Only) return emptyList()
+        // API23's WebmWriter crashes natively while adding Vorbis track metadata; do not expose
+        // a format that can terminate the app. Muxed one-file WebM downloads remain available.
+        if (preferences.h264Only || Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return emptyList()
         val audioCodecs = buildList {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) add("opus")
             add("vorbis")
@@ -372,9 +374,9 @@ class InnerTubeSearchRepository(context: Context? = null) {
     ) = separateMp4Tracks(formats, preferences) + separateWebmTracks(formats, preferences)
 
     private fun isMuxableWebmVideoCodec(codec: String): Boolean =
-        codec.startsWith("vp8", ignoreCase = true) ||
-            (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N &&
-                (codec.startsWith("vp9", ignoreCase = true) || codec.startsWith("vp09", ignoreCase = true)))
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.N &&
+            (codec.startsWith("vp8", ignoreCase = true) ||
+                codec.startsWith("vp9", ignoreCase = true) || codec.startsWith("vp09", ignoreCase = true))
 
     private fun resolveStreams(
         video: VideoItem,

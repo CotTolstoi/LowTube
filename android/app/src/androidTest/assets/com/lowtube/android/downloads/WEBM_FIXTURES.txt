@@ -1,0 +1,11 @@
+CC0 WebM muxing fixtures from https://loremfile.dev/webm/.
+
+webm_vp8_vorbis.webm
+  Source: https://loremfile.dev/webm/720p-5s-vp8.webm
+  SHA-256: C65A926DE39F8897AA5D30671AC2B8BFB1309C497297946E830A4BE28E7C8DE3
+
+webm_vp9_opus.webm
+  Source: https://loremfile.dev/webm/720p-5s-vp9.webm
+  SHA-256: 3E080CCEFCD8B8D99F09FE06D621F9633209D060B910A0EDB95FF79F84AB59DA
+
+The provider states that all media files on the source site are CC0.
