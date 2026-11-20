@@ -489,7 +489,10 @@ fun LibraryScreen(
             item {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Text(stringResource(R.string.watch_history), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 12.dp))
-                    if (history.isNotEmpty()) TextButton(onClick = { confirmHistoryClear = true }) { Text(stringResource(R.string.clear_history)) }
+                    if (history.isNotEmpty()) TextButton(
+                        modifier = Modifier.testTag(WATCH_HISTORY_CLEAR_ACTION_TEST_TAG),
+                        onClick = { confirmHistoryClear = true },
+                    ) { Text(stringResource(R.string.clear_history)) }
                 }
             }
             if (history.isEmpty()) item { Text(stringResource(R.string.history_empty), color = MaterialTheme.colorScheme.onSurfaceVariant) }
@@ -650,7 +653,10 @@ fun LibraryScreen(
             title = { Text(stringResource(R.string.clear_history)) },
             text = { Text(stringResource(R.string.clear_history_confirm)) },
             confirmButton = {
-                Button(onClick = { repository.clearWatchHistory(); confirmHistoryClear = false; refresh++ }) { Text(stringResource(R.string.clear_history)) }
+                Button(
+                    modifier = Modifier.testTag(WATCH_HISTORY_CLEAR_CONFIRM_TEST_TAG),
+                    onClick = { repository.clearWatchHistory(); confirmHistoryClear = false; refresh++ },
+                ) { Text(stringResource(R.string.clear_history)) }
             },
             dismissButton = { TextButton(onClick = { confirmHistoryClear = false }) { Text(stringResource(R.string.cancel)) } },
         )
@@ -807,7 +813,10 @@ private fun WatchHistoryRow(entry: WatchHistoryEntry, onPlay: () -> Unit, onRemo
                 if (entry.video.channel.isNotBlank()) Text(entry.video.channel, style = MaterialTheme.typography.bodySmall)
                 Text(progressText, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            TextButton(onClick = onRemove) { Text(stringResource(R.string.remove)) }
+            TextButton(
+                modifier = Modifier.testTag("watch-history-remove-${entry.video.id}"),
+                onClick = onRemove,
+            ) { Text(stringResource(R.string.remove)) }
         }
     }
 }
@@ -840,3 +849,5 @@ private fun YouTubePlaylistVideoRow(video: VideoItem, onPlay: () -> Unit, onQueu
 
 internal const val LIBRARY_LIST_TEST_TAG = "lowtube-library-list"
 internal const val LIBRARY_DETAIL_PANE_TEST_TAG = "lowtube-library-detail-pane"
+internal const val WATCH_HISTORY_CLEAR_ACTION_TEST_TAG = "lowtube-watch-history-clear-action"
+internal const val WATCH_HISTORY_CLEAR_CONFIRM_TEST_TAG = "lowtube-watch-history-clear-confirm"
