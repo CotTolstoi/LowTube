@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
@@ -61,6 +62,57 @@ class SubscriptionCategoryUiTest {
             composeTestRule.onNodeWithText("Science", useUnmergedTree = true).performClick()
             composeTestRule.onNodeWithText("Science upload").assertExists()
             assertTrue(composeTestRule.onAllNodesWithText("Other upload").fetchSemanticsNodes().isEmpty())
+        } finally {
+            repository.close()
+            context.deleteDatabase(databaseName)
+        }
+    }
+
+    @Test
+    fun subscriptionFeedUsesAdaptiveGridWithoutDroppingItems() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val databaseName = "lowtube-subscriptions-grid-${System.currentTimeMillis()}.db"
+        val repository = LocalLibraryRepository(context, databaseName)
+        val channelId = "UC" + "g".repeat(22)
+        try {
+            repository.follow(channelId, "Grid channel", "https://www.youtube.com/channel/$channelId")
+            repository.replaceChannelFeed(
+                channelId,
+                listOf(
+                    VideoItem("gridvideo01", "Grid first video", "Grid channel", channelId, url = "https://www.youtube.com/watch?v=gridvideo01"),
+                    VideoItem("gridvideo02", "Grid second video", "Grid channel", channelId, url = "https://www.youtube.com/watch?v=gridvideo02"),
+                ),
+                1L,
+            )
+
+            composeTestRule.setContent {
+                MaterialTheme {
+                    SubscriptionsTab(
+                        repository = repository,
+                        accountEmail = "",
+                        refreshRevision = 0,
+                        youtubeSyncBusy = false,
+                        youtubeSyncMessage = "",
+                        onSyncYouTubeSubscriptions = {},
+                        onAddChannel = {},
+                        onBrowseChannel = {},
+                        onPlay = {},
+                    )
+                }
+            }
+            composeTestRule.waitForIdle()
+
+            val density = context.resources.displayMetrics.density
+            val grid = composeTestRule.onNodeWithTag(SUBSCRIPTIONS_FEED_GRID_TEST_TAG).fetchSemanticsNode().boundsInRoot
+            val first = composeTestRule.onNodeWithText("Grid first video").fetchSemanticsNode().boundsInRoot
+            val second = composeTestRule.onNodeWithText("Grid second video").fetchSemanticsNode().boundsInRoot
+            if (grid.width / density >= 760f) {
+                assertTrue("Wide subscriptions should use multiple columns", second.left > first.left && second.top == first.top)
+            } else {
+                assertTrue("Compact subscriptions should retain one column", second.top >= first.bottom)
+            }
+            composeTestRule.onNodeWithText("Grid first video").assertExists()
+            composeTestRule.onNodeWithText("Grid second video").assertExists()
         } finally {
             repository.close()
             context.deleteDatabase(databaseName)

@@ -23,6 +23,9 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
@@ -48,6 +51,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.layout.ContentScale
 import coil3.compose.AsyncImage
@@ -61,6 +65,8 @@ import com.lowtube.android.model.VideoItem
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+
+internal const val SUBSCRIPTIONS_FEED_GRID_TEST_TAG = "subscriptions-adaptive-grid"
 
 @Composable
 internal fun SubscriptionsTab(
@@ -256,10 +262,12 @@ internal fun SubscriptionsTab(
                 Text(stringResource(R.string.subscription_feed_filtered_empty), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(minSize = 360.dp),
+                modifier = Modifier.fillMaxSize().testTag(SUBSCRIPTIONS_FEED_GRID_TEST_TAG),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 8.dp),
+                contentPadding = PaddingValues(vertical = 8.dp),
             ) {
                 items(visibleVideos, key = { it.channelId + ":" + it.id }) { video ->
                     Card(
