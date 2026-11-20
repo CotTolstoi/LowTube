@@ -223,6 +223,8 @@
     <string name="clear_history_confirm">Очистить всю локальную историю и позиции возобновления?</string>
     <string name="watched">Просмотрено</string>
     <string name="now_playing">Сейчас воспроизводится</string>
+    <string name="full_screen">На весь экран</string>
+    <string name="exit_full_screen">Выйти из полноэкранного режима</string>
     <string name="start_over">С начала</string>
     <string name="playback_speed">Скорость воспроизведения</string>
     <string name="seek_backward_10_seconds">Перемотать назад на 10 секунд</string>

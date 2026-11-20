@@ -1,9 +1,11 @@
 package com.lowtube.android.ui.playback
 
+import android.app.Activity
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.ActivityInfo
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -51,9 +53,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.MimeTypes
@@ -125,6 +130,10 @@ fun PlaybackScreen(
     onPictureInPictureEligibilityChanged: (Boolean, Boolean) -> Unit = { _, _ -> },
 ) {
     val context = LocalContext.current
+    val hostActivity = context as? Activity
+    val originalRequestedOrientation = remember(hostActivity) {
+        hostActivity?.requestedOrientation ?: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+    }
     val repository = remember(context) { InnerTubeSearchRepository(context.applicationContext) }
     val decoderPreferences = remember(context) {
         context.getSharedPreferences(PlaybackDecoderDiagnostics.PREFERENCES_NAME, Context.MODE_PRIVATE)
@@ -138,6 +147,7 @@ fun PlaybackScreen(
     var speedMenuExpanded by remember { mutableStateOf(false) }
     var audioMenuExpanded by remember { mutableStateOf(false) }
     var subtitleMenuExpanded by remember { mutableStateOf(false) }
+    var fullScreen by rememberSaveable(video.id, playbackRequestId) { mutableStateOf(false) }
     var externalAudioUri by rememberSaveable(video.id, localAudioTrack?.uri) { mutableStateOf("") }
     var externalAudioLabel by rememberSaveable(video.id, localAudioTrack?.uri) { mutableStateOf("") }
     var externalSubtitleUri by rememberSaveable(video.id, localAudioTrack?.uri) { mutableStateOf("") }
@@ -169,6 +179,33 @@ fun PlaybackScreen(
     val latestPreloadNext by rememberUpdatedState(preloadNext)
     val latestHasQueuedItems by rememberUpdatedState(hasQueuedItems)
     val immersiveShorts = video.kind == "shorts" && localAudioTrack == null && !playbackPreferences.audioOnly
+    val canUseVideoFullscreen = !immersiveShorts && localAudioTrack == null &&
+        (localVideoSource != null || !playbackPreferences.audioOnly)
+
+    LaunchedEffect(hostActivity, fullScreen, canUseVideoFullscreen) {
+        val activity = hostActivity ?: return@LaunchedEffect
+        val enabled = fullScreen && canUseVideoFullscreen
+        activity.requestedOrientation = if (enabled) {
+            ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        } else originalRequestedOrientation
+        val insets = WindowCompat.getInsetsController(activity.window, activity.window.decorView)
+        if (enabled) {
+            insets.systemBarsBehavior = androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            insets.hide(WindowInsetsCompat.Type.systemBars())
+        } else {
+            insets.show(WindowInsetsCompat.Type.systemBars())
+        }
+    }
+    DisposableEffect(hostActivity) {
+        onDispose {
+            hostActivity?.requestedOrientation = originalRequestedOrientation
+            hostActivity?.let { activity ->
+                WindowCompat.getInsetsController(activity.window, activity.window.decorView)
+                    .show(WindowInsetsCompat.Type.systemBars())
+            }
+        }
+    }
+    BackHandler(enabled = fullScreen) { fullScreen = false }
 
     val seekBy: (Long) -> Unit = { offsetMs ->
         val activeController = controller
@@ -733,11 +770,38 @@ fun PlaybackScreen(
     }
 
     Scaffold(topBar = {
-        if (!immersiveShorts) TopAppBar(
+        if (!immersiveShorts && !fullScreen) TopAppBar(
             title = { Text(stringResource(R.string.now_playing)) },
             navigationIcon = { TextButton(onClick = onBack) { Text(stringResource(R.string.back)) } },
+            actions = {
+                if (canUseVideoFullscreen) {
+                    TextButton(
+                        onClick = { fullScreen = true },
+                        modifier = Modifier.testTag(PLAYBACK_FULLSCREEN_ENTER_TAG),
+                    ) { Text(stringResource(R.string.full_screen)) }
+                }
+            },
         )
     }) { padding ->
+        if (fullScreen && canUseVideoFullscreen) {
+            Box(Modifier.fillMaxSize().background(Color.Black)) {
+                controller?.let { activeController ->
+                    AndroidView(
+                        modifier = Modifier.fillMaxSize(),
+                        factory = { viewContext: Context -> PlayerView(viewContext).apply { player = activeController; useController = true } },
+                        update = { it.player = activeController },
+                    )
+                }
+                TextButton(
+                    onClick = { fullScreen = false },
+                    modifier = Modifier.align(Alignment.TopStart).padding(8.dp)
+                        .background(Color.Black.copy(alpha = 0.62f)).testTag(PLAYBACK_FULLSCREEN_EXIT_TAG),
+                ) { Text(stringResource(R.string.exit_full_screen), color = Color.White) }
+                if (loading) CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                message?.let { Text(it, modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp), color = Color.White) }
+            }
+            return@Scaffold
+        }
         if (immersiveShorts) {
             Box(Modifier.fillMaxSize().background(Color.Black).padding(padding)) {
                 var verticalDrag by remember(video.id, playbackRequestId) { mutableStateOf(0f) }
@@ -1294,3 +1358,5 @@ internal fun updateTrackOverride(player: Player?, type: Int, option: TrackOption
 }
 
 internal const val PLAYBACK_START_OVER_TEST_TAG = "lowtube-playback-start-over"
+internal const val PLAYBACK_FULLSCREEN_ENTER_TAG = "lowtube-playback-fullscreen-enter"
+internal const val PLAYBACK_FULLSCREEN_EXIT_TAG = "lowtube-playback-fullscreen-exit"
