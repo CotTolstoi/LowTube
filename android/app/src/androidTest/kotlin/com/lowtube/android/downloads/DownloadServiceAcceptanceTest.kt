@@ -317,6 +317,100 @@ class DownloadServiceAcceptanceTest {
     }
 
     @Test
+    fun separateAvcAacTracksResumeAndPublishAsMatroska() {
+        runBlocking {
+            assumeTrue(
+                "Separate-track MKV queue acceptance is opt-in; pass -e runMkvPairDownloadAcceptance true",
+                InstrumentationRegistry.getArguments().getString("runMkvPairDownloadAcceptance") == "true",
+            )
+            val context = ApplicationProvider.getApplicationContext<Context>()
+            val storagePermissionAvailable = Build.VERSION.SDK_INT > 28 ||
+                (context.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
+                    context.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
+            assumeTrue("Android 6 publication acceptance requires already-granted READ/WRITE storage permission", storagePermissionAvailable)
+
+            val instrumentation = InstrumentationRegistry.getInstrumentation()
+            val videoBytes = instrumentation.context.assets.open("com/lowtube/android/downloads/mux_video_track.mp4").use { it.readBytes() }
+            val audioBytes = instrumentation.context.assets.open("com/lowtube/android/downloads/mux_audio_track.mp4").use { it.readBytes() }
+            assertTrue("Synthetic separate-track fixtures must remain below the 64 KiB total cap", videoBytes.size + audioBytes.size <= CHUNK_BYTES)
+            val videoServer = RangeResumeLoopbackServer(videoBytes.size.toLong(), MAX_TRACK_RANGE_REQUESTS, videoBytes)
+            val audioServer = RangeResumeLoopbackServer(audioBytes.size.toLong(), MAX_TRACK_RANGE_REQUESTS, audioBytes)
+            val dbName = "lowtube-mkv-pair-${System.currentTimeMillis()}.db"
+            val partial = File(context.cacheDir, "$dbName.part")
+            val publishedCopy = File(context.cacheDir, "$dbName-output.mkv")
+            val store = DownloadJobStore(context, dbName)
+            var id = 0L
+            var publishedUri: Uri? = null
+            val video = VideoItem("fixture", "Separate AVC AAC to Matroska", duration = "1", url = "https://www.youtube.com/watch?v=fixture")
+            val videoJson = JSONObject().put("id", video.id).put("title", video.title).put("url", video.url).toString()
+            try {
+                id = store.insert(
+                    videoJson,
+                    "bounded-mux-pair-test|container=mkv",
+                    false,
+                    "lowtube-mkv-pair-${System.currentTimeMillis()}.mkv",
+                    "video/x-matroska",
+                    "LowTube separate-track MKV acceptance",
+                    partial.absolutePath,
+                    maxBytesPerAttempt = TRACK_RANGE_CHUNK_BYTES,
+                )
+                videoServer.start()
+                audioServer.start()
+
+                var result = store.get(id) ?: error("Separate-track MKV job disappeared before it started.")
+                for (attempt in 0 until MAX_TRACK_RANGE_REQUESTS) {
+                    val bytesBeforeAttempt = File(partial.absolutePath + ".video").length() + File(partial.absolutePath + ".audio").length()
+                    startService(context, dbName, videoServer.url, audioServer.url)
+                    result = waitForTerminalAttempt(store, id)
+                    if (result.status == DownloadStatus.SUCCESSFUL) break
+                    assertEquals("Separate-track MKV transfer failed: ${result.reason}", DownloadStatus.PAUSED, result.status)
+                    waitForServiceStopped(context)
+                    val videoPartialBytes = File(partial.absolutePath + ".video").length()
+                    val audioPartialBytes = File(partial.absolutePath + ".audio").length()
+                    assertEquals(videoPartialBytes + audioPartialBytes, result.downloadedBytes)
+                    assertTrue("A bounded MKV transfer attempt exceeded its two-track byte cap", result.downloadedBytes - bytesBeforeAttempt <= TRACK_RANGE_CHUNK_BYTES)
+                    store.update(id, DownloadStatus.PENDING)
+                }
+
+                assertEquals("Separate-track MKV job did not finish within bounded retries: ${result.reason}", DownloadStatus.SUCCESSFUL, result.status)
+                publishedUri = Uri.parse(result.localUri)
+                assertEquals("video/x-matroska", context.contentResolver.getType(publishedUri!!))
+                context.contentResolver.openInputStream(publishedUri!!)?.use { input -> publishedCopy.outputStream().use(input::copyTo) }
+                    ?: error("Published separate-track Matroska could not be opened.")
+                val signature = publishedCopy.inputStream().use { input -> ByteArray(4) { input.read().toByte() } }
+                assertTrue("Published separate-track file must have the Matroska EBML signature", signature.contentEquals(byteArrayOf(0x1a, 0x45, 0xdf.toByte(), 0xa3.toByte())))
+                MatroskaMedia3TestReader.assertTracksAndSamples(publishedCopy, setOf("video/avc", "audio/mp4a-latm"))
+                assertTrue("Video Range requests did not resume for MKV: ${videoServer.rangeHeaders}", rangeHeadersAreSequential(videoServer.rangeHeaders, videoBytes.size.toLong()))
+                assertTrue("Audio Range requests did not resume for MKV: ${audioServer.rangeHeaders}", rangeHeadersAreSequential(audioServer.rangeHeaders, audioBytes.size.toLong()))
+                assertFalse("Private video partial remained after MKV success", File(partial.absolutePath + ".video").exists())
+                assertFalse("Private audio partial remained after MKV success", File(partial.absolutePath + ".audio").exists())
+                assertFalse("Video Range sidecar remained after MKV success", File(partial.absolutePath + ".video.total").exists())
+                assertFalse("Audio Range sidecar remained after MKV success", File(partial.absolutePath + ".audio.total").exists())
+                waitForServiceStopped(context)
+                DownloadFileStore(context).deletePublished(publishedUri!!)
+                publishedUri = null
+                Log.i(TAG, "separateMkvDownloadStatus=${result.status}, videoBytes=${videoBytes.size}, audioBytes=${audioBytes.size}, rangeRequests=${videoServer.rangeHeaders.size}/${audioServer.rangeHeaders.size}")
+            } finally {
+                context.stopService(Intent(context, DownloadService::class.java))
+                videoServer.close()
+                audioServer.close()
+                partial.delete()
+                File(partial.absolutePath + ".video").delete()
+                File(partial.absolutePath + ".audio").delete()
+                File(partial.absolutePath + ".video.total").delete()
+                File(partial.absolutePath + ".audio.total").delete()
+                publishedCopy.delete()
+                publishedUri?.let { runCatching { DownloadFileStore(context).deletePublished(it) } }
+                if (id > 0L) store.remove(id)
+                store.close()
+                context.deleteDatabase(dbName)
+                (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(NOTIFICATION_ID)
+                (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(DownloadService.TERMINAL_NOTIFICATION_ID)
+            }
+        }
+    }
+
+    @Test
     fun cancellingMuxedDownloadDuringAudioRangeKeepsPartialsForResume() {
         runBlocking {
             assumeTrue(

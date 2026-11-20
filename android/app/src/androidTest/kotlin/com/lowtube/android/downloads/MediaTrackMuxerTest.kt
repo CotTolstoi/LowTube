@@ -75,13 +75,17 @@ class MediaTrackMuxerTest {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
         val directory = File(context.cacheDir, "separate-avc-aac-matroska-test").apply { deleteRecursively(); mkdirs() }
-        val source = File(directory, "source.mp4")
+        val video = File(directory, "video-only.mp4")
+        val audio = File(directory, "audio-only.mp4")
         val output = File(directory, "combined.mkv")
         try {
-            instrumentation.context.assets.open("com/lowtube/android/downloads/mux_fixture.mp4").use { input ->
-                source.outputStream().use(input::copyTo)
+            instrumentation.context.assets.open("com/lowtube/android/downloads/mux_video_track.mp4").use { input ->
+                video.outputStream().use(input::copyTo)
             }
-            MatroskaMuxer.muxSeparate(source, source, output)
+            instrumentation.context.assets.open("com/lowtube/android/downloads/mux_audio_track.mp4").use { input ->
+                audio.outputStream().use(input::copyTo)
+            }
+            MatroskaMuxer.muxSeparate(video, audio, output)
             MatroskaMedia3TestReader.assertTracksAndSamples(output, setOf("video/avc", "audio/mp4a-latm"))
         } finally {
             directory.deleteRecursively()

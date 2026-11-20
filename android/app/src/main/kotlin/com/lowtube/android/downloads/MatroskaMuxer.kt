@@ -37,9 +37,9 @@ internal object MatroskaMuxer {
         try {
             videoExtractor.setDataSource(videoFile.absolutePath)
             audioExtractor.setDataSource(audioFile.absolutePath)
-            val video = buildTracks(videoExtractor, videoExtractor.trackCount, videoFile).singleOrNull { it.type == TRACK_VIDEO }
+            val video = buildTracks(videoExtractor, videoExtractor.trackCount, videoFile).singleOrNull { it.type == TRACK_VIDEO }?.copy(number = 1)
                 ?: throw IOException("The downloaded video track is missing or unsupported.")
-            val audio = buildTracks(audioExtractor, audioExtractor.trackCount, audioFile).singleOrNull { it.type == TRACK_AUDIO }
+            val audio = buildTracks(audioExtractor, audioExtractor.trackCount, audioFile).singleOrNull { it.type == TRACK_AUDIO }?.copy(number = 2)
                 ?: throw IOException("The downloaded audio track is missing or unsupported.")
             writeSeparate(videoExtractor, video, audioExtractor, audio, output, cancelled)
         } finally {
