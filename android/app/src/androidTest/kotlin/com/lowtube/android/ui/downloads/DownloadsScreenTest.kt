@@ -4,6 +4,7 @@ import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.lowtube.android.R
@@ -13,6 +14,7 @@ import com.lowtube.android.model.DownloadStatus
 import com.lowtube.android.ui.theme.LowTubeTheme
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -67,6 +69,14 @@ class DownloadsScreenTest {
             composeTestRule.onNodeWithText(context.getString(R.string.downloads)).assertIsDisplayed()
             composeTestRule.onNodeWithText("Paused screen fixture").assertIsDisplayed()
             composeTestRule.onNodeWithText("50% • 32 B / 64 B").assertIsDisplayed()
+            val density = context.resources.displayMetrics.density
+            val gridBounds = composeTestRule.onNodeWithTag(DOWNLOADS_GRID_TEST_TAG).fetchSemanticsNode().boundsInRoot
+            val cardBounds = composeTestRule.onNodeWithTag("download-entry-$jobId").fetchSemanticsNode().boundsInRoot
+            if (gridBounds.width / density >= 760f) {
+                assertTrue("Wide downloads should use a card width smaller than the full window", cardBounds.width < gridBounds.width * 0.75f)
+            } else {
+                assertTrue("Compact downloads should keep a full-width card", cardBounds.width >= gridBounds.width * 0.75f)
+            }
             composeTestRule.onNodeWithText(context.getString(R.string.retry)).performClick()
             assertEquals("Retry should target the visible queue entry", jobId, retryId)
 

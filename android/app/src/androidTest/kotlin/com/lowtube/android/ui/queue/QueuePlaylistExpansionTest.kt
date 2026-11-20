@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
@@ -17,6 +18,7 @@ import com.lowtube.android.model.VideoItem
 import org.junit.Rule
 import org.junit.Test
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 
 class QueuePlaylistExpansionTest {
     @get:Rule
@@ -59,6 +61,45 @@ class QueuePlaylistExpansionTest {
             composeTestRule.onNodeWithText("Loaded playlist video").assertExists()
             composeTestRule.onNodeWithText("Already queued").assertExists()
             assertEquals(listOf("video000002", "video000001"), repository.queue().map { it.video.id })
+        } finally {
+            repository.close()
+            context.deleteDatabase(databaseName)
+        }
+    }
+
+    @Test
+    fun queueGridUsesAvailableWidthAndKeepsRowsInOrder() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val databaseName = "queue-adaptive-${System.currentTimeMillis()}.db"
+        val repository = LocalLibraryRepository(context, databaseName)
+        repository.enqueue(video("adaptive0001", "Adaptive queue first"))
+        repository.enqueue(video("adaptive0002", "Adaptive queue second"))
+        try {
+            composeTestRule.setContent {
+                MaterialTheme {
+                    QueueScreen(
+                        repository = repository,
+                        refreshRevision = 0,
+                        onBack = {},
+                        onPlay = {},
+                        onExpandPlaylist = {},
+                        expandingPlaylistRowId = null,
+                        autoNext = true,
+                        onAutoNextChanged = {},
+                    )
+                }
+            }
+            composeTestRule.waitForIdle()
+
+            val density = context.resources.displayMetrics.density
+            val grid = composeTestRule.onNodeWithTag(QUEUE_GRID_TEST_TAG).fetchSemanticsNode().boundsInRoot
+            val first = composeTestRule.onNodeWithText("Adaptive queue first").fetchSemanticsNode().boundsInRoot
+            val second = composeTestRule.onNodeWithText("Adaptive queue second").fetchSemanticsNode().boundsInRoot
+            if (grid.width / density >= 760f) {
+                assertTrue("Wide queue should use multiple columns", second.left > first.left && second.top == first.top)
+            } else {
+                assertTrue("Compact queue should retain one column and item order", second.top >= first.bottom)
+            }
         } finally {
             repository.close()
             context.deleteDatabase(databaseName)

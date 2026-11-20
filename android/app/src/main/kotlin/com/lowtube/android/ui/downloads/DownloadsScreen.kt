@@ -6,8 +6,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -26,12 +27,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.lowtube.android.R
 import com.lowtube.android.data.DownloadRepository
 import com.lowtube.android.model.DownloadRecord
 import com.lowtube.android.model.DownloadStatus
 import kotlinx.coroutines.delay
+
+internal const val DOWNLOADS_GRID_TEST_TAG = "downloads-adaptive-grid"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,14 +75,17 @@ fun DownloadsScreen(
                 Text(stringResource(R.string.downloads_empty), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(padding),
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(minSize = 360.dp),
+                modifier = Modifier.fillMaxSize().padding(padding).testTag(DOWNLOADS_GRID_TEST_TAG),
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 items(records, key = { it.id }) { record ->
                     DownloadRow(
                         record,
+                        modifier = Modifier.testTag("download-entry-${record.id}"),
                         onRemove = {
                             if (record.status == DownloadStatus.RUNNING || record.status == DownloadStatus.PENDING) repository.cancel(record.id)
                             else repository.remove(record.id)
@@ -107,6 +114,7 @@ fun DownloadsScreen(
 internal fun DownloadRow(
     record: DownloadRecord,
     retrying: Boolean,
+    modifier: Modifier = Modifier,
     onPlayInLowTube: () -> Unit = {},
     onOpen: () -> Unit,
     onRemove: () -> Unit,
@@ -128,7 +136,7 @@ internal fun DownloadRow(
         else -> record.mimeType
     }
     val progress = if (record.totalBytes > 0) record.downloadedBytes.toFloat() / record.totalBytes.toFloat() else null
-    Card(Modifier.fillMaxWidth()) {
+    Card(modifier.fillMaxWidth()) {
         Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(record.title, style = MaterialTheme.typography.titleMedium, maxLines = 2)
             Text(format, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
