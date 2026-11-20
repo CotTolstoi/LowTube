@@ -133,7 +133,7 @@ fun LowTubeSearchScreen(
     onOpenDownloads: () -> Unit,
     onOpenDecoderBenchmark: () -> Unit = {},
     onPlay: (VideoItem) -> Unit,
-    onPlayShorts: (VideoItem, List<VideoItem>) -> Unit,
+    onPlayShorts: (VideoItem, List<VideoItem>, String?, Boolean, String, String, String) -> Unit,
     onAddToQueue: (VideoItem) -> Unit,
     onResolveDownloadOptions: (VideoItem, Boolean, (Result<List<DownloadFormatOption>>) -> Unit) -> Unit,
     onDownload: (VideoItem, DownloadFormatOption) -> Unit,
@@ -632,7 +632,17 @@ fun LowTubeSearchScreen(
                                 viewModel.search(item.url, language, emptySearchMessage, requestFailedMessage, pageSize)
                             }
                             } else ({
-                                if (item.kind == "shorts") onPlayShorts(item, visibleItems) else onPlay(item)
+                                if (item.kind == "shorts") {
+                                    onPlayShorts(
+                                        item,
+                                        visibleItems,
+                                        state.continuation,
+                                        state.isHome,
+                                        state.query,
+                                        state.homeTopic,
+                                        state.discoveryLanguage,
+                                    )
+                                } else onPlay(item)
                             }),
                         )
                     }

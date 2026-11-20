@@ -162,6 +162,8 @@
     <string name="browse_channel">Відео каналу</string>
     <string name="saved_to_watch_later">Збережено в «Переглянути пізніше»</string>
     <string name="shorts_save">Зберегти на потім</string>
+    <string name="shorts_no_more">У цій стрічці більше немає Shorts.</string>
+    <string name="shorts_load_failed">Не вдалося завантажити Shorts. Проведіть угору, щоб повторити.</string>
     <string name="watch_later">Переглянути пізніше</string>
     <string name="action_failed">Не вдалося виконати дію.</string>
     <string name="watch_queue">Черга</string>

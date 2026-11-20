@@ -162,6 +162,8 @@
     <string name="browse_channel">Browse videos</string>
     <string name="saved_to_watch_later">Saved to Watch later</string>
     <string name="shorts_save">Save to Watch later</string>
+    <string name="shorts_no_more">No more Shorts are available in this feed.</string>
+    <string name="shorts_load_failed">Could not load more Shorts. Swipe up to retry.</string>
     <string name="watch_later">Watch later</string>
     <string name="action_failed">Action failed.</string>
     <string name="watch_queue">Queue</string>

@@ -56,6 +56,8 @@ import com.lowtube.android.ui.library.LibraryScreen
 import com.lowtube.android.ui.queue.QueueScreen
 import com.lowtube.android.ui.downloads.DownloadsScreen
 import com.lowtube.android.ui.playback.PlaybackScreen
+import com.lowtube.android.ui.playback.MAX_SHORTS_SESSION_ITEMS
+import com.lowtube.android.ui.playback.loadShortsContinuation
 import com.lowtube.android.benchmark.DecoderBenchmarkScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -234,6 +236,14 @@ fun MainNavigation(
     var selectedVideo by rememberSaveable(stateSaver = videoItemSaver) { mutableStateOf(restoredPlaybackSession?.video) }
     var shortsSession by remember { mutableStateOf(emptyList<VideoItem>()) }
     var shortsSessionIndex by remember { mutableIntStateOf(-1) }
+    var shortsContinuation by remember { mutableStateOf<String?>(null) }
+    var shortsIsHome by remember { mutableStateOf(false) }
+    var shortsQuery by remember { mutableStateOf("") }
+    var shortsHomeTopic by remember { mutableStateOf("science and technology") }
+    var shortsDiscoveryLanguage by remember { mutableStateOf("any") }
+    var shortsLoadingMore by remember { mutableStateOf(false) }
+    var shortsLoadJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+    var shortsGeneration by remember { mutableIntStateOf(0) }
     var selectedLocalAudio by rememberSaveable(stateSaver = localAudioTrackSaver) {
         mutableStateOf(restoredPlaybackSession?.localAudioTrack)
     }
@@ -542,9 +552,17 @@ fun MainNavigation(
                         playbackRequestId++
                         backStack.add(Player)
                     },
-                    onPlayShorts = { video, results ->
+                    onPlayShorts = { video, results, continuation, isHome, query, homeTopic, feedLanguage ->
+                        shortsLoadJob?.cancel()
+                        shortsGeneration++
+                        shortsLoadingMore = false
                         shortsSession = results.filter { it.kind == "shorts" }
                         shortsSessionIndex = shortsSession.indexOfFirst { it.id == video.id }
+                        shortsContinuation = continuation
+                        shortsIsHome = isHome
+                        shortsQuery = query
+                        shortsHomeTopic = homeTopic
+                        shortsDiscoveryLanguage = feedLanguage
                         selectedQueueRowId = null
                         selectedLocalAudio = null
                         selectedLocalVideoSource = null
@@ -950,7 +968,9 @@ fun MainNavigation(
                     },
                     onBack = navigateBack,
                     canNavigateShortsBack = video.kind == "shorts" && shortsSessionIndex > 0,
-                    canNavigateShortsForward = video.kind == "shorts" && shortsSessionIndex in 0 until shortsSession.lastIndex,
+                    canNavigateShortsForward = video.kind == "shorts" &&
+                        (shortsSessionIndex in 0 until shortsSession.lastIndex || shortsContinuation != null),
+                    isLoadingMoreShorts = shortsLoadingMore,
                     onNavigateShorts = { direction ->
                         val targetIndex = shortsSessionIndex + direction
                         val target = shortsSession.getOrNull(targetIndex)
@@ -961,6 +981,61 @@ fun MainNavigation(
                             selectedVideo = target
                             shortsSessionIndex = targetIndex
                             playbackRequestId++
+                        } else if (direction > 0 && shortsContinuation != null && !shortsLoadingMore &&
+                            shortsSession.size < MAX_SHORTS_SESSION_ITEMS
+                        ) {
+                            val requestGeneration = shortsGeneration
+                            val requestPlaybackId = playbackRequestId
+                            shortsLoadingMore = true
+                            shortsLoadJob = scope.launch {
+                                try {
+                                    val result = loadShortsContinuation(
+                                        currentItems = shortsSession,
+                                        initialContinuation = shortsContinuation,
+                                    ) { continuation ->
+                                        if (shortsIsHome) {
+                                            catalogue.recommendations(
+                                                language = AppLocale.language(context),
+                                                topic = shortsHomeTopic,
+                                                discoveryLanguage = shortsDiscoveryLanguage,
+                                                continuation = continuation,
+                                            )
+                                        } else {
+                                            catalogue.search(
+                                                input = shortsQuery,
+                                                continuation = continuation,
+                                                language = AppLocale.language(context),
+                                            )
+                                        }
+                                    }
+                                    if (requestGeneration == shortsGeneration && requestPlaybackId == playbackRequestId &&
+                                        selectedVideo?.kind == "shorts"
+                                    ) {
+                                        shortsContinuation = result.continuation
+                                        if (result.items.isNotEmpty()) {
+                                            val firstIndex = shortsSession.size
+                                            val appended = result.items
+                                            shortsSession = shortsSession + appended
+                                            shortsSessionIndex = firstIndex
+                                            selectedVideo = appended.first()
+                                            playbackRequestId++
+                                        } else if (result.continuation == null) {
+                                            Toast.makeText(context, R.string.shorts_no_more, Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                                    throw cancelled
+                                } catch (_: Exception) {
+                                    if (requestGeneration == shortsGeneration) {
+                                        Toast.makeText(context, R.string.shorts_load_failed, Toast.LENGTH_LONG).show()
+                                    }
+                                } finally {
+                                    if (requestGeneration == shortsGeneration) {
+                                        shortsLoadingMore = false
+                                        shortsLoadJob = null
+                                    }
+                                }
+                            }
                         }
                     },
                     inPictureInPictureMode = inPictureInPictureMode,

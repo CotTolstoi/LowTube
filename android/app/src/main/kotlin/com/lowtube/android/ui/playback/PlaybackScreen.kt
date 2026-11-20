@@ -125,6 +125,7 @@ fun PlaybackScreen(
     onBack: () -> Unit,
     canNavigateShortsBack: Boolean = false,
     canNavigateShortsForward: Boolean = false,
+    isLoadingMoreShorts: Boolean = false,
     onNavigateShorts: (Int) -> Unit = {},
     inPictureInPictureMode: Boolean = false,
     onPictureInPictureEligibilityChanged: (Boolean, Boolean) -> Unit = { _, _ -> },
@@ -890,7 +891,7 @@ fun PlaybackScreen(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                if (loading) CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                if (loading || isLoadingMoreShorts) CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 message?.let { Text(it, modifier = Modifier.align(Alignment.TopCenter).padding(16.dp), color = Color.White) }
             }
             return@Scaffold
