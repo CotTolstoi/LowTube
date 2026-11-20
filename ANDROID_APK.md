@@ -1,12 +1,12 @@
-## Current artifact (2026-11-20, source revision 7c92102)
+## Current artifact (2026-11-20, source revision 89ee743)
 
-- File: `LowTube-Android-debug-0.1.0.apk`; version `0.1.0-android-dev` (version code 1); minimum Android 6.0 (API 23).
-- Build type: installable debug APK, signed with the Android debug certificate; not a production-signed release.
-- Source revision: `048002d` (`feat/android-first-run-setup`). Includes API23 VP8/Vorbis WebM muxing, first-run language/theme/UI scale/download settings, `Start over` history reset, 9:16 Shorts / 16:9 regular-video PiP, tablet Settings/setup content capped at 1280 dp, and localized Shorts/Live/Playlist card type labels. Wide setup/Settings were visually reviewed at 1600 dp on an API33 AVD; the current APK installed/launched on Android6/API23 x86_64 AVD (versionCode 1). The localized Shorts label was reviewed in For you on an API33 AVD; no playback was started. Portrait AVC fixture acceptance (test-source commit `77d5487`) passed on API33 AVD and connected Android13/API33 through real Compose/Media3/system PiP at 9:16 with a ≤5-second local fixture. Live YouTube Shorts resolver/rendering, system PiP controls, API26 runtime, and physical-tablet layout remain unverified.
-- APK size: 25664463 bytes.
-- SHA-256: `3C8FC4FDD3E60926D0554F48E3B6FE68F726D4F9C06CAB795760F04E546E124F`.
-- `:app:testDebugUnitTest --tests com.lowtube.android.ui.playback.PlaybackPictureInPicturePolicyTest :app:assembleDebug :app:assembleDebugAndroidTest --offline --no-configuration-cache` succeeded; PiP policy tests passed 2/2. `PictureInPictureSystemAcceptanceTest` passed on API33 AVD and connected Android13/API33, asserting 9:16 Shorts parameters and system PiP entry. `PlaybackPictureInPictureAcceptanceTest` passed on both targets with real Media3 playback and regular-video 16:9 PiP; the local CC0 WebM fixture stayed below 5 seconds.
-- Latest APK installed on the connected Android13/API33 device; MainActivity remains top-resumed on first-run setup with selections unchanged. Settled five-second point sample: CPU 0% of one core, PSS 105.2 MiB, RSS 191.9 MiB, peak RSS 192.2 MiB, device RAM 3713/1680 MiB total/available. This is not a benchmark. The system reports `TrebleDroid vanilla`; Redmi Note 8 identity is unverified.
+- File: `LowTube-Android-debug-0.1.1.apk`; version `0.1.1-android-dev` (version code 2); minimum Android 6.0 (API 23).
+- Build type: installable debug APK signed with the Android debug certificate; not a production-signed release.
+- Source revision: `89ee743` (`build: increment android debug apk version`), including `c932ae3` which limits automatic playback retries for HTTP errors to 408 and 5xx; permanent 403/404 responses are surfaced without repeated extraction.
+- Build: `:app:assembleDebug` succeeded offline for armeabi-v7a, arm64-v8a, and x86_64. `PlaybackRecoveryPolicyTest` passed. Bounded resolver/player acceptance passed 1/1 on API23 AVD, API33 AVD, and connected Android13/API33; each uses a 12-second first clip and asserts playback remains below 120 seconds.
+- Installed on the connected Android13/API33 device; `MainActivity` is top-resumed. Five-second idle point sample: CPU 0% in this sample, PSS 117668 KiB, RSS 213763 KiB, swap PSS 476 KiB, device RAM 3802500/1773040 KiB total/available. Not a benchmark. The system identifies as TrebleDroid vanilla; Redmi Note 8 identity is unverified.
+- APK size: 24441008 bytes.
+- SHA-256: `6565EBAF510D62CBE9BE70AF645EE424213D5F058274B5ADD07EFAFD436AEFF7`.
 ## Previous artifact details (source revision 52c984e; historical)
 
 - Built from Android development branch `feat/android-first-run-setup` at source commit `52c984e`; the APK includes the SAF download-folder option in first-run setup and centralized persistable-grant cleanup. Unit and instrumentation test sources are not packaged in the APK.
