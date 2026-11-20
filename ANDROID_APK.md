@@ -1,12 +1,12 @@
-## Current artifact (2026-11-20, source revision 062b830)
+## Current artifact (2026-11-20, source revision d37939d)
 
 - File: `LowTube-Android-debug-0.1.0.apk`; version `0.1.0-android-dev` (version code 1); minimum Android 6.0 (API 23).
 - Build type: installable debug APK, signed with the Android debug certificate; not a production-signed release.
-- Source revision: `062b830` (`feat/android-first-run-setup`). Separate AVC/AAC MP4 and WebM track downloads use platform/Media3 muxing without re-encoding. API23 VP8/Vorbis uses Media3 `WebmMuxer`, avoiding the Android 6 native `WebmWriter` crash; API24+ additionally offers VP9 and API29+ Opus.
+- Source revision: `d37939d` (`feat/android-first-run-setup`). Separate AVC/AAC MP4 and WebM track downloads use platform/Media3 muxing without re-encoding. API23 VP8/Vorbis uses Media3 `WebmMuxer`, avoiding the Android 6 native `WebmWriter` crash; API24+ additionally offers VP9 and API29+ Opus. Compact first-run setup keeps Skip and Save actions visible while settings scroll independently.
 - APK size: 24839518 bytes.
-- SHA-256: `44A898108AF115F4D8C2D1C3751AF7BFCFFB6840D0B1D184B2727F206359EEA1`.
-- `:app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest --offline --no-configuration-cache` succeeded. `DownloadOptionsTest` passed 4/4 on Android 6/API23 AVD, Android 13/API33 AVD, and connected Android API33. `MediaTrackMuxerTest` passed MP4 remux on all three, VP8/Vorbis on all three, and VP9/Opus on the API33 AVD and connected API33. No YouTube playback or network download was run.
-- Installed on the connected Android API33 system; MainActivity is top-resumed. Five-second idle point sample: PSS 106735 KiB, RSS 202375 KiB, swap PSS 508 KiB, total/available RAM 3802500/1773628 KiB. `dumpsys cpuinfo` had no LowTube process row in this sample. This is not a benchmark. System reports `TrebleDroid vanilla`; Redmi Note 8 hardware identity is unverified.
+- SHA-256: `235A342A0249D5FB53FB2F082CB6E654577CC23649A8F6D2F783B3D72C1508A8`.
+- `:app:connectedDebugAndroidTest '-Pandroid.testInstrumentationRunnerArguments.class=com.lowtube.android.ui.onboarding.FirstRunSetupScreenTest#compactLayoutKeepsSetupActionsVisibleWhilePreferencesScroll' --offline --no-configuration-cache` succeeded. The compact setup test passed 1/1 on Android 6/API23 AVD, Android 13/API33 AVD, and connected Android API33; screenshot confirmed the pinned actions on the phone. No playback or network request was run.
+- Installed on the connected Android API33 system; MainActivity is top-resumed on first-run setup, and user selections were left untouched. Four-second idle point sample: CPU 0%, PSS 107932 KiB, RSS 203675 KiB, swap PSS 507 KiB, total/available RAM 3802500/1774944 KiB. This is not a benchmark. System reports `TrebleDroid vanilla`; Redmi Note 8 hardware identity is unverified.
 ## Previous artifact details (source revision 52c984e; historical)
 
 - Built from Android development branch `feat/android-first-run-setup` at source commit `52c984e`; the APK includes the SAF download-folder option in first-run setup and centralized persistable-grant cleanup. Unit and instrumentation test sources are not packaged in the APK.
