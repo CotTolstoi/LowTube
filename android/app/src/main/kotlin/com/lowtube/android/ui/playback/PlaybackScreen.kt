@@ -21,8 +21,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -896,250 +894,253 @@ fun PlaybackScreen(
             }
             return@Scaffold
         }
-        Column(
-            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            if ((playbackPreferences.audioOnly && localVideoSource == null) || localAudioTrack != null) {
-                Text(stringResource(R.string.audio_only_playback), style = MaterialTheme.typography.titleMedium)
-            }
-            if ((localVideoSource != null || !playbackPreferences.audioOnly) && localAudioTrack == null) controller?.let { activeController ->
-                Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f)) {
-                    AndroidView(
-                        modifier = Modifier.fillMaxSize(),
-                        factory = { viewContext: Context ->
-                            PlayerView(viewContext).apply {
-                                player = activeController
-                                useController = true
-                                videoPlayerView = this
+        AdaptivePlaybackLayout(
+            hasVideoPane = localAudioTrack == null && (localVideoSource != null || !playbackPreferences.audioOnly),
+            modifier = Modifier.fillMaxSize().padding(padding),
+            videoPane = {
+                if ((localVideoSource != null || !playbackPreferences.audioOnly) && localAudioTrack == null) controller?.let { activeController ->
+                    Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f)) {
+                        AndroidView(
+                            modifier = Modifier.fillMaxSize(),
+                            factory = { viewContext: Context ->
+                                PlayerView(viewContext).apply {
+                                    player = activeController
+                                    useController = true
+                                    videoPlayerView = this
+                                }
+                            },
+                            update = {
+                                it.player = activeController
+                                videoPlayerView = it
+                            },
+                        )
+                        if (!immersiveShorts) {
+                            PlaybackSeekGestureOverlay(
+                                onShowControls = { videoPlayerView?.showController() },
+                                onSeek = seekBy,
+                                modifier = Modifier.align(Alignment.Center),
+                            )
+                            if (seekFeedbackDirection != 0) {
+                                Text(
+                                    text = stringResource(
+                                        if (seekFeedbackDirection < 0) R.string.seek_backward_feedback
+                                        else R.string.seek_forward_feedback,
+                                    ),
+                                    modifier = Modifier.align(Alignment.Center).background(Color.Black.copy(alpha = 0.72f))
+                                        .padding(horizontal = 20.dp, vertical = 12.dp),
+                                    color = Color.White,
+                                    style = MaterialTheme.typography.titleLarge,
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            detailsPane = {
+                if ((playbackPreferences.audioOnly && localVideoSource == null) || localAudioTrack != null) {
+                    Text(stringResource(R.string.audio_only_playback), style = MaterialTheme.typography.titleMedium)
+                }
+                Text(watchedVideo.title, style = MaterialTheme.typography.titleLarge)
+                if (watchedVideo.channel.isNotBlank()) {
+                    androidx.compose.foundation.layout.Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(watchedVideo.channel, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                        if (localAudioTrack == null && watchedVideo.channelId.matches(Regex("UC[a-zA-Z0-9_-]{22}"))) {
+                            ChannelFollowControl(isFollowing = displayedFollowState) {
+                                displayedFollowState = onToggleFollow(watchedVideo)
+                            }
+                        }
+                    }
+                }
+                if (localAudioTrack == null) androidx.compose.foundation.layout.Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(onClick = onPreviousVideo, enabled = !loading) { Text(stringResource(R.string.previous_video)) }
+                    if (hasQueuedItems) TextButton(onClick = onAdvanceQueue, enabled = !loading) { Text(stringResource(R.string.next_in_queue)) }
+                    TextButton(
+                        modifier = Modifier.testTag(PLAYBACK_START_OVER_TEST_TAG),
+                        enabled = !loading && controller?.currentMediaItem != null,
+                        onClick = {
+                            controller?.let { active ->
+                                library.resetWatchProgress(watchedVideo.id)
+                                active.seekTo(0L)
+                                message = null
                             }
                         },
-                        update = {
-                            it.player = activeController
-                            videoPlayerView = it
-                        },
-                    )
-                    if (!immersiveShorts) {
-                        PlaybackSeekGestureOverlay(
-                            onShowControls = { videoPlayerView?.showController() },
-                            onSeek = seekBy,
-                            modifier = Modifier.align(Alignment.Center),
+                    ) { Text(stringResource(R.string.start_over)) }
+                }
+                if (localAudioTrack == null && (localVideoSource != null || !playbackPreferences.audioOnly)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(stringResource(R.string.playback_diagnostics), style = MaterialTheme.typography.titleSmall)
+                        Text(
+                            stringResource(
+                                R.string.video_decoder_name,
+                                decoderSnapshot.name.ifBlank { context.getString(R.string.video_decoder_waiting) },
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
                         )
-                        if (seekFeedbackDirection != 0) {
-                            Text(
-                                text = stringResource(
-                                    if (seekFeedbackDirection < 0) R.string.seek_backward_feedback
-                                    else R.string.seek_forward_feedback,
-                                ),
-                                modifier = Modifier.align(Alignment.Center).background(Color.Black.copy(alpha = 0.72f))
-                                    .padding(horizontal = 20.dp, vertical = 12.dp),
-                                color = Color.White,
-                                style = MaterialTheme.typography.titleLarge,
-                            )
+                        if (decoderSnapshot.inputFormat.isNotBlank()) {
+                            Text(stringResource(R.string.video_input_format, decoderSnapshot.inputFormat), style = MaterialTheme.typography.bodySmall)
+                        }
+                        val hardwareStatus = when (decoderSnapshot.hardwareStatus) {
+                            PlaybackDecoderDiagnostics.HARDWARE_STATUS_HARDWARE -> R.string.video_hardware_yes
+                            PlaybackDecoderDiagnostics.HARDWARE_STATUS_SOFTWARE -> R.string.video_hardware_no
+                            else -> R.string.video_hardware_unknown
+                        }
+                        Text(stringResource(R.string.video_hardware_status, stringResource(hardwareStatus)), style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+                androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                    Text(stringResource(R.string.playback_speed), style = MaterialTheme.typography.bodyLarge)
+                    androidx.compose.foundation.layout.Box {
+                        TextButton(onClick = { speedMenuExpanded = true }) {
+                            Text("${"%.2f".format(java.util.Locale.ROOT, playbackSpeed).trimEnd('0').trimEnd('.')}×")
+                        }
+                        DropdownMenu(expanded = speedMenuExpanded, onDismissRequest = { speedMenuExpanded = false }) {
+                            (1..8).map { it * 0.25f }.forEach { speed ->
+                                DropdownMenuItem(
+                                    text = { Text("${"%.2f".format(java.util.Locale.ROOT, speed).trimEnd('0').trimEnd('.')}×") },
+                                    onClick = {
+                                        speedMenuExpanded = false
+                                        onPlaybackSpeedChanged(speed)
+                                        controller?.let { PlaybackSpeedPolicy.apply(it, speed) }
+                                    },
+                                )
+                            }
                         }
                     }
                 }
-            }
-            Text(watchedVideo.title, style = MaterialTheme.typography.titleLarge)
-            if (watchedVideo.channel.isNotBlank()) {
-                androidx.compose.foundation.layout.Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Text(watchedVideo.channel, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-                    if (localAudioTrack == null && watchedVideo.channelId.matches(Regex("UC[a-zA-Z0-9_-]{22}"))) {
-                        ChannelFollowControl(isFollowing = displayedFollowState) {
-                            displayedFollowState = onToggleFollow(watchedVideo)
-                        }
-                    }
-                }
-            }
-            if (localAudioTrack == null) androidx.compose.foundation.layout.Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextButton(onClick = onPreviousVideo, enabled = !loading) { Text(stringResource(R.string.previous_video)) }
-                if (hasQueuedItems) TextButton(onClick = onAdvanceQueue, enabled = !loading) { Text(stringResource(R.string.next_in_queue)) }
-                TextButton(
-                    modifier = Modifier.testTag(PLAYBACK_START_OVER_TEST_TAG),
-                    enabled = !loading && controller?.currentMediaItem != null,
-                    onClick = {
-                        controller?.let { active ->
-                            library.resetWatchProgress(watchedVideo.id)
-                            active.seekTo(0L)
-                            message = null
-                        }
-                    },
-                ) { Text(stringResource(R.string.start_over)) }
-            }
-            if (localAudioTrack == null && (localVideoSource != null || !playbackPreferences.audioOnly)) {
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(stringResource(R.string.playback_diagnostics), style = MaterialTheme.typography.titleSmall)
-                    Text(
-                        stringResource(
-                            R.string.video_decoder_name,
-                            decoderSnapshot.name.ifBlank { context.getString(R.string.video_decoder_waiting) },
-                        ),
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                    if (decoderSnapshot.inputFormat.isNotBlank()) {
-                        Text(stringResource(R.string.video_input_format, decoderSnapshot.inputFormat), style = MaterialTheme.typography.bodySmall)
-                    }
-                    val hardwareStatus = when (decoderSnapshot.hardwareStatus) {
-                        PlaybackDecoderDiagnostics.HARDWARE_STATUS_HARDWARE -> R.string.video_hardware_yes
-                        PlaybackDecoderDiagnostics.HARDWARE_STATUS_SOFTWARE -> R.string.video_hardware_no
-                        else -> R.string.video_hardware_unknown
-                    }
-                    Text(stringResource(R.string.video_hardware_status, stringResource(hardwareStatus)), style = MaterialTheme.typography.bodySmall)
-                }
-            }
-            androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                Text(stringResource(R.string.playback_speed), style = MaterialTheme.typography.bodyLarge)
-                androidx.compose.foundation.layout.Box {
-                    TextButton(onClick = { speedMenuExpanded = true }) {
-                        Text("${"%.2f".format(java.util.Locale.ROOT, playbackSpeed).trimEnd('0').trimEnd('.')}×")
-                    }
-                    DropdownMenu(expanded = speedMenuExpanded, onDismissRequest = { speedMenuExpanded = false }) {
-                        (1..8).map { it * 0.25f }.forEach { speed ->
-                            DropdownMenuItem(
-                                text = { Text("${"%.2f".format(java.util.Locale.ROOT, speed).trimEnd('0').trimEnd('.')}×") },
-                                onClick = {
-                                    speedMenuExpanded = false
-                                    onPlaybackSpeedChanged(speed)
-                                    controller?.let { PlaybackSpeedPolicy.apply(it, speed) }
-                                },
-                            )
-                        }
-                    }
-                }
-            }
-            androidx.compose.foundation.layout.Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                androidx.compose.foundation.layout.Box {
-                    TextButton(
-                        onClick = { audioMenuExpanded = true },
-                        enabled = controller != null && localAudioTrack == null && !playbackPreferences.audioOnly,
-                    ) {
-                        Text(stringResource(R.string.audio_track))
-                    }
-                    DropdownMenu(expanded = audioMenuExpanded, onDismissRequest = { audioMenuExpanded = false }) {
-                        DropdownMenuItem(
-                            text = {
-                                if (externalAudioUri.isBlank()) Text(stringResource(R.string.external_audio_choose))
-                                else Text(stringResource(R.string.external_audio_loaded_menu, externalAudioLabel))
-                            },
+                androidx.compose.foundation.layout.Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    androidx.compose.foundation.layout.Box {
+                        TextButton(
+                            onClick = { audioMenuExpanded = true },
                             enabled = controller != null && localAudioTrack == null && !playbackPreferences.audioOnly,
-                            onClick = {
-                                audioMenuExpanded = false
-                                audioPicker.launch(arrayOf("audio/*", "application/octet-stream"))
-                            },
-                        )
-                        if (externalAudioUri.isNotBlank()) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.external_audio_remove)) },
-                                onClick = {
-                                    audioMenuExpanded = false
-                                    if (replaceExternalAudio(controller, null)) {
-                                        val previous = externalAudioUri
-                                        externalAudioUri = ""
-                                        externalAudioLabel = ""
-                                        message = null
-                                        runCatching {
-                                            context.contentResolver.releasePersistableUriPermission(
-                                                Uri.parse(previous), Intent.FLAG_GRANT_READ_URI_PERMISSION,
-                                            )
-                                        }
-                                    } else message = context.getString(R.string.subtitles_player_unavailable)
-                                },
-                            )
+                        ) {
+                            Text(stringResource(R.string.audio_track))
                         }
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.track_auto)) },
-                            onClick = {
-                                audioMenuExpanded = false
-                                updateTrackOverride(controller, C.TRACK_TYPE_AUDIO, null)
-                            },
-                        )
-                        availableAudioTracks.forEach { option ->
+                        DropdownMenu(expanded = audioMenuExpanded, onDismissRequest = { audioMenuExpanded = false }) {
                             DropdownMenuItem(
-                                text = { Text(option.label) },
+                                text = {
+                                    if (externalAudioUri.isBlank()) Text(stringResource(R.string.external_audio_choose))
+                                    else Text(stringResource(R.string.external_audio_loaded_menu, externalAudioLabel))
+                                },
+                                enabled = controller != null && localAudioTrack == null && !playbackPreferences.audioOnly,
                                 onClick = {
                                     audioMenuExpanded = false
-                                    updateTrackOverride(controller, C.TRACK_TYPE_AUDIO, option)
+                                    audioPicker.launch(arrayOf("audio/*", "application/octet-stream"))
                                 },
                             )
+                            if (externalAudioUri.isNotBlank()) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.external_audio_remove)) },
+                                    onClick = {
+                                        audioMenuExpanded = false
+                                        if (replaceExternalAudio(controller, null)) {
+                                            val previous = externalAudioUri
+                                            externalAudioUri = ""
+                                            externalAudioLabel = ""
+                                            message = null
+                                            runCatching {
+                                                context.contentResolver.releasePersistableUriPermission(
+                                                    Uri.parse(previous), Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                                                )
+                                            }
+                                        } else message = context.getString(R.string.subtitles_player_unavailable)
+                                    },
+                                )
+                            }
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.track_auto)) },
+                                onClick = {
+                                    audioMenuExpanded = false
+                                    updateTrackOverride(controller, C.TRACK_TYPE_AUDIO, null)
+                                },
+                            )
+                            availableAudioTracks.forEach { option ->
+                                DropdownMenuItem(
+                                    text = { Text(option.label) },
+                                    onClick = {
+                                        audioMenuExpanded = false
+                                        updateTrackOverride(controller, C.TRACK_TYPE_AUDIO, option)
+                                    },
+                                )
+                            }
+                        }
+                    }
+                    androidx.compose.foundation.layout.Box {
+                        TextButton(
+                            onClick = { subtitleMenuExpanded = true },
+                            enabled = controller != null && localAudioTrack == null && !playbackPreferences.audioOnly,
+                        ) {
+                            Text(stringResource(R.string.subtitles))
+                        }
+                        DropdownMenu(expanded = subtitleMenuExpanded, onDismissRequest = { subtitleMenuExpanded = false }) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text(stringResource(
+                                        if (externalSubtitleUri.isBlank()) R.string.subtitles_choose_file
+                                        else R.string.subtitles_loaded,
+                                    ))
+                                },
+                                enabled = controller != null && localAudioTrack == null,
+                                onClick = {
+                                    subtitleMenuExpanded = false
+                                    subtitlePicker.launch(arrayOf("text/*", "application/x-subrip", "application/octet-stream"))
+                                },
+                            )
+                            if (externalSubtitleUri.isNotBlank()) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.subtitles_remove_file)) },
+                                    onClick = {
+                                        subtitleMenuExpanded = false
+                                        if (replaceExternalSubtitle(controller, null)) {
+                                            val previous = externalSubtitleUri
+                                            externalSubtitleUri = ""
+                                            message = null
+                                            runCatching {
+                                                context.contentResolver.releasePersistableUriPermission(
+                                                    Uri.parse(previous),
+                                                    Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                                                )
+                                            }
+                                        } else message = context.getString(R.string.subtitles_player_unavailable)
+                                    },
+                                )
+                            }
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.subtitles_off)) },
+                                onClick = {
+                                    subtitleMenuExpanded = false
+                                    updateTrackOverride(controller, C.TRACK_TYPE_TEXT, null, disable = true)
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.track_auto)) },
+                                onClick = {
+                                    subtitleMenuExpanded = false
+                                    updateTrackOverride(controller, C.TRACK_TYPE_TEXT, null)
+                                },
+                            )
+                            availableSubtitleTracks.forEach { option ->
+                                DropdownMenuItem(
+                                    text = { Text(option.label) },
+                                    onClick = {
+                                        subtitleMenuExpanded = false
+                                        updateTrackOverride(controller, C.TRACK_TYPE_TEXT, option)
+                                    },
+                                )
+                            }
                         }
                     }
                 }
-                androidx.compose.foundation.layout.Box {
-                    TextButton(
-                        onClick = { subtitleMenuExpanded = true },
-                        enabled = controller != null && localAudioTrack == null && !playbackPreferences.audioOnly,
-                    ) {
-                        Text(stringResource(R.string.subtitles))
-                    }
-                    DropdownMenu(expanded = subtitleMenuExpanded, onDismissRequest = { subtitleMenuExpanded = false }) {
-                        DropdownMenuItem(
-                            text = {
-                                Text(stringResource(
-                                    if (externalSubtitleUri.isBlank()) R.string.subtitles_choose_file
-                                    else R.string.subtitles_loaded,
-                                ))
-                            },
-                            enabled = controller != null && localAudioTrack == null,
-                            onClick = {
-                                subtitleMenuExpanded = false
-                                subtitlePicker.launch(arrayOf("text/*", "application/x-subrip", "application/octet-stream"))
-                            },
-                        )
-                        if (externalSubtitleUri.isNotBlank()) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.subtitles_remove_file)) },
-                                onClick = {
-                                    subtitleMenuExpanded = false
-                                    if (replaceExternalSubtitle(controller, null)) {
-                                        val previous = externalSubtitleUri
-                                        externalSubtitleUri = ""
-                                        message = null
-                                        runCatching {
-                                            context.contentResolver.releasePersistableUriPermission(
-                                                Uri.parse(previous),
-                                                Intent.FLAG_GRANT_READ_URI_PERMISSION,
-                                            )
-                                        }
-                                    } else message = context.getString(R.string.subtitles_player_unavailable)
-                                },
-                            )
-                        }
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.subtitles_off)) },
-                            onClick = {
-                                subtitleMenuExpanded = false
-                                updateTrackOverride(controller, C.TRACK_TYPE_TEXT, null, disable = true)
-                            },
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.track_auto)) },
-                            onClick = {
-                                subtitleMenuExpanded = false
-                                updateTrackOverride(controller, C.TRACK_TYPE_TEXT, null)
-                            },
-                        )
-                        availableSubtitleTracks.forEach { option ->
-                            DropdownMenuItem(
-                                text = { Text(option.label) },
-                                onClick = {
-                                    subtitleMenuExpanded = false
-                                    updateTrackOverride(controller, C.TRACK_TYPE_TEXT, option)
-                                },
-                            )
-                        }
-                    }
+                if (loading || controller == null) {
+                    CircularProgressIndicator()
+                    Text(stringResource(R.string.resolving_stream))
                 }
-            }
-            if (loading || controller == null) {
-                CircularProgressIndicator()
-                Text(stringResource(R.string.resolving_stream))
-            }
-            message?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        }
+                message?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            },
+        )
     }
 }
 

@@ -278,3 +278,7 @@ Playback acceptance test opt-in і за замовчуванням пропус�
 ## Фізичний Xiaomi Pad 6 — UI smoke, 2026-11-20
 
 Без playback перевірено For you → More → Library → Back → Settings → Back: adaptive NavigationRail і три колонки feed-карток видно в portrait, Library та Settings відкриваються, MainActivity залишилася top-resumed. 1800×2880 px / 400 dpi дає близько 720×1152 dp; ця ширина нижча за 800 dp breakpoint двопанельної Library, тому wide split-pane та landscape acceptance на Pad 6 лишаються відкритими. Налаштування користувача не змінювалися.
+
+## Адаптивний watch layout — 2026-11-20
+
+Звичайний відеоплеєр на ширині ≥840 dp переходить у дві незалежно прокручувані панелі: відео ліворуч, metadata/actions/tracks/diagnostics праворуч; контент центровано з межею 1280 dp. Компактний режим, Shorts і audio-only лишаються одноколонковими. Compose acceptance на API33 AVD перевірив wide side-by-side, compact video та wide audio-only режими (3/3); playback не запускався, бо зміни стосувалися тільки геометрії UI. Фізичний Pad 6 має 720 dp у portrait і не покриває breakpoint. Після відхиленого USB install `INSTALL_FAILED_USER_RESTRICTED` APK наразі відсутній на Pad 6; фізичний runtime acceptance очікує дозволеного встановлення.
