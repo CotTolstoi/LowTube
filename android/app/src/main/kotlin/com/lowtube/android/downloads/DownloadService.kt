@@ -274,7 +274,7 @@ class DownloadService : Service() {
         queue: DownloadJobStore,
         rateLimitKiB: Int,
     ): TransferOutcome {
-        val audioStream = option.audioStream ?: throw IOException("The selected MP4 format has no audio track.")
+        val audioStream = option.audioStream ?: throw IOException("The selected format has no separate audio track.")
         val videoPart = files.videoTrackFile(job)
         val audioPart = files.audioTrackFile(job)
         var videoTotal = files.trackTotal(job, video = true)
@@ -362,7 +362,7 @@ class DownloadService : Service() {
         }
         if (cancelId == job.id) throw CancellationException("Cancelled by user.")
         val sourceBytes = videoPart.length() + audioPart.length()
-        Mp4TrackMuxer.merge(videoPart, audioPart, outputPart)
+        MediaTrackMuxer.merge(videoPart, audioPart, outputPart)
         files.deleteTrackFiles(job)
         return TransferOutcome(
             downloaded = sourceBytes,

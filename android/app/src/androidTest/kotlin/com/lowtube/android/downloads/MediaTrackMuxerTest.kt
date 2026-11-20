@@ -14,7 +14,7 @@ import java.io.File
 import java.nio.ByteBuffer
 
 @RunWith(AndroidJUnit4::class)
-class Mp4TrackMuxerTest {
+class MediaTrackMuxerTest {
     @Test
     fun combinesSeparateAvcAndAacMp4TracksWithoutTranscoding() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
@@ -34,7 +34,7 @@ class Mp4TrackMuxerTest {
             extractTrack(source, video, "video/avc")
             extractTrack(source, audio, "audio/mp4a-latm")
 
-            Mp4TrackMuxer.merge(video, audio, output)
+            MediaTrackMuxer.merge(video, audio, output)
 
             val result = MediaExtractor()
             try {

@@ -1,5 +1,6 @@
 package com.lowtube.android.data
 
+import android.os.Build
 import android.content.Context
 import android.net.Uri
 import com.lowtube.android.model.SearchPage
@@ -22,8 +23,6 @@ import java.net.URI
 import java.net.URL
 import java.net.URLEncoder
 import java.util.concurrent.TimeUnit
-import android.os.Build
-
 /** Aggregate-only instrumentation hook for comparing anonymous YouTube player clients. */
 internal data class PlayerClientStreamSummary(
     val client: String,
@@ -292,7 +291,7 @@ class InnerTubeSearchRepository(context: Context? = null) {
             downloadableFormats(streaming, preferences, true).map { it to null }
         } else {
             val muxed = downloadableFormats(streaming, preferences, false).map { it to null }
-            val separate = separateMp4Tracks(formats, preferences)
+            val separate = separateDownloadTracks(formats, preferences)
             muxed + separate
         }
         return selected.distinctBy { (videoFormat, audioFormat) ->
@@ -339,6 +338,43 @@ class InnerTubeSearchRepository(context: Context? = null) {
             .map { it to audio }
             .toList()
     }
+
+    /** Select WebM codecs accepted by this Android release's platform MediaMuxer. */
+    private fun separateWebmTracks(
+        formats: List<PlaybackFormat>,
+        preferences: DownloadStreamPreferences,
+    ): List<Pair<PlaybackFormat, PlaybackFormat?>> {
+        if (preferences.h264Only) return emptyList()
+        val audioCodecs = buildList {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) add("opus")
+            add("vorbis")
+        }
+        val videoTracks = formats.asSequence()
+            .filter { it.videoOnly && it.mimeType == "video/webm" }
+            .filter { format -> isMuxableWebmVideoCodec(format.codec) }
+            .filter { it.json.optInt("height", 0) in 1..preferences.maxHeight }
+            .filter { !preferences.fps30Only || it.json.optDouble("fps", 0.0) <= 30.0 }
+            .toList()
+        if (videoTracks.isEmpty()) return emptyList()
+        val audioTrack = formats.asSequence()
+            .filter { it.audioOnly && it.mimeType == "audio/webm" }
+            .filter { format -> audioCodecs.any { format.codec.startsWith(it, ignoreCase = true) } }
+            .sortedWith(compareBy<PlaybackFormat> { format ->
+                audioCodecs.indexOfFirst { format.codec.startsWith(it, ignoreCase = true) }
+            }.thenByDescending { it.json.optLong("bitrate", 0) })
+            .firstOrNull() ?: return emptyList()
+        return videoTracks.map { it to audioTrack }
+    }
+
+    private fun separateDownloadTracks(
+        formats: List<PlaybackFormat>,
+        preferences: DownloadStreamPreferences,
+    ) = separateMp4Tracks(formats, preferences) + separateWebmTracks(formats, preferences)
+
+    private fun isMuxableWebmVideoCodec(codec: String): Boolean =
+        codec.startsWith("vp8", ignoreCase = true) ||
+            (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N &&
+                (codec.startsWith("vp9", ignoreCase = true) || codec.startsWith("vp09", ignoreCase = true)))
 
     private fun resolveStreams(
         video: VideoItem,
@@ -434,15 +470,17 @@ class InnerTubeSearchRepository(context: Context? = null) {
         preferences: DownloadStreamPreferences,
         audioOnly: Boolean,
     ): Boolean = downloadableFormats(streaming, preferences, audioOnly).isNotEmpty() ||
-        (!audioOnly && separateMp4Tracks(parsePlaybackFormats(streaming), preferences).isNotEmpty())
+        (!audioOnly && separateDownloadTracks(parsePlaybackFormats(streaming), preferences).isNotEmpty())
 
     private fun hasResolvableSignatureDownloadFormat(
         streaming: JSONObject,
         preferences: DownloadStreamPreferences,
         audioOnly: Boolean,
     ): Boolean {
-        var hasVideoTrack = false
-        var hasAudioTrack = false
+        var hasMp4VideoTrack = false
+        var hasMp4AudioTrack = false
+        var hasWebmVideoTrack = false
+        var hasWebmAudioTrack = false
         for (key in arrayOf("formats", "adaptiveFormats")) {
             val formats = streaming.optJSONArray(key) ?: continue
             for (index in 0 until formats.length()) {
@@ -451,9 +489,15 @@ class InnerTubeSearchRepository(context: Context? = null) {
                 if (audioOnly) {
                     if (mime !in SUPPORTED_DOWNLOAD_MIME_TYPES || !mime.startsWith("audio/")) continue
                 } else {
-                    if (mime == "audio/mp4") {
+                    if (mime == "audio/mp4" || mime == "audio/webm") {
                         val codec = format.optString("mimeType").substringAfter("codecs=\"", "").substringBefore('"')
-                        if (codec.startsWith("mp4a") && hasDirectOrSignatureCipher(format)) hasAudioTrack = true
+                        if (hasDirectOrSignatureCipher(format)) {
+                            if (mime == "audio/mp4" && codec.startsWith("mp4a")) hasMp4AudioTrack = true
+                            if (mime == "audio/webm" && (codec.startsWith("vorbis", true) ||
+                                    (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && codec.startsWith("opus", true)))) {
+                                hasWebmAudioTrack = true
+                            }
+                        }
                         continue
                     }
                     if (!mime.startsWith("video/") || format.optInt("height", 0) !in 1..preferences.maxHeight) continue
@@ -462,14 +506,17 @@ class InnerTubeSearchRepository(context: Context? = null) {
                     if (preferences.fps30Only && format.optDouble("fps", 0.0) > 30.0) continue
                     if (hasDirectOrSignatureCipher(format)) {
                         if (format.has("audioQuality")) return true
-                        if (mime == "video/mp4" && codec.startsWith("avc1")) hasVideoTrack = true
+                        if (mime == "video/mp4" && codec.startsWith("avc1")) hasMp4VideoTrack = true
+                        if (!preferences.h264Only && mime == "video/webm" && isMuxableWebmVideoCodec(codec)) {
+                            hasWebmVideoTrack = true
+                        }
                     }
                     continue
                 }
                 if (hasDirectOrSignatureCipher(format)) return true
             }
         }
-        return !audioOnly && hasVideoTrack && hasAudioTrack
+        return !audioOnly && ((hasMp4VideoTrack && hasMp4AudioTrack) || (hasWebmVideoTrack && hasWebmAudioTrack))
     }
 
     private fun hasDirectOrSignatureCipher(format: JSONObject): Boolean {

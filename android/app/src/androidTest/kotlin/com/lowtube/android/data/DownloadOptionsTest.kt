@@ -2,6 +2,7 @@ package com.lowtube.android.data
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import android.net.Uri
+import android.os.Build
 import com.lowtube.android.model.VideoItem
 import org.json.JSONArray
 import org.json.JSONObject
@@ -59,6 +60,57 @@ class DownloadOptionsTest {
         assertEquals("transformed", Uri.parse(options.first().stream.uri).getQueryParameter("n"))
     }
 
+    @Test
+    fun separateWebmTracksUseCodecsSupportedByThisAndroidVersion() {
+        val streaming = JSONObject().put(
+            "adaptiveFormats",
+            JSONArray()
+                .put(videoOnlyFormat(247, 720, 30, 2_000_000, "vp09.00.31.08"))
+                .put(videoOnlyFormat(244, 480, 30, 1_000_000, "vp8"))
+                .put(audioFormat(251, 160_000, "opus", "audio/webm"))
+                .put(audioFormat(250, 70_000, "vorbis", "audio/webm")),
+        )
+
+        val options = repository.downloadOptions(
+            video,
+            streaming,
+            DownloadStreamPreferences(h264Only = false),
+            audioOnly = false,
+        )
+
+        assertTrue(options.isNotEmpty())
+        assertTrue(options.all { it.container == "WebM" && it.requiresMuxing })
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+            assertEquals(listOf("vp8"), options.map { it.stream.videoCodec })
+        } else {
+            assertTrue(options.any { it.stream.videoCodec.startsWith("vp09") })
+        }
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            assertTrue(options.all { it.audioStream?.audioCodec == "vorbis" })
+        } else {
+            assertTrue(options.all { it.audioStream?.audioCodec == "opus" })
+        }
+    }
+
+    @Test
+    fun h264OnlyPreferenceDoesNotOfferWebmSeparateTracks() {
+        val streaming = JSONObject().put(
+            "adaptiveFormats",
+            JSONArray()
+                .put(videoOnlyFormat(244, 480, 30, 1_000_000, "vp8"))
+                .put(audioFormat(250, 70_000, "vorbis", "audio/webm")),
+        )
+
+        val options = repository.downloadOptions(
+            video,
+            streaming,
+            DownloadStreamPreferences(h264Only = true),
+            audioOnly = false,
+        )
+
+        assertTrue(options.isEmpty())
+    }
+
     private fun videoFormat(
         itag: Int,
         height: Int,
@@ -90,4 +142,18 @@ class DownloadOptionsTest {
         .put("mimeType", "$mime; codecs=\"$codec\"")
         .put("bitrate", bitrate)
         .put("url", "https://$host/videoplayback$query")
+
+    private fun videoOnlyFormat(
+        itag: Int,
+        height: Int,
+        fps: Int,
+        bitrate: Long,
+        codec: String,
+    ) = JSONObject()
+        .put("itag", itag)
+        .put("mimeType", "video/webm; codecs=\"$codec\"")
+        .put("height", height)
+        .put("fps", fps)
+        .put("bitrate", bitrate)
+        .put("url", "https://rr1---sn.googlevideo.com/videoplayback?expire=123")
 }
