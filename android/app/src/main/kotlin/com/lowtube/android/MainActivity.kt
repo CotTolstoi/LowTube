@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.Density
 import androidx.core.view.WindowCompat
 import com.lowtube.android.ui.theme.LowTubeTheme
 import com.lowtube.android.data.UiScaleOptions
+import com.lowtube.android.ui.playback.PlaybackPictureInPicturePolicy
 import com.lowtube.android.ui.onboarding.FirstRunSetupScreen
 
 class MainActivity : ComponentActivity() {
@@ -72,6 +73,7 @@ class MainActivity : ComponentActivity() {
   private var externalYoutubeUrl by mutableStateOf<String?>(null)
   private var externalYoutubeRequestId by mutableIntStateOf(0)
   private var navigationBackHandler: (() -> Boolean)? = null
+  private var pictureInPictureAspectRatio = Rational(16, 9)
   private var googleAccountName by mutableStateOf("")
   private var googleAccountEmail by mutableStateOf("")
   private var googleAccountAvatarUrl by mutableStateOf("")
@@ -330,13 +332,17 @@ class MainActivity : ComponentActivity() {
     inPictureInPictureMode = isInPictureInPictureMode
   }
 
-  private fun setPictureInPictureEligibility(eligible: Boolean) {
-    if (pictureInPictureEligible == eligible || Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+  private fun setPictureInPictureEligibility(eligible: Boolean, isShorts: Boolean) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+    val aspectRatio = PlaybackPictureInPicturePolicy.aspectRatio(isShorts)
+    val requestedRatio = Rational(aspectRatio.width, aspectRatio.height)
+    if (pictureInPictureEligible == eligible && pictureInPictureAspectRatio == requestedRatio) return
     pictureInPictureEligible = eligible
+    pictureInPictureAspectRatio = requestedRatio
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
       setPictureInPictureParams(
         PictureInPictureParams.Builder()
-          .setAspectRatio(Rational(16, 9))
+          .setAspectRatio(pictureInPictureAspectRatio)
           .setAutoEnterEnabled(eligible)
           .build(),
       )
@@ -344,7 +350,7 @@ class MainActivity : ComponentActivity() {
   }
 
   private fun pictureInPictureParams(): PictureInPictureParams =
-    PictureInPictureParams.Builder().setAspectRatio(Rational(16, 9)).build()
+    PictureInPictureParams.Builder().setAspectRatio(pictureInPictureAspectRatio).build()
 
   internal fun acceptExternalYoutubeIntent(incoming: Intent?) {
     if (incoming == null) return

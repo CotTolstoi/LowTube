@@ -8,6 +8,7 @@ import android.widget.FrameLayout
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.platform.ComposeView
 import androidx.core.content.FileProvider
+import android.app.PictureInPictureParams
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
@@ -26,6 +27,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertEquals
 import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.Test
@@ -100,9 +102,9 @@ class PlaybackPictureInPictureAcceptanceTest {
                                 onAdvanceQueue = {},
                                 onPreviousVideo = {},
                                 onBack = {},
-                                onPictureInPictureEligibilityChanged = { eligible ->
+                                onPictureInPictureEligibilityChanged = { eligible, isShorts ->
                                     pipEligible.set(eligible)
-                                    setPipEligibility(compose.activity, eligible)
+                                    setPipEligibility(compose.activity, eligible, isShorts)
                                 },
                             )
                         }
@@ -124,6 +126,10 @@ class PlaybackPictureInPictureAcceptanceTest {
             assertTrue("The test must observe real active Media3 playback", withContext(Dispatchers.Main.immediate) {
                 controller.playbackState == Player.STATE_READY && controller.isPlaying
             })
+            val pipParams = readPipParams(compose.activity)
+            val aspectRatio = pipParams.aspectRatio ?: throw AssertionError("PiP aspect ratio is missing")
+            assertEquals("Ordinary video should keep a landscape PiP window", 16, aspectRatio.numerator)
+            assertEquals("Ordinary video should keep a landscape PiP window", 9, aspectRatio.denominator)
 
             withContext(Dispatchers.Main.immediate) { invokeLeaveHint(compose.activity) }
             compose.waitUntil(5_000) { compose.activity.isInPictureInPictureMode }
@@ -144,13 +150,20 @@ class PlaybackPictureInPictureAcceptanceTest {
         }
     }
 
-    private fun setPipEligibility(activity: MainActivity, eligible: Boolean) {
+    private fun setPipEligibility(activity: MainActivity, eligible: Boolean, isShorts: Boolean) {
         val method = MainActivity::class.java.getDeclaredMethod(
             "setPictureInPictureEligibility",
             Boolean::class.javaPrimitiveType,
+            Boolean::class.javaPrimitiveType,
         )
         method.isAccessible = true
-        method.invoke(activity, eligible)
+        method.invoke(activity, eligible, isShorts)
+    }
+
+    private fun readPipParams(activity: MainActivity): PictureInPictureParams {
+        val method = MainActivity::class.java.getDeclaredMethod("pictureInPictureParams")
+        method.isAccessible = true
+        return method.invoke(activity) as PictureInPictureParams
     }
 
     private fun invokeLeaveHint(activity: MainActivity) {

@@ -122,7 +122,7 @@ fun PlaybackScreen(
     canNavigateShortsForward: Boolean = false,
     onNavigateShorts: (Int) -> Unit = {},
     inPictureInPictureMode: Boolean = false,
-    onPictureInPictureEligibilityChanged: (Boolean) -> Unit = {},
+    onPictureInPictureEligibilityChanged: (Boolean, Boolean) -> Unit = { _, _ -> },
 ) {
     val context = LocalContext.current
     val repository = remember(context) { InnerTubeSearchRepository(context.applicationContext) }
@@ -327,6 +327,7 @@ fun PlaybackScreen(
                         hasLocalAudioTrack = localAudioTrack != null,
                         audioOnly = playbackPreferences.audioOnly,
                     ),
+                    immersiveShorts,
                 )
                 if (playbackState == Player.STATE_READY) {
                     controller?.duration?.takeIf { it > 0 }?.let { lastObservedDurationMs = it }
@@ -367,6 +368,7 @@ fun PlaybackScreen(
                         hasLocalAudioTrack = localAudioTrack != null,
                         audioOnly = playbackPreferences.audioOnly,
                     ),
+                    immersiveShorts,
                 )
             }
 
@@ -375,7 +377,7 @@ fun PlaybackScreen(
             }
 
             override fun onPlayerError(error: PlaybackException) {
-                onPictureInPictureEligibilityChanged(false)
+                onPictureInPictureEligibilityChanged(false, immersiveShorts)
                 recoveryCompletion?.let { pending ->
                     if (!pending.isCompleted) {
                         pending.complete(error)
@@ -499,7 +501,7 @@ fun PlaybackScreen(
 
     DisposableEffect(controller, video.id, playbackRequestId, localAudioTrack?.uri, localVideoSource?.uri) {
         onDispose {
-            onPictureInPictureEligibilityChanged(false)
+            onPictureInPictureEligibilityChanged(false, immersiveShorts)
             recoveryJob?.cancel()
             recoveryCompletion?.cancel()
             controller?.let { active ->

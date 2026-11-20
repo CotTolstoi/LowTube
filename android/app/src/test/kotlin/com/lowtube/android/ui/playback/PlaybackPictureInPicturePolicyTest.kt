@@ -2,6 +2,7 @@ package com.lowtube.android.ui.playback
 
 import androidx.media3.common.Player
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -22,6 +23,12 @@ class PlaybackPictureInPicturePolicyTest {
         assertFalse(isEligible(hasCurrentItem = false))
         assertFalse(isEligible(hasLocalAudioTrack = true))
         assertFalse(isEligible(audioOnly = true))
+    }
+
+    @Test
+    fun shortsUsePortraitPipAndRegularVideosUseLandscapePip() {
+        assertEquals(PlaybackPipAspectRatio(9, 16), PlaybackPictureInPicturePolicy.aspectRatio(isShorts = true))
+        assertEquals(PlaybackPipAspectRatio(16, 9), PlaybackPictureInPicturePolicy.aspectRatio(isShorts = false))
     }
 
     private fun isEligible(

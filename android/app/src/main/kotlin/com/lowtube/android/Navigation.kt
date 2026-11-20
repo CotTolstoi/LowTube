@@ -87,7 +87,7 @@ fun MainNavigation(
     externalYoutubeRequestId: Int,
     onExternalYoutubeUrlConsumed: (Int) -> Unit,
     inPictureInPictureMode: Boolean,
-    onPictureInPictureEligibilityChanged: (Boolean) -> Unit,
+    onPictureInPictureEligibilityChanged: (Boolean, Boolean) -> Unit,
 ) {
     val context = LocalContext.current
     val library = remember(context) { LocalLibraryRepository(context.applicationContext) }
