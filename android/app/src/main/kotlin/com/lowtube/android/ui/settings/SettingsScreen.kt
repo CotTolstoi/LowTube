@@ -613,7 +613,10 @@ fun SettingsScreen(
             if (diagnosticReportExported) Text(stringResource(R.string.diagnostic_report_exported), style = MaterialTheme.typography.bodySmall)
             if (diagnosticReportFailed) Text(stringResource(R.string.diagnostic_report_error), color = MaterialTheme.colorScheme.error)
             resourceSample?.let { sample ->
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Column(
+                    modifier = Modifier.testTag("resource_usage_sample_result"),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
                     Text(stringResource(R.string.resource_usage_last_sample, sample.durationMs / 1000.0), style = MaterialTheme.typography.labelMedium)
                     Text(stringResource(R.string.resource_usage_cpu, sample.cpuPercentOneCore))
                     Text(stringResource(R.string.resource_usage_pss, sample.pssStartKiB / 1024.0, sample.pssEndKiB / 1024.0))

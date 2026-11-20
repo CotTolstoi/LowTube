@@ -1,9 +1,11 @@
 package com.lowtube.android.ui.settings
 
 import androidx.activity.ComponentActivity
+import android.os.SystemClock
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -11,7 +13,9 @@ import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import com.lowtube.android.R
 import com.lowtube.android.data.PlaybackStreamPreferences
+import com.lowtube.android.data.ResourceUsageSampler
 import androidx.test.platform.app.InstrumentationRegistry
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -134,17 +138,29 @@ class SettingsTransferScreenTest {
         composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.resource_usage_measure))
             .performScrollTo()
             .performClick()
-        val pssMatcher = "LowTube PSS:"
+        composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.resource_usage_sampling)).assertExists()
         val errorMessage = composeTestRule.activity.getString(R.string.resource_usage_error)
         composeTestRule.waitUntil(15_000L) {
-            composeTestRule.onAllNodesWithText(pssMatcher, substring = true).fetchSemanticsNodes().isNotEmpty() ||
+            composeTestRule.onAllNodesWithTag("resource_usage_sample_result").fetchSemanticsNodes().isNotEmpty() ||
                 composeTestRule.onAllNodesWithText(errorMessage).fetchSemanticsNodes().isNotEmpty()
         }
 
-        composeTestRule.onNodeWithText(pssMatcher, substring = true).assertExists()
-        composeTestRule.onNodeWithText("LowTube CPU:", substring = true).assertExists()
-        composeTestRule.onNodeWithText("Available system RAM:", substring = true).assertExists()
+        composeTestRule.onNodeWithTag("resource_usage_sample_result").assertExists()
         composeTestRule.onNodeWithText(errorMessage).assertDoesNotExist()
+    }
+
+    @Test
+    fun resourceSamplerReturnsPssAndSystemMemoryAfterFiveSeconds() {
+        val startMs = SystemClock.elapsedRealtime()
+        val sample = runBlocking {
+            ResourceUsageSampler.capture(composeTestRule.activity.applicationContext)
+        }
+        val elapsedMs = SystemClock.elapsedRealtime() - startMs
+
+        assertTrue("Resource sample should last at least 4.5 seconds", sample.durationMs >= 4_500L)
+        assertTrue("Resource sample should complete within 15 seconds", elapsedMs <= 15_000L)
+        assertTrue("System RAM should be reported", sample.totalRamMiB > 0L)
+        assertTrue("Process PSS should be reported", sample.pssStartKiB > 0L && sample.pssEndKiB > 0L)
     }
 
     private fun showSettings(
