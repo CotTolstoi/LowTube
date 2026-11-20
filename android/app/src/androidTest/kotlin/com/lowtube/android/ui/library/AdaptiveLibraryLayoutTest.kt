@@ -6,11 +6,11 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.hasText
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.platform.app.InstrumentationRegistry
 import com.lowtube.android.data.LocalLibraryRepository
 import com.lowtube.android.model.VideoItem
 import org.junit.Assert.assertEquals
@@ -48,7 +48,9 @@ class AdaptiveLibraryLayoutTest {
                 }
             }
             compose.waitForIdle()
-            val wideWindow = InstrumentationRegistry.getArguments().getString("libraryLayout") == "twoPane"
+            val density = context.resources.displayMetrics.density
+            val availableWidthDp = compose.onRoot().fetchSemanticsNode().boundsInRoot.width / density
+            val wideWindow = availableWidthDp >= 800f
             val detailPanes = compose.onAllNodesWithTag(LIBRARY_DETAIL_PANE_TEST_TAG).fetchSemanticsNodes().size
             assertEquals(if (wideWindow) 1 else 0, detailPanes)
             if (wideWindow) {
