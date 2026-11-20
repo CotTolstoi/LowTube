@@ -720,14 +720,26 @@ class InnerTubeSearchRepository(context: Context? = null) {
                             continue
                         }
                         val signatureSource = executableFunctions.signatureProgram
-                            ?: throw IOException("YouTube signature transform could not be isolated from the player bundle.")
+                        if (signatureSource.isNullOrBlank()) {
+                            if (executableFunctions.markerCandidateNames.isNotEmpty()) {
+                                pendingSignatureTransforms.add(PendingSignatureTransform(format, cipher, obfuscated))
+                            } else {
+                                format.remove("signatureCipher")
+                                format.remove("cipher")
+                            }
+                            continue
+                        }
                         val signature = runCatching {
                             runtime.executeFunction(signatureSource, function, obfuscated, functions.signatureArgumentPrefix)
                         }.getOrNull()
                         val signedUrl = signature?.let { YoutubePlayerUrlTransformer.applySignatureCipher(cipher, it) }
                         if (signedUrl.isNullOrBlank() || !isTrustedStreamUrl(signedUrl)) {
-                            format.remove("signatureCipher")
-                            format.remove("cipher")
+                            if (executableFunctions.markerCandidateNames.isNotEmpty()) {
+                                pendingSignatureTransforms.add(PendingSignatureTransform(format, cipher, obfuscated))
+                            } else {
+                                format.remove("signatureCipher")
+                                format.remove("cipher")
+                            }
                             continue
                         }
                         format.put("url", signedUrl)
