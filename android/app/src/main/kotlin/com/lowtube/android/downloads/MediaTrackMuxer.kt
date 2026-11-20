@@ -5,11 +5,16 @@ import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.media.MediaMuxer
 import android.os.Build
+import androidx.media3.common.util.MediaFormatUtil
+import androidx.media3.muxer.BufferInfo as Media3BufferInfo
+import androidx.media3.muxer.FileOutputStreamSeekableMuxerOutput
+import androidx.media3.muxer.WebmMuxer
 import java.io.File
+import java.io.FileOutputStream
 import java.io.IOException
 import java.nio.ByteBuffer
 
-/** Losslessly combines supported YouTube video/audio tracks using Android's native muxer. */
+/** Losslessly combines supported YouTube video/audio tracks without decoding or re-encoding them. */
 internal object MediaTrackMuxer {
     fun merge(videoFile: File, audioFile: File, outputFile: File) {
         if (!videoFile.isFile || !audioFile.isFile || videoFile.length() <= 0L || audioFile.length() <= 0L) {
@@ -18,9 +23,9 @@ internal object MediaTrackMuxer {
         outputFile.delete()
         val videoExtractor = MediaExtractor()
         val audioExtractor = MediaExtractor()
-        var muxer: MediaMuxer? = null
+        var muxer: MuxerOutput? = null
         var started = false
-        var outputFormat = MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4
+        var isWebm = false
         var containerName = "MP4"
         try {
             videoExtractor.setDataSource(videoFile.absolutePath)
@@ -34,13 +39,10 @@ internal object MediaTrackMuxer {
             when {
                 videoMime == "video/avc" && audioMime == "audio/mp4a-latm" -> Unit
                 videoMime == "video/x-vnd.on2.vp8" && audioMime in setOf("audio/vorbis", "audio/opus") -> {
-                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-                        throw IOException("Separate WebM tracks are disabled on Android 6 because its native muxer may crash.")
-                    }
                     if (audioMime == "audio/opus" && Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
                         throw IOException("Opus WebM muxing requires Android 10 or newer.")
                     }
-                    outputFormat = MediaMuxer.OutputFormat.MUXER_OUTPUT_WEBM
+                    isWebm = true
                     containerName = "WebM"
                 }
                 videoMime == "video/x-vnd.on2.vp9" && audioMime in setOf("audio/vorbis", "audio/opus") -> {
@@ -50,16 +52,16 @@ internal object MediaTrackMuxer {
                     if (audioMime == "audio/opus" && Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
                         throw IOException("Opus WebM muxing requires Android 10 or newer.")
                     }
-                    outputFormat = MediaMuxer.OutputFormat.MUXER_OUTPUT_WEBM
+                    isWebm = true
                     containerName = "WebM"
                 }
-                else -> throw IOException("Unsupported track pair for native muxing: $videoMime + $audioMime.")
+                else -> throw IOException("Unsupported track pair for muxing: $videoMime + $audioMime.")
             }
-            muxer = MediaMuxer(outputFile.absolutePath, outputFormat)
+            muxer = createMuxer(outputFile, isWebm)
             val muxVideoTrack = muxer.addTrack(videoFormat)
             val muxAudioTrack = muxer.addTrack(audioFormat)
             val rotation = if (videoFormat.containsKey(MediaFormat.KEY_ROTATION)) videoFormat.getInteger(MediaFormat.KEY_ROTATION) else 0
-            if (outputFormat == MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4 && rotation in setOf(90, 180, 270)) {
+            if (!isWebm && rotation in setOf(90, 180, 270)) {
                 muxer.setOrientationHint(rotation)
             }
             muxer.start()
@@ -95,9 +97,15 @@ internal object MediaTrackMuxer {
         throw IOException("A downloaded track does not contain a $mimePrefix media stream.")
     }
 
+    private fun createMuxer(outputFile: File, webm: Boolean): MuxerOutput = when {
+        webm && Build.VERSION.SDK_INT < Build.VERSION_CODES.N -> Media3MuxerOutput(outputFile)
+        webm -> PlatformMuxerOutput(outputFile, MediaMuxer.OutputFormat.MUXER_OUTPUT_WEBM)
+        else -> PlatformMuxerOutput(outputFile, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
+    }
+
     private fun copySamples(
         extractor: MediaExtractor,
-        muxer: MediaMuxer,
+        muxer: MuxerOutput,
         destinationTrack: Int,
         format: MediaFormat,
         containerName: String,
@@ -127,4 +135,47 @@ internal object MediaTrackMuxer {
 
     private const val DEFAULT_BUFFER_BYTES = 2 * 1024 * 1024
     private const val MAX_BUFFER_BYTES = 16 * 1024 * 1024
+
+    private interface MuxerOutput {
+        fun addTrack(format: MediaFormat): Int
+        fun setOrientationHint(degrees: Int)
+        fun start()
+        fun stop()
+        fun release()
+        fun writeSampleData(track: Int, buffer: ByteBuffer, info: MediaCodec.BufferInfo)
+    }
+
+    private class PlatformMuxerOutput(file: File, format: Int) : MuxerOutput {
+        private val muxer = MediaMuxer(file.absolutePath, format)
+        override fun addTrack(format: MediaFormat) = muxer.addTrack(format)
+        override fun setOrientationHint(degrees: Int) = muxer.setOrientationHint(degrees)
+        override fun start() = muxer.start()
+        override fun stop() = muxer.stop()
+        override fun release() = muxer.release()
+        override fun writeSampleData(track: Int, buffer: ByteBuffer, info: MediaCodec.BufferInfo) =
+            muxer.writeSampleData(track, buffer, info)
+    }
+
+    private class Media3MuxerOutput(file: File) : MuxerOutput {
+        private val outputStream = FileOutputStream(file)
+        private val muxer = WebmMuxer.Builder(FileOutputStreamSeekableMuxerOutput(outputStream)).build()
+        override fun addTrack(format: MediaFormat) = muxer.addTrack(
+            MediaFormatUtil.createFormatFromMediaFormat(format).buildUpon().setLanguage("und").build(),
+        )
+        override fun setOrientationHint(degrees: Int) = Unit
+        override fun start() = Unit
+        override fun stop() = Unit
+        override fun release() {
+            try {
+                muxer.close()
+            } finally {
+                outputStream.close()
+            }
+        }
+        override fun writeSampleData(track: Int, buffer: ByteBuffer, info: MediaCodec.BufferInfo) = muxer.writeSampleData(
+            track,
+            buffer,
+            Media3BufferInfo(info.presentationTimeUs, info.size, info.flags),
+        )
+    }
 }

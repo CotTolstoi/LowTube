@@ -79,12 +79,12 @@ class DownloadOptionsTest {
         )
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-            assertTrue("Android 6 native WebM muxing is disabled after a platform crash", options.isEmpty())
-            return
+            assertEquals(listOf("vp8"), options.map { it.stream.videoCodec })
+        } else {
+            assertTrue(options.any { it.stream.videoCodec.startsWith("vp09") })
         }
         assertTrue(options.isNotEmpty())
         assertTrue(options.all { it.container == "WebM" && it.requiresMuxing })
-        assertTrue(options.any { it.stream.videoCodec.startsWith("vp09") })
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             assertTrue(options.all { it.audioStream?.audioCodec == "vorbis" })
         } else {

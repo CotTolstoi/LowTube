@@ -8,44 +8,15 @@ import android.os.Build
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
-import org.junit.Assert.fail
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.File
-import java.io.IOException
 import java.nio.ByteBuffer
 
 @RunWith(AndroidJUnit4::class)
 class MediaTrackMuxerTest {
-    @Test
-    fun android6WebmRemuxIsRejectedBeforeNativeMuxerCanCrash() {
-        assumeTrue("Android 6 guard only", Build.VERSION.SDK_INT < Build.VERSION_CODES.N)
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val directory = File(context.cacheDir, "android6-webm-mux-guard-test").apply {
-            deleteRecursively()
-            mkdirs()
-        }
-        val source = File(directory, "source.webm")
-        val output = File(directory, "must-not-be-created.webm")
-        try {
-            InstrumentationRegistry.getInstrumentation().context.assets.open(
-                "com/lowtube/android/downloads/webm_vp8_vorbis.webm",
-            ).use { input -> source.outputStream().use(input::copyTo) }
-
-            try {
-                MediaTrackMuxer.merge(source, source, output)
-                fail("Separate WebM remux should be rejected on Android 6")
-            } catch (expected: IOException) {
-                assertTrue(expected.message.orEmpty().contains("disabled on Android 6"))
-                assertTrue(!output.exists())
-            }
-        } finally {
-            directory.deleteRecursively()
-        }
-    }
-
     @Test
     fun combinesSeparateAvcAndAacMp4TracksWithoutTranscoding() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
@@ -96,24 +67,18 @@ class MediaTrackMuxerTest {
 
     @Test
     fun combinesSeparateVp8AndVorbisWebmTracksWithoutTranscoding() {
-        assumeTrue("Separate WebM tracks are disabled on Android 6 after a native WebmWriter crash", Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val directory = File(context.cacheDir, "vp8-vorbis-webm-mux-test").apply {
             deleteRecursively()
             mkdirs()
         }
         val source = File(directory, "source.webm")
-        val video = File(directory, "video-only.webm")
-        val audio = File(directory, "audio-only.webm")
         val output = File(directory, "combined.webm")
         try {
             InstrumentationRegistry.getInstrumentation().context.assets.open(
                 "com/lowtube/android/downloads/webm_vp8_vorbis.webm",
             ).use { input -> source.outputStream().use(input::copyTo) }
-            extractTrack(source, video, "video/x-vnd.on2.vp8", MediaMuxer.OutputFormat.MUXER_OUTPUT_WEBM)
-            extractTrack(source, audio, "audio/vorbis", MediaMuxer.OutputFormat.MUXER_OUTPUT_WEBM)
-
-            MediaTrackMuxer.merge(video, audio, output)
+            MediaTrackMuxer.merge(source, source, output)
 
             assertCombined(output, setOf("video/x-vnd.on2.vp8", "audio/vorbis"))
         } finally {
@@ -130,17 +95,12 @@ class MediaTrackMuxerTest {
             mkdirs()
         }
         val source = File(directory, "source.webm")
-        val video = File(directory, "video-only.webm")
-        val audio = File(directory, "audio-only.webm")
         val output = File(directory, "combined.webm")
         try {
             InstrumentationRegistry.getInstrumentation().context.assets.open(
                 "com/lowtube/android/downloads/webm_vp9_opus.webm",
             ).use { input -> source.outputStream().use(input::copyTo) }
-            extractTrack(source, video, "video/x-vnd.on2.vp9", MediaMuxer.OutputFormat.MUXER_OUTPUT_WEBM)
-            extractTrack(source, audio, "audio/opus", MediaMuxer.OutputFormat.MUXER_OUTPUT_WEBM)
-
-            MediaTrackMuxer.merge(video, audio, output)
+            MediaTrackMuxer.merge(source, source, output)
 
             assertCombined(output, setOf("video/x-vnd.on2.vp9", "audio/opus"))
         } finally {
