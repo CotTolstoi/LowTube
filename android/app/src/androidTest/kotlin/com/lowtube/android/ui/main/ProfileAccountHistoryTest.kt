@@ -4,12 +4,14 @@ import androidx.activity.ComponentActivity
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.lowtube.android.R
 import com.lowtube.android.model.VideoItem
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 
@@ -53,5 +55,46 @@ class ProfileAccountHistoryTest {
         assertEquals(true, requestedReload)
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.play)).performClick()
         assertTrue(playedVideo === video)
+    }
+
+    @Test
+    fun profileUsesTwoIndependentPanesOnlyOnWideWindows() {
+        composeRule.setContent {
+            MaterialTheme {
+                ProfileTab(
+                    accountName = "Account",
+                    accountEmail = "account@example.test",
+                    accountMessage = "",
+                    signInBusy = false,
+                    onSignIn = {},
+                    onSignOut = {},
+                    modifier = Modifier,
+                )
+            }
+        }
+        composeRule.waitForIdle()
+
+        val isWide = androidx.test.platform.app.InstrumentationRegistry.getArguments()
+            .getString("profileLayout") == "twoPane"
+        assertEquals(
+            if (isWide) 1 else 0,
+            composeRule.onAllNodesWithTag(PROFILE_TWO_PANE_TEST_TAG).fetchSemanticsNodes().size,
+        )
+        assertEquals(
+            if (isWide) 1 else 0,
+            composeRule.onAllNodesWithTag(PROFILE_ACCOUNT_PANE_TEST_TAG).fetchSemanticsNodes().size,
+        )
+        assertEquals(
+            if (isWide) 1 else 0,
+            composeRule.onAllNodesWithTag(PROFILE_HISTORY_PANE_TEST_TAG).fetchSemanticsNodes().size,
+        )
+        if (isWide) {
+            val accountPane = composeRule.onAllNodesWithTag(PROFILE_ACCOUNT_PANE_TEST_TAG).fetchSemanticsNodes().single().boundsInRoot
+            val historyPane = composeRule.onAllNodesWithTag(PROFILE_HISTORY_PANE_TEST_TAG).fetchSemanticsNodes().single().boundsInRoot
+            assertTrue("Wide profile panes should sit side-by-side", accountPane.right < historyPane.left)
+        }
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.google_account)).assertExists()
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.youtube_history_title)).assertExists()
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.supported_links)).assertExists()
     }
 }

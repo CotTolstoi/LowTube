@@ -9,17 +9,20 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -29,6 +32,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -67,6 +71,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 internal const val SUBSCRIPTIONS_FEED_GRID_TEST_TAG = "subscriptions-adaptive-grid"
+internal const val PROFILE_TWO_PANE_TEST_TAG = "profile-two-pane"
+internal const val PROFILE_ACCOUNT_PANE_TEST_TAG = "profile-account-pane"
+internal const val PROFILE_HISTORY_PANE_TEST_TAG = "profile-history-pane"
 
 @Composable
 internal fun SubscriptionsTab(
@@ -371,12 +378,7 @@ internal fun ProfileTab(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    LazyColumn(
-        modifier.fillMaxSize().padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        item {
+    val accountCard: @Composable () -> Unit = {
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(stringResource(R.string.google_account), style = MaterialTheme.typography.titleMedium)
@@ -420,8 +422,8 @@ internal fun ProfileTab(
                     if (accountEmail.isNotBlank()) TextButton(onClick = onSignOut) { Text(stringResource(R.string.account_sign_out)) }
                 }
             }
-        }
-        item {
+    }
+    val historyCard: @Composable () -> Unit = {
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(stringResource(R.string.youtube_history_title), style = MaterialTheme.typography.titleMedium)
@@ -469,8 +471,8 @@ internal fun ProfileTab(
                     }
                 }
             }
-        }
-        item {
+    }
+    val supportedLinksCard: @Composable () -> Unit = {
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(stringResource(R.string.supported_links), style = MaterialTheme.typography.titleMedium)
@@ -488,6 +490,43 @@ internal fun ProfileTab(
                         },
                     ) { Text(stringResource(R.string.open_link_settings)) }
                 }
+            }
+    }
+    BoxWithConstraints(modifier.fillMaxSize()) {
+        if (maxWidth >= 800.dp) {
+            Row(
+                Modifier.width(maxWidth.coerceAtMost(1280.dp))
+                    .fillMaxHeight()
+                    .align(Alignment.TopCenter)
+                    .padding(16.dp)
+                    .testTag(PROFILE_TWO_PANE_TEST_TAG),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                Column(
+                    Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState())
+                        .testTag(PROFILE_ACCOUNT_PANE_TEST_TAG),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    accountCard()
+                    supportedLinksCard()
+                }
+                Column(
+                    Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState())
+                        .testTag(PROFILE_HISTORY_PANE_TEST_TAG),
+                ) {
+                    historyCard()
+                }
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.widthIn(max = 720.dp).fillMaxSize()
+                    .align(Alignment.TopCenter).padding(horizontal = 16.dp),
+                contentPadding = PaddingValues(vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                item { accountCard() }
+                item { historyCard() }
+                item { supportedLinksCard() }
             }
         }
     }
