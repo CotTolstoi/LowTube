@@ -2,17 +2,18 @@
 
 This branch publishes the latest available Android development build.
 
-## Current artifact (2026-11-20, source revision bb1ef92)
+## Current artifact (2026-11-20, source revision 55f883b)
 
 - File: `LowTube-Android-debug-0.1.0.apk`; version `0.1.0-android-dev` (version code 1); minimum Android 6.0 (API 23).
 - Build type: installable debug APK, signed with the Android debug certificate; not a production-signed release.
-- Source revision: `bb1ef92` (`feat/android-first-run-setup`); includes the adaptive local Subscriptions feed grid for wide windows.
+- Source revision: `55f883b` (`feat/android-first-run-setup`); includes adaptive Subscriptions and Profile layouts for wide windows.
 - APK size: 25759871 bytes.
-- SHA-256: `72CD1D4E8C1BDFD23140F869AB401CE683982C718364280B0F7C958896F678E7`.
+- SHA-256: `B00F135065987C4508C1728B11FEFEA3DAA23384F1ED7A111458368A81F6A34F`.
 - `:app:assembleDebug :app:assembleDebugAndroidTest --offline --no-configuration-cache` succeeded. The expanded first-run setup exposes independent playback/download resolution, H.264 and FPS limits, playback audio-only, source audio bitrate, UI scale, language, theme, and download-folder choice; values write to the preferences consumed by playback and downloads. On API23, `FirstRunSetupScreenTest` passed 3/3 compact tests, `FirstRunSetupPreferencesTest` 1/1, and the wide 960 dp setup test 1/1. On the connected Android13/API33 device, compact UI and preference persistence each passed 1/1. Queue and Downloads adaptive-grid acceptance from source revision `3dc698f` passed on API23 compact/wide and API33 compact; no video playback or stream resolver was started for these UI checks.
 - `MainScreenTest#setupCanBeReopenedFromSettingsAndSavesStreamPreferences` passed 1/1 on API23 and 1/1 on the connected API33 device. It reopened setup from Settings, saved playback/download preferences, and restored the original preference values; no video playback was started.
 - `SubscriptionCategoryUiTest` passed 2/2 on API23 compact and 960 dp wide, plus 2/2 on the connected Android13/API33 device. It checked adaptive card geometry, item visibility, and category filtering; no video playback or resolver request was started.
-- Installed on the connected Android13/API33 system; `MainActivity` is top-resumed. Latest post-test point sample: CPU process entry was absent from `dumpsys cpuinfo`, PSS 102549 KiB, RSS 200779 KiB, swap PSS 494 KiB, total/available RAM 3802500/1616068 KiB. This is not a benchmark. The system reports `TrebleDroid vanilla`; Redmi Note 8 hardware is not verified.
+- `ProfileAccountHistoryTest` passed 2/2 on API23 compact/wide, API33 AVD compact/wide, and the connected Android13/API33 device. It checked the breakpoint, both pane positions, section visibility, and history callbacks; no Media3 playback or resolver request was started.
+- Installed on the connected Android13/API33 system; `MainActivity` is top-resumed. Latest post-test point sample: CPU process entry was absent from `dumpsys cpuinfo`, PSS 116744 KiB, RSS 213839 KiB, swap PSS 284 KiB, total/available RAM 3802500/1639264 KiB. This is not a benchmark. The system reports `TrebleDroid vanilla`; Redmi Note 8 hardware is not verified.
 ## Previous artifact details (source revision 52c984e; historical)
 
 - Built from Android development branch `feat/android-first-run-setup` at source commit `52c984e`; the APK includes the SAF download-folder option in first-run setup and centralized persistable-grant cleanup. Unit and instrumentation test sources are not packaged in the APK.
