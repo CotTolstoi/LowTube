@@ -319,6 +319,23 @@ class InnerTubeSearchRepository(context: Context? = null) {
                 },
                 audioStream = audioStream,
             )
+        }.let { sourceOptions ->
+            sourceOptions + sourceOptions.filter(::supportsMatroskaOutput).map { option ->
+                option.copy(key = "${option.key}|container=mkv", container = "MKV")
+            }
+        }
+    }
+
+    private fun supportsMatroskaOutput(option: DownloadFormatOption): Boolean {
+        val videoCodec = option.stream.videoCodec.lowercase()
+        val audioCodec = (option.audioStream?.audioCodec ?: option.stream.audioCodec).lowercase()
+        return when {
+            videoCodec.startsWith("avc1") && audioCodec.startsWith("mp4a.40.2") -> true
+            videoCodec.startsWith("vp8") && audioCodec.startsWith("vorbis") -> true
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && videoCodec.startsWith("vp9") &&
+                (audioCodec.startsWith("vorbis") || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && audioCodec.startsWith("opus"))) -> true
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && videoCodec.startsWith("vp8") && audioCodec.startsWith("opus") -> true
+            else -> false
         }
     }
 
@@ -455,11 +472,14 @@ class InnerTubeSearchRepository(context: Context? = null) {
                 val url = playableFormatUrl(json) ?: continue
                 if (!isTrustedStreamUrl(url)) continue
                 val mime = json.optString("mimeType").substringBefore(';')
-                val codec = json.optString("mimeType").substringAfter("codecs=\"", "").substringBefore('"').substringBefore(',')
+                val codecs = json.optString("mimeType").substringAfter("codecs=\"", "").substringBefore('"')
+                    .split(',').map(String::trim).filter(String::isNotEmpty)
+                val codec = codecs.firstOrNull().orEmpty()
+                val audioCodec = codecs.firstOrNull { it.startsWith("mp4a", true) || it.startsWith("opus", true) || it.startsWith("vorbis", true) }.orEmpty()
                 val videoOnly = mime.startsWith("video/") && !json.has("audioQuality")
                 val audioOnly = mime.startsWith("audio/")
                 val videoMuxed = mime.startsWith("video/") && !videoOnly
-                formats += PlaybackFormat(json, url, mime, codec, videoOnly, audioOnly, videoMuxed)
+                formats += PlaybackFormat(json, url, mime, codec, audioCodec, videoOnly, audioOnly, videoMuxed)
             }
         }
         return formats
@@ -590,6 +610,7 @@ class InnerTubeSearchRepository(context: Context? = null) {
         val url: String,
         val mimeType: String,
         val codec: String,
+        val audioCodec: String,
         val videoOnly: Boolean,
         val audioOnly: Boolean,
         val videoMuxed: Boolean,
@@ -603,7 +624,7 @@ class InnerTubeSearchRepository(context: Context? = null) {
             videoHeight = json.optInt("height", 0),
             fps = json.optDouble("fps", 0.0),
             videoCodec = if (isAudioOnly) "" else codec,
-            audioCodec = if (isAudioOnly) codec else "",
+            audioCodec = if (isAudioOnly) codec else if (videoMuxed) audioCodec else "",
             itag = json.optInt("itag", 0),
             isAudioOnly = isAudioOnly,
             isMuxed = videoMuxed,

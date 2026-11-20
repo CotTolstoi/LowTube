@@ -14,6 +14,7 @@ import java.io.IOException
 
 internal class DownloadFileStore(private val context: Context) {
     fun partialFile(job: DownloadJob): File = File(job.partialPath)
+    fun matroskaFile(job: DownloadJob): File = File(job.partialPath + ".mkv")
     fun videoTrackFile(job: DownloadJob): File = File(job.partialPath + ".video")
     fun audioTrackFile(job: DownloadJob): File = File(job.partialPath + ".audio")
     fun videoTrackTotalFile(job: DownloadJob): File = File(job.partialPath + ".video.total")
@@ -55,8 +56,8 @@ internal class DownloadFileStore(private val context: Context) {
         }
     }
 
-    fun publish(job: DownloadJob): Uri {
-        val partial = partialFile(job)
+    fun publish(job: DownloadJob, sourceFile: File = partialFile(job)): Uri {
+        val partial = sourceFile
         if (!partial.isFile || partial.length() <= 0L) throw IOException("The downloaded file is empty or missing.")
         val selectedTree = DownloadDestination.selectedTreeUri(context)
         if (selectedTree != null) return publishToTree(job, partial, selectedTree)

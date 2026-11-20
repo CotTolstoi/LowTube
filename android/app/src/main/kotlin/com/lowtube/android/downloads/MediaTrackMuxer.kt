@@ -16,7 +16,17 @@ import java.nio.ByteBuffer
 
 /** Losslessly combines supported YouTube video/audio tracks without decoding or re-encoding them. */
 internal object MediaTrackMuxer {
-    fun merge(videoFile: File, audioFile: File, outputFile: File) {
+    fun merge(
+        videoFile: File,
+        audioFile: File,
+        outputFile: File,
+        outputContainer: String? = null,
+        cancelled: () -> Boolean = { false },
+    ) {
+        if (outputContainer == "MKV") {
+            MatroskaMuxer.muxSeparate(videoFile, audioFile, outputFile, cancelled)
+            return
+        }
         if (!videoFile.isFile || !audioFile.isFile || videoFile.length() <= 0L || audioFile.length() <= 0L) {
             throw IOException("A downloaded video or audio track is missing.")
         }

@@ -42,8 +42,9 @@ class InnerTubeDownloadOptionsTest {
             audioOnly = false,
         )
 
-        assertEquals(1, options.size)
-        assertTrue(options.single().stream.uri.contains("n=transformed-value"))
+        assertEquals(2, options.size)
+        assertTrue(options.any { it.container == "MKV" && it.key.endsWith("|container=mkv") })
+        assertTrue(options.single { it.container != "MKV" }.stream.uri.contains("n=transformed-value"))
     }
 
     @Test
@@ -79,6 +80,6 @@ class InnerTubeDownloadOptionsTest {
             userAgent = mwebUserAgent,
         )
 
-        assertEquals(mwebUserAgent, options.single().stream.userAgent)
+        assertTrue(options.all { it.stream.userAgent == mwebUserAgent })
     }
 }

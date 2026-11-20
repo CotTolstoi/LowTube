@@ -32,8 +32,13 @@ class DownloadOptionsTest {
 
         val options = repository.downloadOptions(video, streaming, DownloadStreamPreferences(720, true, true), audioOnly = false)
 
-        assertEquals(listOf(100, 22, 18), options.map { it.stream.itag })
-        assertEquals("MP4", options.first().container)
+        val sourceOptions = options.filter { it.container != "MKV" }
+        val mkvOptions = options.filter { it.container == "MKV" }
+        assertEquals(listOf(100, 22, 18), sourceOptions.map { it.stream.itag })
+        assertEquals(listOf(100, 22, 18), mkvOptions.map { it.stream.itag })
+        assertEquals("MP4", sourceOptions.first().container)
+        assertTrue(mkvOptions.all { it.key.endsWith("|container=mkv") })
+        assertEquals("MKV", mkvOptions.first().container)
         assertEquals("avc1.64001F", options.first().stream.videoCodec)
         assertTrue(options.all { it.stream.videoHeight <= 720 && it.stream.fps <= 30.0 })
         assertTrue(options.all { it.stream.isMuxed && !it.audioOnly })
@@ -78,17 +83,21 @@ class DownloadOptionsTest {
             audioOnly = false,
         )
 
+        val sourceOptions = options.filter { it.container != "MKV" }
+        val mkvOptions = options.filter { it.container == "MKV" }
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-            assertEquals(listOf("vp8"), options.map { it.stream.videoCodec })
+            assertEquals(listOf("vp8"), sourceOptions.map { it.stream.videoCodec })
         } else {
-            assertTrue(options.any { it.stream.videoCodec.startsWith("vp09") })
+            assertTrue(sourceOptions.any { it.stream.videoCodec.startsWith("vp09") })
         }
-        assertTrue(options.isNotEmpty())
-        assertTrue(options.all { it.container == "WebM" && it.requiresMuxing })
+        assertTrue(sourceOptions.isNotEmpty())
+        assertTrue(sourceOptions.all { it.container == "WebM" && it.requiresMuxing })
+        assertTrue(mkvOptions.isNotEmpty())
+        assertTrue(mkvOptions.all { it.requiresMuxing && it.key.endsWith("|container=mkv") })
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-            assertTrue(options.all { it.audioStream?.audioCodec == "vorbis" })
+            assertTrue(sourceOptions.all { it.audioStream?.audioCodec == "vorbis" })
         } else {
-            assertTrue(options.all { it.audioStream?.audioCodec == "opus" })
+            assertTrue(sourceOptions.all { it.audioStream?.audioCodec == "opus" })
         }
     }
 
