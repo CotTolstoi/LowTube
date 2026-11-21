@@ -67,9 +67,11 @@ class LocalSubscriptionFeedRepository(
             }.awaitAll().filterNotNull()
         }
         val failed = outcomes.filter { it.error != null }.map { it.channel.title.ifBlank { it.channel.id } }
+        val refreshedChannels = outcomes.count { it.error == null }
+        if (refreshedChannels > 0) SubscriptionFeedRefreshScheduler.notifyFeedUpdated()
         SubscriptionFeedRefresh(
             videos = library.subscriptionFeed(accountEmail),
-            refreshedChannels = outcomes.count { it.error == null },
+            refreshedChannels = refreshedChannels,
             failedChannels = failed,
             remainingChannels = library.unattemptedFeedChannelCount(accountEmail),
             failureDetails = outcomes.mapNotNull { it.error?.take(160) },

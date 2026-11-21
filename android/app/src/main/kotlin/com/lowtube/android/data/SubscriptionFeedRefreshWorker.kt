@@ -19,7 +19,6 @@ class SubscriptionFeedRefreshWorker(
             if (library.localChannels().isEmpty()) return Result.success()
             val result = LocalSubscriptionFeedRepository(library, InnerTubeSearchRepository(applicationContext))
                 .refreshBatch(AppLocale.language(applicationContext), preset)
-            if (result.refreshedChannels > 0) SubscriptionFeedRefreshScheduler.notifyFeedUpdated()
             if (result.refreshedChannels == 0 && result.failedChannels.isNotEmpty()) Result.retry() else Result.success()
         } catch (cancelled: CancellationException) {
             throw cancelled
