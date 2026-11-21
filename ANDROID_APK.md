@@ -1,3 +1,14 @@
+## Current artifact (2026-11-21, source revision 2389777)
+
+- File: `LowTube-Android-debug-0.1.14.apk`; version `0.1.14-android-dev` (version code 15); minimum Android 6.0 (API 23).
+- Build type: installable debug APK signed with the Android debug certificate; not production-signed.
+- Source revision: `2389777` on `codex/android-shorts-continuation`.
+- Build: `:app:assembleDebug --offline --no-configuration-cache` succeeded for armeabi-v7a, arm64-v8a and x86_64.
+- Change in 0.1.14: local channel subscriptions can be removed from the Subscriptions filter after confirmation; this does not change a Google account subscription.
+- Playback was not run; playback logic was unchanged. APK installed on Xiaomi Pad 6 and MainActivity verified foreground. The local removal UI was not acceptance-tested.
+- APK size: 24595972 bytes.
+- SHA-256: `9CE72FB4F221CE4AC4980A9C704DC3E6E0460E8CB8DC3D1D298248821516ADC2`.
+
 ## Current artifact (2026-11-21, source revision 4fddd4a)
 
 - File: `LowTube-Android-debug-0.1.13.apk`; version `0.1.13-android-dev` (version code 14); minimum Android 6.0 (API 23).
