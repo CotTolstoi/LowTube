@@ -59,6 +59,7 @@ import com.lowtube.android.ui.playback.PlaybackPictureInPicturePolicy
 import com.lowtube.android.ui.onboarding.FirstRunSetupScreen
 
 class MainActivity : ComponentActivity() {
+  private var openDownloadsRequested by mutableStateOf(false)
   private data class YoutubeSubscriptionChange(
     val accountEmail: String,
     val channelId: String,
@@ -192,6 +193,7 @@ class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     acceptExternalYoutubeIntent(intent)
+    openDownloadsRequested = intent?.action == ACTION_OPEN_DOWNLOADS
     val preferences = getSharedPreferences("lowtube_settings", MODE_PRIVATE)
     googleAccountMessageStore = GoogleAccountMessageStore(this)
     googleAccountMessage = googleAccountMessageStore?.load().orEmpty()
@@ -304,6 +306,11 @@ class MainActivity : ComponentActivity() {
             inPictureInPictureMode = inPictureInPictureMode,
             onPictureInPictureEligibilityChanged = ::setPictureInPictureEligibility,
             externalYoutubeUrl = externalYoutubeUrl,
+            openDownloadsRequested = openDownloadsRequested,
+            onOpenDownloadsConsumed = {
+              openDownloadsRequested = false
+              if (intent?.action == ACTION_OPEN_DOWNLOADS) intent.action = null
+            },
             externalYoutubeRequestId = externalYoutubeRequestId,
             onExternalYoutubeUrlConsumed = { requestId ->
               if (requestId == externalYoutubeRequestId) externalYoutubeUrl = null
@@ -319,6 +326,7 @@ class MainActivity : ComponentActivity() {
     super.onNewIntent(newIntent)
     setIntent(newIntent)
     acceptExternalYoutubeIntent(newIntent)
+    if (newIntent.action == ACTION_OPEN_DOWNLOADS) openDownloadsRequested = true
   }
 
   override fun onUserLeaveHint() {
@@ -842,6 +850,7 @@ class MainActivity : ComponentActivity() {
   }
 
   companion object {
+    internal const val ACTION_OPEN_DOWNLOADS = "com.lowtube.android.OPEN_DOWNLOADS"
     private const val OPENID_SCOPE = "openid"
     private const val EMAIL_SCOPE = "email"
     private const val PROFILE_SCOPE = "profile"

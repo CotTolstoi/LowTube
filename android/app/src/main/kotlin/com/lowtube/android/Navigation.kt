@@ -90,6 +90,8 @@ fun MainNavigation(
     onStartFirstRunSetup: () -> Unit = {},
     onBackHandlerChanged: ((() -> Boolean) -> Unit),
     externalYoutubeUrl: String?,
+    openDownloadsRequested: Boolean = false,
+    onOpenDownloadsConsumed: () -> Unit = {},
     externalYoutubeRequestId: Int,
     onExternalYoutubeUrlConsumed: (Int) -> Unit,
     inPictureInPictureMode: Boolean,
@@ -455,6 +457,12 @@ fun MainNavigation(
         Toast.makeText(context, context.getString(R.string.audio_import_result, added, skipped), Toast.LENGTH_LONG).show()
     }
     val backStack = rememberNavBackStack(Main)
+    LaunchedEffect(openDownloadsRequested) {
+        if (openDownloadsRequested) {
+            if (backStack.lastOrNull() != Downloads) backStack.add(Downloads)
+            onOpenDownloadsConsumed()
+        }
+    }
     val popBackStackEntry: () -> Unit = {
         val removed = backStack.removeLastOrNull()
         if (removed == Player) {
