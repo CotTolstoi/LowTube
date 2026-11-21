@@ -65,6 +65,7 @@ import com.lowtube.android.R
 import com.lowtube.android.data.InnerTubeSearchRepository
 import com.lowtube.android.data.LocalLibraryRepository
 import com.lowtube.android.data.LocalSubscriptionFeedRepository
+import com.lowtube.android.data.SubscriptionFeedCooldownException
 import com.lowtube.android.model.SavedChannel
 import com.lowtube.android.model.VideoItem
 import kotlinx.coroutines.CancellationException
@@ -111,7 +112,7 @@ internal fun SubscriptionsTab(
     var categoryInput by remember { mutableStateOf("") }
     var refreshJob by remember { mutableStateOf<Job?>(null) }
     var refreshMessage by remember { mutableStateOf<String?>(null) }
-    var refreshFailed by remember { mutableStateOf(false) }
+    var refreshFailed by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(channelIds, categories) {
         if (selectedChannel !in channelIds) selectedChannel = ""
         if (selectedCategory !in categories) selectedCategory = ""
@@ -160,7 +161,7 @@ internal fun SubscriptionsTab(
                 enabled = refreshJob?.isActive != true && channels.isNotEmpty(),
                 onClick = {
                     refreshMessage = null
-                    refreshFailed = false
+                    refreshFailed = null
                     refreshJob = scope.launch {
                         try {
                             val result = feedRepository.refreshBatch(AppLocale.language(context), feedRefreshPreset, accountEmail)
@@ -174,8 +175,10 @@ internal fun SubscriptionsTab(
                             localRevision++
                         } catch (cancelled: CancellationException) {
                             throw cancelled
+                        } catch (paused: SubscriptionFeedCooldownException) {
+                            refreshFailed = context.getString(R.string.feed_refresh_paused, paused.seconds)
                         } catch (_: Exception) {
-                            refreshFailed = true
+                            refreshFailed = context.getString(R.string.feed_refresh_failed)
                         } finally {
                             refreshJob = null
                         }
@@ -196,7 +199,7 @@ internal fun SubscriptionsTab(
             Text(youtubeSyncMessage, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         refreshMessage?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
-        if (refreshFailed) Text(stringResource(R.string.feed_refresh_failed), color = MaterialTheme.colorScheme.error)
+        refreshFailed?.let { Text(it, color = MaterialTheme.colorScheme.error) }
 
         Row(
             Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(vertical = 4.dp),

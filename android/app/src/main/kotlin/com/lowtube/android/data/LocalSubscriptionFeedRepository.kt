@@ -25,6 +25,8 @@ import java.util.Date
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
 
+internal class SubscriptionFeedCooldownException(val seconds: Long) : IOException()
+
 data class SubscriptionFeedRefresh(
     val videos: List<VideoItem>,
     val refreshedChannels: Int,
@@ -46,7 +48,7 @@ class LocalSubscriptionFeedRepository(
         val channels = library.channels(accountEmail)
         if (channels.isEmpty()) return@withContext SubscriptionFeedRefresh(emptyList(), 0, emptyList(), 0)
         val waitMs = cooldownUntilMs.get() - SystemClock.elapsedRealtime()
-        if (waitMs > 0) throw IOException("Subscription refresh paused. Retry in ${(waitMs + 999) / 1_000} s.")
+        if (waitMs > 0) throw SubscriptionFeedCooldownException((waitMs + 999) / 1_000)
 
         val policy = SubscriptionFeedRefreshPolicy.fromPreset(preset)
         val selected = library.channelsForFeedRefresh(channels, policy.channelsPerBatch)

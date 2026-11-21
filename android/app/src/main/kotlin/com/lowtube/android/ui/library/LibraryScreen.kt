@@ -57,6 +57,7 @@ import com.lowtube.android.R
 import com.lowtube.android.data.LocalLibraryRepository
 import com.lowtube.android.data.InnerTubeSearchRepository
 import com.lowtube.android.data.LocalSubscriptionFeedRepository
+import com.lowtube.android.data.SubscriptionFeedCooldownException
 import com.lowtube.android.data.SubscriptionFeedRefresh
 import com.lowtube.android.AppLocale
 import com.lowtube.android.model.LocalPlaylist
@@ -117,7 +118,7 @@ fun LibraryScreen(
     }
     var feedJob by remember { mutableStateOf<Job?>(null) }
     var feedRefreshResult by remember { mutableStateOf<SubscriptionFeedRefresh?>(null) }
-    var feedRefreshFailed by remember { mutableStateOf(false) }
+    var feedRefreshFailed by remember { mutableStateOf<String?>(null) }
     var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
     val selected = playlists.firstOrNull { it.id == selectedId }
     val videos = remember(refresh, selectedId) { selectedId?.let(repository::videos).orEmpty() }
@@ -389,15 +390,17 @@ fun LibraryScreen(
                                 if (feedJob?.isActive == true) feedJob?.cancel()
                                 else {
                                     feedRefreshResult = null
-                                    feedRefreshFailed = false
+                                    feedRefreshFailed = null
                                     feedJob = scope.launch {
                                         try {
                                             feedRefreshResult = feedRepository.refreshBatch(AppLocale.language(context), feedRefreshPreset, accountEmail)
                                             refresh++
                                         } catch (cancelled: CancellationException) {
                                             throw cancelled
+                                        } catch (paused: SubscriptionFeedCooldownException) {
+                                            feedRefreshFailed = context.getString(R.string.feed_refresh_paused, paused.seconds)
                                         } catch (_: Exception) {
-                                            feedRefreshFailed = true
+                                            feedRefreshFailed = context.getString(R.string.feed_refresh_failed)
                                         } finally {
                                             feedJob = null
                                         }
@@ -446,7 +449,7 @@ fun LibraryScreen(
                     }
                 }
                 if (feedJob?.isActive == true) item { androidx.compose.material3.LinearProgressIndicator(Modifier.fillMaxWidth()) }
-                if (feedRefreshFailed) item { Text(stringResource(R.string.feed_refresh_failed), color = MaterialTheme.colorScheme.error) }
+                feedRefreshFailed?.let { message -> item { Text(message, color = MaterialTheme.colorScheme.error) } }
                 feedRefreshResult?.let { result ->
                     item {
                         Text(
