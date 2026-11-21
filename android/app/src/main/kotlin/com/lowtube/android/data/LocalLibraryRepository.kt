@@ -276,8 +276,11 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
         db.beginTransaction()
         try {
             db.delete("subscriptions", "channel_id=?", arrayOf(channelId))
-            db.delete("channel_feed_items", "channel_id=?", arrayOf(channelId))
-            db.delete("channel_feed_state", "channel_id=?", arrayOf(channelId))
+            val noAccountSubscription =
+                "channel_id=? AND NOT EXISTS (SELECT 1 FROM youtube_account_subscriptions WHERE channel_id=?)"
+            val args = arrayOf(channelId, channelId)
+            db.delete("channel_feed_items", noAccountSubscription, args)
+            db.delete("channel_feed_state", noAccountSubscription, args)
             db.setTransactionSuccessful()
         } finally { db.endTransaction() }
     }
