@@ -11,6 +11,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.performTextReplacement
 import androidx.lifecycle.ViewModelProvider
+import androidx.test.platform.app.InstrumentationRegistry
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performScrollTo
@@ -22,6 +23,7 @@ import com.lowtube.android.ui.onboarding.FIRST_RUN_FINISH_TAG
 import com.lowtube.android.ui.onboarding.FIRST_RUN_PLAYBACK_H264_TAG
 import org.junit.Assert.assertTrue
 import org.junit.Assert.assertEquals
+import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -83,6 +85,34 @@ class MainScreenTest {
         composeTestRule.onNode(searchTab).assertIsSelected()
         composeTestRule.onNode(hasSetTextAction() and hasText(draft)).assertExists()
         assertEquals("NASA", viewModel.state.value.query)
+    }
+
+    @Test
+    fun searchResultsRemainWhenReturningFromRecommendations() {
+        assumeTrue(
+            "Live search acceptance requires -e runSearchTabAcceptance true",
+            InstrumentationRegistry.getArguments().getString("runSearchTabAcceptance") == "true",
+        )
+        val activity = composeTestRule.activity
+        val tabRole = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab)
+        val searchTab = hasText(activity.getString(R.string.search_tab)) and tabRole
+        val recommendationsTab = hasText(activity.getString(R.string.recommendations_tab)) and tabRole
+        composeTestRule.onNode(searchTab).performClick()
+
+        val viewModel = ViewModelProvider(activity)[SearchViewModel::class.java]
+        composeTestRule.runOnIdle { viewModel.search("https://www.youtube.com/watch?v=6kp91gVA9To", language = "en") }
+        composeTestRule.waitUntil(30_000) { !viewModel.state.value.loading }
+        val before = viewModel.state.value
+        assertTrue("Public video did not resolve: ${before.error}", before.items.any { it.id == "6kp91gVA9To" })
+
+        composeTestRule.onNode(recommendationsTab).performClick()
+        composeTestRule.waitUntil(5_000) { viewModel.state.value.isHome }
+        composeTestRule.onNode(searchTab).performClick()
+        composeTestRule.onNode(searchTab).assertIsSelected()
+        val restored = viewModel.state.value
+        assertEquals(before.query, restored.query)
+        assertEquals(before.items, restored.items)
+        assertTrue("Returning should reuse results immediately", !restored.loading)
     }
 
     @Test

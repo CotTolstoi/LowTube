@@ -341,7 +341,7 @@ fun LowTubeSearchScreen(
     val selectMainTab: (String) -> Unit = { tab ->
         onSelectedTabChanged(tab)
         when (tab) {
-            "search" -> viewModel.showSearch()
+            "search" -> viewModel.showSearch(requestFailedMessage, pageSize)
             "home" -> {
                 recommendationKind = "all"
                 viewModel.loadHome(language, discoveryTopic, discoveryLanguage, force = true, requestFailedMessage = requestFailedMessage, pageSize = pageSize)

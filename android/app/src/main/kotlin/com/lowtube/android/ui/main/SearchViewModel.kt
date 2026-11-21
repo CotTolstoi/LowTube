@@ -35,6 +35,7 @@ class SearchViewModel(
     private val mutableState = MutableStateFlow(SearchUiState())
     val state: StateFlow<SearchUiState> = mutableState.asStateFlow()
     private val homePages = LinkedHashMap<String, SearchUiState>()
+    private var savedSearch: SearchUiState? = null
     private var searchJob: Job? = null
     private var generation = 0
 
@@ -51,6 +52,7 @@ class SearchViewModel(
         val cleanDiscoveryLanguage = discoveryLanguage.takeIf { it in DISCOVERY_LANGUAGES } ?: "any"
         val cacheKey = "$language|$cleanTopic|$cleanDiscoveryLanguage"
         val current = mutableState.value
+        if (!current.isHome && current.searched) savedSearch = current
         if (!force && current.isHome && current.homeCacheKey == cacheKey && (current.loading || current.items.isNotEmpty())) return
         val cached = homePages[cacheKey]
         if (!force && cached != null) {
@@ -99,10 +101,16 @@ class SearchViewModel(
         }
     }
 
-    fun showSearch() {
+    fun showSearch(requestFailedMessage: String, pageSize: Int) {
+        if (!mutableState.value.isHome) return
+        val previous = savedSearch
+        if (previous?.loading == true) {
+            search(previous.query, previous.requestLanguage, requestFailedMessage = requestFailedMessage, pageSize = pageSize)
+            return
+        }
         generation++
         searchJob?.cancel()
-        mutableState.value = SearchUiState()
+        mutableState.value = previous?.copy(loadingMore = false) ?: SearchUiState(displayLimit = pageSize)
     }
 
     fun setPageSize(pageSize: Int) {
@@ -131,7 +139,7 @@ class SearchViewModel(
         val requestGeneration = ++generation
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
-            mutableState.value = SearchUiState(query = normalized, loading = true, searched = true, displayLimit = pageSize)
+            mutableState.value = SearchUiState(query = normalized, requestLanguage = language, loading = true, searched = true, displayLimit = pageSize)
             try {
                 val page = repository.search(normalized, language = language)
                 if (requestGeneration == generation) {
