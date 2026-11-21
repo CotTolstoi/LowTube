@@ -86,6 +86,7 @@ class LocalSubscriptionFeedRepository(
     } catch (cancelled: CancellationException) {
         throw cancelled
     } catch (atomFailure: Exception) {
+        if (atomFailure is FeedHttpException && atomFailure.status in setOf(429, 503)) throw atomFailure
         val fallbackItems = innerTube.search(channel.url, language = language).items
             .asSequence()
             .filter { it.channelId == channel.id && it.kind != "playlist" && VIDEO_ID.matches(it.id) }
@@ -108,7 +109,7 @@ class LocalSubscriptionFeedRepository(
         }
         try {
             val status = connection.responseCode
-            if (status !in 200..299) throw IOException("Channel feed request failed with HTTP $status.")
+            if (status !in 200..299) throw FeedHttpException(status)
             if (connection.contentLength > MAX_RESPONSE_BYTES) throw IOException("Channel feed exceeds the 2 MB limit.")
             val bytes = ByteArrayOutputStream()
             connection.inputStream.use { input ->
@@ -222,6 +223,7 @@ class LocalSubscriptionFeedRepository(
     }.getOrDefault("")
 
     private data class ChannelResult(val channel: SavedChannel, val error: String?, val usedBrowseFallback: Boolean)
+    private class FeedHttpException(val status: Int) : IOException("Channel feed request failed with HTTP $status.")
 
     companion object {
         // The worker and UI use separate repository instances but share the feed database.

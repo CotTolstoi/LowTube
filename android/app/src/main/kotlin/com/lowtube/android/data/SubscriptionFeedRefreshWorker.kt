@@ -19,17 +19,22 @@ class SubscriptionFeedRefreshWorker(
             if (library.localChannels().isEmpty()) return Result.success()
             val result = LocalSubscriptionFeedRepository(library, InnerTubeSearchRepository(applicationContext))
                 .refreshBatch(AppLocale.language(applicationContext), preset)
-            if (result.refreshedChannels == 0 && result.failedChannels.isNotEmpty()) Result.retry() else Result.success()
+            if (result.refreshedChannels == 0 && result.failedChannels.isNotEmpty()) retryOrWaitForNextPeriod()
+            else Result.success()
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (_: Exception) {
-            Result.retry()
+            retryOrWaitForNextPeriod()
         } finally {
             library.close()
         }
     }
 
+    private fun retryOrWaitForNextPeriod(): Result =
+        if (runAttemptCount < MAX_RETRIES) Result.retry() else Result.success()
+
     companion object {
         private const val DEFAULT_PRESET = 1
+        private const val MAX_RETRIES = 2
     }
 }
