@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 
 data class SearchUiState(
     val query: String = "",
+    val requestLanguage: String = "en",
     val items: List<VideoItem> = emptyList(),
     val continuation: String? = null,
     val playlistTitle: String? = null,
@@ -52,7 +53,9 @@ class SearchViewModel(
         if (!force && current.isHome && current.homeCacheKey == cacheKey && (current.loading || current.items.isNotEmpty())) return
         val cached = homePages[cacheKey]
         if (!force && cached != null) {
-            val restored = cached.copy(displayLimit = pageSize)
+            generation++
+            searchJob?.cancel()
+            val restored = cached.copy(displayLimit = pageSize, loading = false, loadingMore = false, error = null)
             mutableState.value = restored
             rememberHomePage(restored)
             return
@@ -61,6 +64,7 @@ class SearchViewModel(
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
             mutableState.value = SearchUiState(
+                requestLanguage = language,
                 items = cached?.items.orEmpty(),
                 continuation = cached?.continuation,
                 loading = true,
@@ -74,6 +78,7 @@ class SearchViewModel(
                 val page = repository.recommendations(language, cleanTopic, cleanDiscoveryLanguage)
                 if (requestGeneration == generation) {
                     val loaded = SearchUiState(
+                        requestLanguage = language,
                         items = page.items,
                         continuation = page.continuation,
                         isHome = true,
@@ -134,6 +139,7 @@ class SearchViewModel(
                 if (requestGeneration == generation) {
                     mutableState.value = SearchUiState(
                         query = normalized,
+                        requestLanguage = language,
                         items = page.items,
                         continuation = page.continuation,
                         playlistTitle = page.playlistTitle,
@@ -151,7 +157,6 @@ class SearchViewModel(
     }
 
     fun loadMore(
-        language: String,
         requestFailedMessage: String = DEFAULT_REQUEST_FAILED_MESSAGE,
         pageSize: Int = FeedPagePolicy.DEFAULT_PAGE_SIZE,
         availableItemCount: Int = -1,
@@ -173,15 +178,15 @@ class SearchViewModel(
         viewModelScope.launch {
             try {
                 val page = if (current.isHome) repository.recommendations(
-                    language,
+                    current.requestLanguage,
                     current.homeTopic,
                     current.discoveryLanguage,
                     token,
                 )
-                    else repository.search(current.query, continuation = token, language = language)
+                    else repository.search(current.query, continuation = token, language = current.requestLanguage)
                 if (requestGeneration == generation) {
                     val merged = (current.items + page.items).distinctBy { it.kind + ":" + it.id }.take(5_000)
-                    val updated = current.copy(
+                    val updated = mutableState.value.copy(
                         items = merged,
                         continuation = page.continuation?.takeUnless {
                             merged.size == 5_000 || (it == token && merged.size == current.items.size)

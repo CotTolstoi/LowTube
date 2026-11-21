@@ -331,7 +331,7 @@ fun LowTubeSearchScreen(
         }
         if (autoLoadAttemptedToken == attemptKey) return@LaunchedEffect
         autoLoadAttemptedToken = attemptKey
-        viewModel.loadMore(language, requestFailedMessage, pageSize, visibleItems.size)
+        viewModel.loadMore(requestFailedMessage, pageSize, visibleItems.size)
     }
 
     val navigationItemColors = NavigationBarItemDefaults.colors(
@@ -653,7 +653,7 @@ fun LowTubeSearchScreen(
                         item(key = "load-more", span = { GridItemSpan(maxLineSpan) }) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                                 if (state.error != null) Text(state.error.orEmpty(), color = MaterialTheme.colorScheme.error)
-                                Button(onClick = { viewModel.loadMore(language, requestFailedMessage, pageSize, visibleItems.size) }, enabled = !state.loadingMore) {
+                                Button(onClick = { viewModel.loadMore(requestFailedMessage, pageSize, visibleItems.size) }, enabled = !state.loadingMore) {
                                     if (state.loadingMore) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
                                     else Text(stringResource(R.string.load_more))
                                 }
