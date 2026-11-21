@@ -15,6 +15,7 @@ import com.lowtube.android.R
 import com.lowtube.android.data.LocalLibraryRepository
 import com.lowtube.android.model.VideoItem
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
 
@@ -34,6 +35,8 @@ class WatchHistoryActionsTest {
         repository.recordWatchProgress(second, positionMs = 12_000, durationMs = 30_000)
 
         try {
+            assertEquals(first, repository.previousWatchedVideo(second.id))
+            assertEquals(second, repository.previousWatchedVideo(first.id))
             composeTestRule.setContent {
                 MaterialTheme {
                     LibraryScreen(
@@ -61,6 +64,7 @@ class WatchHistoryActionsTest {
             composeTestRule.onNodeWithTag("watch-history-remove-${first.id}").performClick()
             composeTestRule.waitForIdle()
             assertEquals(listOf(second.id), repository.watchHistory().map { it.video.id })
+            assertNull(repository.previousWatchedVideo(second.id))
             composeTestRule.onNodeWithText(first.title).assertDoesNotExist()
             composeTestRule.onNodeWithText(second.title).assertExists()
 
