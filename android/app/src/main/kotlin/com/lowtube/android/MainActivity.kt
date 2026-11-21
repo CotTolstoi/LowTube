@@ -518,17 +518,41 @@ class MainActivity : ComponentActivity() {
   }
 
   private fun accountAuthorizationError(failure: Throwable): String {
-    val apiFailure = failure as? ApiException
+    val apiFailure = findAuthorizationApiException(failure)
     return when (apiFailure?.statusCode) {
       CommonStatusCodes.DEVELOPER_ERROR -> getString(R.string.account_oauth_not_configured)
       CommonStatusCodes.CANCELED -> googleAuthorizationCancelledMessage(failure)
-      else -> getString(R.string.account_sign_in_failed)
+      else -> if (apiFailure != null) {
+        val details = GoogleAuthorizationDiagnostics.collect(this)
+        getString(
+          R.string.account_sign_in_status_failed,
+          CommonStatusCodes.getStatusCodeString(apiFailure.statusCode),
+          apiFailure.statusCode,
+          details.provider,
+          details.providerVersion.ifBlank { "unknown" },
+          getString(if (details.authorizationApiAvailable) R.string.account_authorization_api_available else R.string.account_authorization_api_not_detected),
+        )
+      } else {
+        getString(R.string.account_sign_in_failed)
+      }
     }
+  }
+
+  private fun findAuthorizationApiException(failure: Throwable?): ApiException? {
+    var current = failure
+    val seen = HashSet<Throwable>()
+    repeat(MAX_AUTHORIZATION_CAUSE_DEPTH) {
+      val cause = current ?: return null
+      if (!seen.add(cause)) return null
+      if (cause is ApiException) return cause
+      current = cause.cause
+    }
+    return null
   }
 
   private fun googleAuthorizationCancelledMessage(failure: Throwable?): String {
     val details = GoogleAuthorizationDiagnostics.collect(this)
-    val result = (failure as? ApiException)?.let { "ApiException ${it.statusCode}" } ?: "RESULT_CANCELED"
+    val result = findAuthorizationApiException(failure)?.let { "ApiException ${it.statusCode}" } ?: "RESULT_CANCELED"
     val message = if (details.provider.equals("microG", ignoreCase = true)) {
       R.string.account_authorization_cancelled_microg_diagnostic
     } else {
@@ -867,5 +891,6 @@ class MainActivity : ComponentActivity() {
     private val SHARED_URL = Regex("""https?://[^\s<>\"']{1,2048}""", RegexOption.IGNORE_CASE)
     private const val MAX_SHARED_TEXT_LENGTH = 16 * 1024
     private const val MAX_SHARED_URLS = 8
+    private const val MAX_AUTHORIZATION_CAUSE_DEPTH = 8
   }
 }

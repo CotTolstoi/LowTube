@@ -24,6 +24,7 @@
     <string name="open_link_settings">Настроить открытие ссылок</string>
     <string name="account_oauth_not_configured">Вход через Google не настроен для этой сборки. Android OAuth-клиент LowTube должен быть зарегистрирован с именем пакета и сертификатом подписи этого приложения.</string>
     <string name="account_sign_in_failed">Не удалось войти через Google. Проверьте настройки OAuth и повторите попытку.</string>
+    <string name="account_sign_in_status_failed">Авторизация Google вернула %1$s (%2$d). Служба: %3$s %4$s; API авторизации: %5$s. Данные аккаунта и токен не записывались в сообщение.</string>
     <string name="account_sign_in_cancelled">Вход через Google отменён.</string>
     <string name="copy_account_message">Копировать сообщение</string>
     <string name="account_message_copied">Сообщение об аккаунте скопировано</string>

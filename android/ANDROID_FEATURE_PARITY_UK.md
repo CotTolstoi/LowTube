@@ -290,3 +290,7 @@ LowTube local library backup format v1 має необов’язкове пол
 ## Аватари у фільтрі підписок — 2026-11-21
 
 Горизонтальний список каналів використовує вже кешований avatar URL відео каналу; для пустого кешу є літерний placeholder. Це UI зміна без додаткових запитів, без перегляду або запуску відео. Збірка `0.1.10-android-dev` успішна; на Xiaomi Pad 6 встановлена, MainActivity top-resumed. UI acceptance компонента окремо не виконувався.
+
+## Діагностика Google authorization — 2026-11-21
+
+Profile показує безпечну назву й числовий код `ApiException`, bounded пошук exception у cause chain, назву/версію провайдера та доступність Authorization API. Текст не містить account identifier, response body або token. На Xiaomi Pad 6 повторний дозвіл на перший акаунт двічі повернув `8 (INTERNAL_ERROR)`; встановлений провайдер — Google Play services 26.45.31. За офіційною таблицею це внутрішня помилка, яка може бути тимчасовою; один retry не допоміг. Runtime account acceptance лишається відкритим. Не запускати безкінечні retries.

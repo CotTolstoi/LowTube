@@ -24,6 +24,7 @@
     <string name="open_link_settings">Open link settings</string>
     <string name="account_oauth_not_configured">Google sign-in is not configured for this build. The LowTube Android OAuth client must be registered with this app’s package name and signing certificate.</string>
     <string name="account_sign_in_failed">Google sign-in failed. Check the OAuth configuration and try again.</string>
+    <string name="account_sign_in_status_failed">Google authorization returned %1$s (%2$d). Provider: %3$s %4$s; authorization API: %5$s. No account details or token were saved in this message.</string>
     <string name="account_sign_in_cancelled">Google sign-in was cancelled.</string>
     <string name="copy_account_message">Copy message</string>
     <string name="account_message_copied">Account message copied</string>
