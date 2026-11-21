@@ -31,19 +31,20 @@ internal object ResourceUsageSampler {
         return withContext(Dispatchers.IO) {
             val activityManager = appContext.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
                 ?: throw IllegalStateException("System memory information is unavailable.")
-            val cpuStartMs = Process.getElapsedCpuTime()
-            val wallStartMs = SystemClock.elapsedRealtime()
             val pssStartKiB = Debug.getPss()
             val rssStartKiB = readProcessMemory().rssKiB
             val ramStartMiB = readSystemMemory(activityManager)
 
+            // Keep the memory queries outside the CPU measurement window.
+            val wallStartMs = SystemClock.elapsedRealtime()
+            val cpuStartMs = Process.getElapsedCpuTime()
             delay(durationMs)
+            val cpuDeltaMs = (Process.getElapsedCpuTime() - cpuStartMs).coerceAtLeast(0L)
+            val wallDeltaMs = (SystemClock.elapsedRealtime() - wallStartMs).coerceAtLeast(1L)
 
             val pssEndKiB = Debug.getPss()
             val processMemoryEnd = readProcessMemory()
             val ramEndMiB = readSystemMemory(activityManager)
-            val cpuDeltaMs = (Process.getElapsedCpuTime() - cpuStartMs).coerceAtLeast(0L)
-            val wallDeltaMs = (SystemClock.elapsedRealtime() - wallStartMs).coerceAtLeast(1L)
 
             ResourceUsageSample(
                 durationMs = wallDeltaMs,
