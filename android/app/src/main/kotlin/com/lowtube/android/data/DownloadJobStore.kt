@@ -21,17 +21,27 @@ internal class DownloadJobStore(context: Context, databaseName: String = DEFAULT
     }
 
     @Synchronized fun insert(videoJson: String, formatKey: String, audioOnly: Boolean, fileName: String, mime: String, userAgent: String, partialPath: String, maxBytesPerAttempt: Long = 0L, transcodeMp3: Boolean = false, targetAudioBitrateKbps: Int = 192): Long {
-        val id = (readableDatabase.rawQuery("SELECT MAX(id) FROM jobs", null).use { c -> if (c.moveToFirst()) c.getLong(0) else 0L }).let { if (it < ID_BASE) ID_BASE else it + 1L }
         val values = ContentValues().apply {
-            put("id", id)
             put("video_json", videoJson); put("format_key", formatKey); put("audio_only", if (audioOnly) 1 else 0)
             put("status", DownloadStatus.PENDING); put("partial_path", partialPath); put("file_name", fileName)
             put("mime_type", mime); put("user_agent", userAgent); put("created_at", System.currentTimeMillis())
             put("max_bytes_per_attempt", maxBytesPerAttempt)
             put("transcode_mp3", if (transcodeMp3) 1 else 0); put("target_audio_bitrate_kbps", targetAudioBitrateKbps)
         }
-        writableDatabase.insertOrThrow("jobs", null, values)
-        return id
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            // Seed the first ID above the legacy DownloadManager range. SQLite allocates the rest.
+            val seeded = db.rawQuery("SELECT seq FROM sqlite_sequence WHERE name='jobs'", null).use {
+                it.moveToFirst() && it.getLong(0) >= ID_BASE
+            }
+            if (!seeded) values.put("id", ID_BASE)
+            val id = db.insertOrThrow("jobs", null, values)
+            db.setTransactionSuccessful()
+            return id
+        } finally {
+            db.endTransaction()
+        }
     }
 
     @Synchronized fun get(id: Long): DownloadJob? = readableDatabase.query("jobs", null, "id=?", arrayOf(id.toString()), null, null, null).use { c ->
