@@ -159,6 +159,9 @@ class DownloadRepository private constructor(
         if (id >= OWN_ID_BASE) {
             jobs.get(id)?.let { job ->
                 File(job.partialPath).delete()
+                File(job.partialPath + ".mp3").delete()
+                File(job.partialPath + ".mkv").delete()
+                File(job.partialPath + ".pcm").delete()
                 File(job.partialPath + ".video").delete()
                 File(job.partialPath + ".audio").delete()
                 File(job.partialPath + ".video.total").delete()
