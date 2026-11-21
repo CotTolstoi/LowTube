@@ -262,18 +262,18 @@ class DownloadService : Service() {
                     retainConvertedFile(converted, readyConverted)
                 } else part
                 if (!job.transcodeMp3 && publicationPart == readyConverted) files.deleteTrackFiles(job)
-                val published = withContext(Dispatchers.IO) { files.publish(job, publicationPart) }
-                val committed = synchronized(cancelLock) {
-                    if (cancelId == job.id) false
-                    else {
+                // The worker already runs on IO. Keep publication and queue commit in one scope.
+                val published = files.publish(job, publicationPart) { cancelId == job.id }
+                try {
+                    synchronized(cancelLock) {
+                        if (cancelId == job.id) throw CancellationException("Cancelled by user.")
                         queue.update(job.id, DownloadStatus.SUCCESSFUL, downloaded = outcome.downloaded, total = outcome.total, uri = published.toString())
-                        true
                     }
+                } catch (failure: Exception) {
+                    runCatching { files.deletePublished(published) }.exceptionOrNull()?.let(failure::addSuppressed)
+                    throw failure
                 }
-                if (!committed) {
-                    files.deletePublished(published)
-                    throw CancellationException("Cancelled by user.")
-                }
+                publicationPart.delete()
                 if (publicationPart != part) part.delete()
                 show(job, outcome.downloaded, outcome.total, false, getString(R.string.download_complete))
             }

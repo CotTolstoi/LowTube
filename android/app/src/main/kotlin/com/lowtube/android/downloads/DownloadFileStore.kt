@@ -12,6 +12,8 @@ import com.lowtube.android.model.DownloadJob
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
+import java.io.OutputStream
+import kotlinx.coroutines.CancellationException
 
 internal class DownloadFileStore(private val context: Context) {
     fun partialFile(job: DownloadJob): File = File(job.partialPath)
@@ -75,14 +77,14 @@ internal class DownloadFileStore(private val context: Context) {
         }
     }
 
-    fun publish(job: DownloadJob, sourceFile: File = partialFile(job)): Uri {
+    fun publish(job: DownloadJob, sourceFile: File, cancelled: () -> Boolean): Uri {
         val partial = sourceFile
         if (!partial.isFile || partial.length() <= 0L) throw IOException("The downloaded file is empty or missing.")
         val selectedTree = DownloadDestination.selectedTreeUri(context)
         if (selectedTree != null) {
             requireTreeWriteAccess(selectedTree)
             try {
-                return publishToTree(job, partial, selectedTree)
+                return publishToTree(job, partial, selectedTree, cancelled)
             } catch (failure: SecurityException) {
                 throw IOException(context.getString(R.string.download_location_error), failure)
             }
@@ -97,10 +99,9 @@ internal class DownloadFileStore(private val context: Context) {
             val uri = context.contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
                 ?: throw IOException("Android could not create the download file.")
             try {
-                context.contentResolver.openOutputStream(uri, "w")?.use { output -> FileInputStream(partial).use { it.copyTo(output) } }
+                context.contentResolver.openOutputStream(uri, "w")?.use { output -> copyForPublication(partial, output, cancelled) }
                     ?: throw IOException("Android could not open the destination file.")
                 ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) }.also { context.contentResolver.update(uri, it, null, null) }
-                partial.delete()
                 return uri
             } catch (failure: Exception) {
                 context.contentResolver.delete(uri, null, null)
@@ -118,9 +119,8 @@ internal class DownloadFileStore(private val context: Context) {
             ?: throw IOException("Android could not create the download entry.")
         try {
             context.contentResolver.openOutputStream(uri, "w")?.use { output ->
-                FileInputStream(partial).use { it.copyTo(output) }
+                copyForPublication(partial, output, cancelled)
             } ?: throw IOException("Android could not open the download entry.")
-            partial.delete()
             return uri
         } catch (failure: Exception) {
             context.contentResolver.delete(uri, null, null)
@@ -128,20 +128,31 @@ internal class DownloadFileStore(private val context: Context) {
         }
     }
 
-    private fun publishToTree(job: DownloadJob, partial: File, treeUri: Uri): Uri {
+    private fun publishToTree(job: DownloadJob, partial: File, treeUri: Uri, cancelled: () -> Boolean): Uri {
         val parentId = DocumentsContract.getTreeDocumentId(treeUri)
         val parentUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, parentId)
         val targetUri = DocumentsContract.createDocument(context.contentResolver, parentUri, job.mimeType, job.fileName)
             ?: throw IOException("Android could not create the file in the selected folder.")
         try {
             context.contentResolver.openOutputStream(targetUri, "w")?.use { output ->
-                FileInputStream(partial).use { it.copyTo(output) }
+                copyForPublication(partial, output, cancelled)
             } ?: throw IOException("Android could not open the file in the selected folder.")
-            partial.delete()
             return targetUri
         } catch (failure: Exception) {
             runCatching { DocumentsContract.deleteDocument(context.contentResolver, targetUri) }
             throw failure
         }
     }
+    private fun copyForPublication(source: File, output: OutputStream, cancelled: () -> Boolean) {
+        FileInputStream(source).use { input ->
+            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+            while (true) {
+                if (cancelled()) throw CancellationException("Cancelled by user.")
+                val size = input.read(buffer)
+                if (size < 0) break
+                output.write(buffer, 0, size)
+            }
+        }
+    }
+
 }

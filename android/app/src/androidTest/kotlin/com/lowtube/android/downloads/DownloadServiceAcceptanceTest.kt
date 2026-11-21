@@ -109,8 +109,8 @@ class DownloadServiceAcceptanceTest {
                 assertTrue("Published MP3 should contain encoded audio", publishedCopy.length() > 1_000L)
                 assertTrue("Published file should begin with an MPEG audio frame", header[0].toInt() and 0xff == 0xff && header[1].toInt() and 0xe0 == 0xe0)
                 if (expectedMp3 != null) assertTrue(expectedMp3.contentEquals(publishedCopy.readBytes()))
-                assertFalse("Completed MP3 should be removed from private storage", readyMp3.exists())
                 waitForServiceStopped(context)
+                assertFalse("Completed MP3 should be removed from private storage", readyMp3.exists())
             } finally {
                 context.stopService(Intent(context, DownloadService::class.java))
                 server.close()
@@ -1057,6 +1057,15 @@ class DownloadServiceAcceptanceTest {
                         downloaded = transferBytes, total = transferBytes)
                     assertTrue(store.requeueRetryable(id))
                 }
+                if (reuseMerged) {
+                    val job = requireNotNull(store.get(id))
+                    var checks = 0
+                    val failure = runCatching {
+                        DownloadFileStore(context).publish(job, source) { ++checks == 2 }
+                    }.exceptionOrNull()
+                    assertTrue("Copy should stop after cancellation", failure is java.util.concurrent.CancellationException)
+                    assertTrue("Cancelled copy must retain the private source", expectedBytes.contentEquals(source.readBytes()))
+                }
                 server.start()
                 startService(context, dbName, testStreamUrl = server.url)
                 val complete = waitForTerminalAttempt(store, id)
@@ -1065,7 +1074,6 @@ class DownloadServiceAcceptanceTest {
                 assertEquals(transferBytes, complete.totalBytes)
                 val expectedRange = if (reuseCompletePart) null else "bytes=0-${RangeResumeLoopbackServer.TOTAL_BYTES - 1}"
                 assertEquals(expectedRange, server.rangeHeader)
-                assertFalse("Private source should be removed after publishing", source.exists())
                 val resultUri = Uri.parse(complete.localUri)
                 publishedUri = resultUri
                 val publishedBytes = if (resultUri.scheme == "file") {
@@ -1077,6 +1085,7 @@ class DownloadServiceAcceptanceTest {
                 assertTrue("Published file contents differ from the bounded source", expectedBytes.contentEquals(publishedBytes))
                 if (!reuseCompletePart) assertTrue("Publication server did not observe the client close", server.awaitClientClosed())
                 waitForServiceStopped(context)
+                assertFalse("Private source should be removed after publishing", source.exists())
                 assertTerminalNotificationText(context, R.string.download_complete)
                 DownloadFileStore(context).deletePublished(resultUri)
                 val stillAvailable = runCatching {
