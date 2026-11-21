@@ -33,6 +33,8 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -63,22 +65,23 @@ internal fun FirstRunSetupScreen(
     onSkip: () -> Unit,
 ) {
     val context = LocalContext.current
-    var selectedLanguage by remember(language) { mutableStateOf(language) }
-    var selectedScale by remember(uiScale) { mutableStateOf(UiScaleOptions.normalize(uiScale)) }
-    var selectedDarkTheme by remember(darkTheme) { mutableStateOf(darkTheme) }
-    var selectedPlaybackHeight by remember(playbackPreferences.maxHeight) { mutableStateOf(playbackPreferences.maxHeight) }
-    var selectedPlaybackH264 by remember(playbackPreferences.h264Only) { mutableStateOf(playbackPreferences.h264Only) }
-    var selectedPlaybackFps30 by remember(playbackPreferences.fps30Only) { mutableStateOf(playbackPreferences.fps30Only) }
-    var selectedPlaybackAudioOnly by remember(playbackPreferences.audioOnly) { mutableStateOf(playbackPreferences.audioOnly) }
-    var selectedDownloadHeight by remember(downloadPreferences.maxHeight) { mutableStateOf(downloadPreferences.maxHeight) }
-    var selectedDownloadH264 by remember(downloadPreferences.h264Only) { mutableStateOf(downloadPreferences.h264Only) }
-    var selectedDownloadFps30 by remember(downloadPreferences.fps30Only) { mutableStateOf(downloadPreferences.fps30Only) }
-    var selectedBitrate by remember(downloadPreferences.audioBitrateKbps) { mutableStateOf(downloadPreferences.audioBitrateKbps) }
+    var selectedLanguage by rememberSaveable(language) { mutableStateOf(language) }
+    var selectedScale by rememberSaveable(uiScale) { mutableStateOf(UiScaleOptions.normalize(uiScale)) }
+    var selectedDarkTheme by rememberSaveable(darkTheme) { mutableStateOf(darkTheme) }
+    var selectedPlaybackHeight by rememberSaveable(playbackPreferences.maxHeight) { mutableStateOf(playbackPreferences.maxHeight) }
+    var selectedPlaybackH264 by rememberSaveable(playbackPreferences.h264Only) { mutableStateOf(playbackPreferences.h264Only) }
+    var selectedPlaybackFps30 by rememberSaveable(playbackPreferences.fps30Only) { mutableStateOf(playbackPreferences.fps30Only) }
+    var selectedPlaybackAudioOnly by rememberSaveable(playbackPreferences.audioOnly) { mutableStateOf(playbackPreferences.audioOnly) }
+    var selectedDownloadHeight by rememberSaveable(downloadPreferences.maxHeight) { mutableStateOf(downloadPreferences.maxHeight) }
+    var selectedDownloadH264 by rememberSaveable(downloadPreferences.h264Only) { mutableStateOf(downloadPreferences.h264Only) }
+    var selectedDownloadFps30 by rememberSaveable(downloadPreferences.fps30Only) { mutableStateOf(downloadPreferences.fps30Only) }
+    var selectedBitrate by rememberSaveable(downloadPreferences.audioBitrateKbps) { mutableStateOf(downloadPreferences.audioBitrateKbps) }
     var playbackQualityExpanded by remember { mutableStateOf(false) }
     var downloadQualityExpanded by remember { mutableStateOf(false) }
     var bitrateExpanded by remember { mutableStateOf(false) }
     val savedDownloadTreeUri = remember(context) { DownloadDestination.selectedTreeUri(context) }
-    var downloadTreeUri by remember(context) { mutableStateOf(savedDownloadTreeUri) }
+    var downloadTreeUri by rememberSaveable { mutableStateOf(savedDownloadTreeUri) }
+    LaunchedEffect(Unit) { if (selectedScale != uiScale) onPreviewUiScale(selectedScale) }
     var downloadFolderError by remember { mutableStateOf(false) }
     val downloadFolderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri != null) {
