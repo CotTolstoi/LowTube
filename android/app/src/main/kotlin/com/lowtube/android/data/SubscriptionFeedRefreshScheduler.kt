@@ -7,8 +7,9 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
 
@@ -16,11 +17,11 @@ import java.util.concurrent.TimeUnit
 object SubscriptionFeedRefreshScheduler {
     private const val UNIQUE_WORK_NAME = "lowtube-local-subscription-feed-refresh"
     const val INPUT_PRESET = "feed_refresh_preset"
-    private val completedRefreshes = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
-    val refreshUpdates = completedRefreshes.asSharedFlow()
+    private val completedRefreshes = MutableStateFlow(0L)
+    val refreshUpdates = completedRefreshes.asStateFlow()
 
     internal fun notifyFeedUpdated() {
-        completedRefreshes.tryEmit(Unit)
+        completedRefreshes.update { it + 1 }
     }
 
     suspend fun synchronize(context: Context, preset: Int, hasLocalChannels: Boolean) = withContext(Dispatchers.IO) {

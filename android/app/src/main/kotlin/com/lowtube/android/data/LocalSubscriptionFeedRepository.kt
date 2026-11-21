@@ -55,36 +55,41 @@ class LocalSubscriptionFeedRepository(
         val selected = library.channelsForFeedRefresh(channels, policy.channelsPerBatch)
         val gate = Semaphore(policy.maxConcurrentRequests)
         val servicePaused = AtomicBoolean(false)
-        val outcomes = coroutineScope {
-            selected.map { channel ->
-                async {
-                    gate.withPermit {
-                        if (servicePaused.get()) return@withPermit null
-                        try {
-                            val (items, usedBrowseFallback) = fetch(channel, language)
-                            if (library.replaceChannelFeed(channel.id, items, System.currentTimeMillis())) {
-                                ChannelResult(channel, null, usedBrowseFallback)
-                            } else null
-                        } catch (cancelled: CancellationException) {
-                            throw cancelled
-                        } catch (failure: Exception) {
-                            if (failure is FeedHttpException && failure.isTemporaryRestriction) {
-                                servicePaused.set(true)
-                                val retryAt = SystemClock.elapsedRealtime() + failure.retryDelayMs
-                                synchronized(cooldownUntilMs) {
-                                    cooldownUntilMs.set(maxOf(cooldownUntilMs.get(), retryAt))
+        val wroteFeed = AtomicBoolean(false)
+        val outcomes = try {
+            coroutineScope {
+                selected.map { channel ->
+                    async {
+                        gate.withPermit {
+                            if (servicePaused.get()) return@withPermit null
+                            try {
+                                val (items, usedBrowseFallback) = fetch(channel, language)
+                                if (library.replaceChannelFeed(channel.id, items, System.currentTimeMillis())) {
+                                    wroteFeed.set(true)
+                                    ChannelResult(channel, null, usedBrowseFallback)
+                                } else null
+                            } catch (cancelled: CancellationException) {
+                                throw cancelled
+                            } catch (failure: Exception) {
+                                if (failure is FeedHttpException && failure.isTemporaryRestriction) {
+                                    servicePaused.set(true)
+                                    val retryAt = SystemClock.elapsedRealtime() + failure.retryDelayMs
+                                    synchronized(cooldownUntilMs) {
+                                        cooldownUntilMs.set(maxOf(cooldownUntilMs.get(), retryAt))
+                                    }
                                 }
+                                runCatching { library.markChannelFeedAttempt(channel.id, System.currentTimeMillis()) }
+                                ChannelResult(channel, failure.message ?: "Feed unavailable", false)
                             }
-                            runCatching { library.markChannelFeedAttempt(channel.id, System.currentTimeMillis()) }
-                            ChannelResult(channel, failure.message ?: "Feed unavailable", false)
                         }
                     }
-                }
-            }.awaitAll().filterNotNull()
+                }.awaitAll().filterNotNull()
+            }
+        } finally {
+            if (wroteFeed.get()) SubscriptionFeedRefreshScheduler.notifyFeedUpdated()
         }
         val failed = outcomes.filter { it.error != null }.map { it.channel.title.ifBlank { it.channel.id } }
         val refreshedChannels = outcomes.count { it.error == null }
-        if (refreshedChannels > 0) SubscriptionFeedRefreshScheduler.notifyFeedUpdated()
         SubscriptionFeedRefresh(
             videos = library.subscriptionFeed(accountEmail),
             refreshedChannels = refreshedChannels,
