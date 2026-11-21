@@ -108,6 +108,9 @@ fun MainNavigation(
         onDispose { library.close() }
     }
     var libraryRevision by remember(library) { mutableIntStateOf(0) }
+    LaunchedEffect(library) {
+        SubscriptionFeedRefreshScheduler.refreshUpdates.collect { libraryRevision++ }
+    }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(lifecycle, library) {
         val observer = LifecycleEventObserver { _, event ->
