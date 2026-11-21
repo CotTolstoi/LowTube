@@ -548,7 +548,12 @@ fun PlaybackScreen(
                 stagedQueueEntry?.let { removeFutureMediaItem(active, it.video.id) }
                 stagedQueueEntry = null
                 resolvingQueueRowId = null
-                if (localAudioTrack == null && active.currentMediaItem != null && active.currentPosition > 0) {
+                if (localAudioTrack == null &&
+                    watchedVideo.id == video.id &&
+                    active.currentMediaItem?.mediaId == video.id &&
+                    active.playbackState != Player.STATE_ENDED &&
+                    active.currentPosition > 0
+                ) {
                     library.recordWatchProgress(watchedVideo, active.currentPosition, active.duration.coerceAtLeast(0))
                 }
             }
@@ -749,7 +754,11 @@ fun PlaybackScreen(
         if (localAudioTrack != null) return@LaunchedEffect
         while (true) {
             delay(3_000)
-            if (activeController.currentMediaItem != null && activeController.playbackState == Player.STATE_READY && activeController.currentPosition > 0) {
+            if (watchedVideo.id == video.id &&
+                activeController.currentMediaItem?.mediaId == video.id &&
+                activeController.playbackState == Player.STATE_READY &&
+                activeController.currentPosition > 0
+            ) {
                 library.recordWatchProgress(watchedVideo, activeController.currentPosition, activeController.duration.coerceAtLeast(0))
             }
         }
