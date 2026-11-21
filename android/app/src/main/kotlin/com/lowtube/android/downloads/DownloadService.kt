@@ -204,8 +204,8 @@ class DownloadService : Service() {
             queue.update(job.id, DownloadStatus.RUNNING, downloaded = downloaded)
             show(job, downloaded, 0, true)
             val rateLimit = getSharedPreferences("lowtube_settings", MODE_PRIVATE).getInt("download_limit_kib", 0).coerceAtLeast(0)
-            val existingCompleteSource = (option.container == "MKV" || job.transcodeMp3) &&
-                !requiresMuxing && job.totalBytes > 0L && part.isFile && part.length() == job.totalBytes
+            val existingCompleteSource = !requiresMuxing && job.totalBytes > 0L &&
+                job.downloadedBytes == job.totalBytes && part.isFile && part.length() == job.totalBytes
             val outcome = if (existingCompleteSource) {
                 TransferOutcome(part.length(), job.totalBytes, complete = true)
             } else if (requiresMuxing) {
@@ -232,6 +232,7 @@ class DownloadService : Service() {
                 queue.update(job.id, DownloadStatus.PAUSED, "Paused after bounded transfer chunk.", outcome.downloaded, outcome.total)
                 show(job, outcome.downloaded, outcome.total, false, getString(R.string.download_paused_resume))
             } else {
+                queue.update(job.id, DownloadStatus.RUNNING, downloaded = outcome.downloaded, total = outcome.total)
                 job = queue.get(job.id) ?: return
                 val publicationPart = if (job.transcodeMp3) {
                     show(job, outcome.downloaded, outcome.total, true, getString(R.string.download_mp3_converting))
