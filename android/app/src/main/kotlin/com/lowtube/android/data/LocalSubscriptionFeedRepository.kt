@@ -22,6 +22,7 @@ import java.net.URL
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.atomic.AtomicBoolean
 
 data class SubscriptionFeedRefresh(
     val videos: List<VideoItem>,
@@ -47,10 +48,12 @@ class LocalSubscriptionFeedRepository(
         val policy = SubscriptionFeedRefreshPolicy.fromPreset(preset)
         val selected = library.channelsForFeedRefresh(channels, policy.channelsPerBatch)
         val gate = Semaphore(policy.maxConcurrentRequests)
+        val servicePaused = AtomicBoolean(false)
         val outcomes = coroutineScope {
             selected.map { channel ->
                 async {
                     gate.withPermit {
+                        if (servicePaused.get()) return@withPermit null
                         try {
                             val (items, usedBrowseFallback) = fetch(channel, language)
                             if (library.replaceChannelFeed(channel.id, items, System.currentTimeMillis())) {
@@ -59,6 +62,9 @@ class LocalSubscriptionFeedRepository(
                         } catch (cancelled: CancellationException) {
                             throw cancelled
                         } catch (failure: Exception) {
+                            if (failure is FeedHttpException && failure.isTemporaryRestriction) {
+                                servicePaused.set(true)
+                            }
                             runCatching { library.markChannelFeedAttempt(channel.id, System.currentTimeMillis()) }
                             ChannelResult(channel, failure.message ?: "Feed unavailable", false)
                         }
@@ -86,7 +92,7 @@ class LocalSubscriptionFeedRepository(
     } catch (cancelled: CancellationException) {
         throw cancelled
     } catch (atomFailure: Exception) {
-        if (atomFailure is FeedHttpException && atomFailure.status in setOf(429, 503)) throw atomFailure
+        if (atomFailure is FeedHttpException && atomFailure.isTemporaryRestriction) throw atomFailure
         val fallbackItems = innerTube.search(channel.url, language = language).items
             .asSequence()
             .filter { it.channelId == channel.id && it.kind != "playlist" && VIDEO_ID.matches(it.id) }
@@ -223,7 +229,9 @@ class LocalSubscriptionFeedRepository(
     }.getOrDefault("")
 
     private data class ChannelResult(val channel: SavedChannel, val error: String?, val usedBrowseFallback: Boolean)
-    private class FeedHttpException(val status: Int) : IOException("Channel feed request failed with HTTP $status.")
+    private class FeedHttpException(status: Int) : IOException("Channel feed request failed with HTTP $status.") {
+        val isTemporaryRestriction = status == 429 || status == 503
+    }
 
     companion object {
         // The worker and UI use separate repository instances but share the feed database.
