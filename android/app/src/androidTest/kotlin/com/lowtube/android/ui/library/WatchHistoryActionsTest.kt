@@ -71,12 +71,17 @@ class WatchHistoryActionsTest {
             list.performScrollToNode(hasTestTag(WATCH_HISTORY_CLEAR_ACTION_TEST_TAG))
             composeTestRule.onNodeWithTag(WATCH_HISTORY_CLEAR_ACTION_TEST_TAG).performClick()
             composeTestRule.onNodeWithText(context.getString(R.string.clear_history_confirm)).assertExists()
+            val beforeClear = repository.watchHistoryGeneration
             composeTestRule.onNodeWithTag(WATCH_HISTORY_CLEAR_CONFIRM_TEST_TAG).performClick()
             composeTestRule.waitForIdle()
 
             assertEquals(0, repository.watchHistory().size)
+            repository.recordWatchProgress(second, 15_000, 30_000, historyGeneration = beforeClear)
+            assertEquals(0, repository.watchHistory().size)
             list.performScrollToNode(hasText(context.getString(R.string.history_empty)))
             composeTestRule.onNodeWithText(context.getString(R.string.history_empty)).assertExists()
+            repository.recordWatchProgress(second, 15_000, 30_000)
+            assertEquals(second.id, repository.watchHistory().single().video.id)
         } finally {
             repository.close()
             context.deleteDatabase(databaseName)
