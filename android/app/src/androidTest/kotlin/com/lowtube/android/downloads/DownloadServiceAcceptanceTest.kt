@@ -1018,7 +1018,7 @@ class DownloadServiceAcceptanceTest {
                 val video = VideoItem("fixture", "Publication fixture", duration = "—", url = "https://www.youtube.com/watch?v=fixture")
                 val videoJson = JSONObject().put("id", video.id).put("title", video.title).put("url", video.url).toString()
                 id = store.insert(
-                    videoJson,
+                    if (reuseCompletePart) "unavailable metadata" else videoJson,
                     "publication-loopback-test",
                     false,
                     publishedName,

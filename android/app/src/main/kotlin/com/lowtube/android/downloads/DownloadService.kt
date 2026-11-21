@@ -163,56 +163,62 @@ class DownloadService : Service() {
         show(job, downloaded, 0, true)
         try {
             withContext(Dispatchers.IO) { files.validateDestination() }
-            val root = JSONObject(job.videoJson)
-            val video = VideoItem(root.getString("id"), root.getString("title"), root.optString("channel"), root.optString("channelId"), root.optString("published"), root.optString("duration", "—"), root.optString("kind", "video"), root.optString("liveStatus"), root.optString("thumbnailUrl"), root.getString("url"))
-            // Re-resolve a fresh signed URL for each run; retain the user's selected itag.
-            val option = testStreamUrl?.let { uri ->
-                val testVideoStream = ResolvedVideoStream(
-                    uri = uri,
-                    mimeType = job.mimeType,
-                    video = video,
-                    userAgent = job.userAgent,
-                    durationMs = 0L,
-                    isAudioOnly = job.audioOnly,
-                    isMuxed = !job.audioOnly && testAudioStreamUrl == null,
-                )
-                DownloadFormatOption(
-                    key = job.formatKey,
-                    stream = testVideoStream,
-                    container = when {
-                        job.fileName.endsWith(".mkv", ignoreCase = true) -> "MKV"
-                        job.fileName.endsWith(".webm", ignoreCase = true) -> "WebM"
-                        job.mimeType.startsWith("audio/") -> "M4A"
-                        else -> "MP4"
-                    },
-                    audioStream = testAudioStreamUrl?.let { audioUri ->
-                        ResolvedVideoStream(
-                            uri = audioUri,
-                            mimeType = "audio/mp4",
-                            video = video,
-                            userAgent = job.userAgent,
-                            durationMs = 0L,
-                            audioCodec = "mp4a",
-                            isAudioOnly = true,
-                        )
-                    },
-                )
-            } ?: repository.resolveDownloadOption(video, DownloadStreamPreferences(maxHeight = 2160, h264Only = false, fps30Only = false), job.audioOnly, job.formatKey)
-            requiresMuxing = option.requiresMuxing
+            val completeLocalSource = job.totalBytes > 0L && job.downloadedBytes == job.totalBytes &&
+                part.isFile && part.length() == job.totalBytes
+            // MKV still needs its format option to distinguish single-track remuxing from a merged file.
+            val publishLocally = completeLocalSource && !job.fileName.endsWith(".mkv", ignoreCase = true)
+            val option = if (publishLocally) null else {
+                val root = JSONObject(job.videoJson)
+                val video = VideoItem(root.getString("id"), root.getString("title"), root.optString("channel"), root.optString("channelId"), root.optString("published"), root.optString("duration", "—"), root.optString("kind", "video"), root.optString("liveStatus"), root.optString("thumbnailUrl"), root.getString("url"))
+                // Resolve a fresh signed URL when a transfer may still be needed.
+                testStreamUrl?.let { uri ->
+                    val testVideoStream = ResolvedVideoStream(
+                        uri = uri,
+                        mimeType = job.mimeType,
+                        video = video,
+                        userAgent = job.userAgent,
+                        durationMs = 0L,
+                        isAudioOnly = job.audioOnly,
+                        isMuxed = !job.audioOnly && testAudioStreamUrl == null,
+                    )
+                    DownloadFormatOption(
+                        key = job.formatKey,
+                        stream = testVideoStream,
+                        container = when {
+                            job.fileName.endsWith(".mkv", ignoreCase = true) -> "MKV"
+                            job.fileName.endsWith(".webm", ignoreCase = true) -> "WebM"
+                            job.mimeType.startsWith("audio/") -> "M4A"
+                            else -> "MP4"
+                        },
+                        audioStream = testAudioStreamUrl?.let { audioUri ->
+                            ResolvedVideoStream(
+                                uri = audioUri,
+                                mimeType = "audio/mp4",
+                                video = video,
+                                userAgent = job.userAgent,
+                                durationMs = 0L,
+                                audioCodec = "mp4a",
+                                isAudioOnly = true,
+                            )
+                        },
+                    )
+                } ?: repository.resolveDownloadOption(video, DownloadStreamPreferences(maxHeight = 2160, h264Only = false, fps30Only = false), job.audioOnly, job.formatKey)
+            }
+            requiresMuxing = option?.requiresMuxing == true
             if (requiresMuxing) downloaded = files.videoTrackFile(job).length() + files.audioTrackFile(job).length()
             else downloaded = part.takeIf { it.isFile }?.length() ?: 0L
             queue.update(job.id, DownloadStatus.RUNNING, downloaded = downloaded)
             show(job, downloaded, 0, true)
             val rateLimit = getSharedPreferences("lowtube_settings", MODE_PRIVATE).getInt("download_limit_kib", 0).coerceAtLeast(0)
-            val existingCompleteSource = !requiresMuxing && job.totalBytes > 0L &&
-                job.downloadedBytes == job.totalBytes && part.isFile && part.length() == job.totalBytes
-            val outcome = if (existingCompleteSource) {
+            val outcome = if (completeLocalSource && !requiresMuxing) {
                 TransferOutcome(part.length(), job.totalBytes, complete = true)
             } else if (requiresMuxing) {
-                downloadMuxedTracks(job, option, video, part, queue, rateLimit)
+                val transferOption = requireNotNull(option)
+                downloadMuxedTracks(job, transferOption, transferOption.stream.video, part, queue, rateLimit)
             } else {
+                val stream = requireNotNull(option).stream
                 val result = OkHttpDownloadTransport(client).download(
-                    option.stream, video, part, rateLimit,
+                    stream, stream.video, part, rateLimit,
                     shouldCancel = { cancelId == job.id },
                     maxBytesThisAttempt = job.maxBytesPerAttempt.takeIf { it > 0 } ?: Long.MAX_VALUE,
                     requirePartialResponse = job.maxBytesPerAttempt > 0,
@@ -240,7 +246,7 @@ class DownloadService : Service() {
                     AudioMp3Transcoder.transcode(part, converted, job.targetAudioBitrateKbps) { cancelId == job.id }
                     if (cancelId == job.id) throw CancellationException("Cancelled by user.")
                     converted
-                } else if (option.container == "MKV" && !requiresMuxing) {
+                } else if (option?.container == "MKV" && !requiresMuxing) {
                     show(job, outcome.downloaded, outcome.total, true, getString(R.string.download_preparing))
                     val converted = files.matroskaFile(job)
                     withContext(Dispatchers.IO) { MatroskaMuxer.muxSingle(part, converted) { cancelId == job.id } }
