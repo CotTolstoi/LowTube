@@ -30,6 +30,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.core.content.ContextCompat
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
@@ -60,6 +61,7 @@ import com.lowtube.android.model.SearchPage
 import com.lowtube.android.ui.library.LibraryScreen
 import com.lowtube.android.ui.queue.QueueScreen
 import com.lowtube.android.ui.downloads.DownloadsScreen
+import com.lowtube.android.ui.downloads.DownloadRetryViewModel
 import com.lowtube.android.ui.playback.PlaybackScreen
 import com.lowtube.android.ui.playback.MAX_SHORTS_SESSION_ITEMS
 import com.lowtube.android.ui.playback.loadShortsContinuation
@@ -103,6 +105,8 @@ fun MainNavigation(
     val library = remember(context) { LocalLibraryRepository(context.applicationContext) }
     val catalogue = remember(context) { InnerTubeSearchRepository(context.applicationContext) }
     val downloads = remember(context) { DownloadRepository(context) }
+    val downloadRetryViewModel: DownloadRetryViewModel = viewModel()
+    val retryingDownloadIds by downloadRetryViewModel.retryingIds.collectAsStateWithLifecycle()
     val playbackSessionStore = remember(context) { PlaybackSessionStore(context.applicationContext) }
     val scope = rememberCoroutineScope()
     val preferences = remember(context) { context.getSharedPreferences("lowtube_settings", android.content.Context.MODE_PRIVATE) }
@@ -895,14 +899,8 @@ fun MainNavigation(
                 DownloadsScreen(
                     repository = downloads,
                     onBack = navigateBack,
-                    onRetry = { id, refresh ->
-                        scope.launch {
-                            runCatching { downloads.retry(id, downloadPreferences) }
-                            .onSuccess { Toast.makeText(context, R.string.download_started, Toast.LENGTH_SHORT).show() }
-                            .onFailure { Toast.makeText(context, it.message ?: context.getString(R.string.download_failed), Toast.LENGTH_LONG).show() }
-                            refresh()
-                        }
-                    },
+                    retryingIds = retryingDownloadIds,
+                    onRetry = { id -> downloadRetryViewModel.retry(downloads, id, downloadPreferences) },
                     onPlayInLowTube = { id ->
                         val audio = runCatching { downloads.playableAudio(id) }.getOrNull()
                         if (audio != null) {

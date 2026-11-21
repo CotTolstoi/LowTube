@@ -24,8 +24,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.testTag
@@ -50,12 +50,12 @@ internal const val DOWNLOADS_GRID_TEST_TAG = "downloads-adaptive-grid"
 fun DownloadsScreen(
     repository: DownloadRepository,
     onBack: () -> Unit,
-    onRetry: (Long, () -> Unit) -> Unit,
+    onRetry: (Long) -> Unit,
+    retryingIds: Set<Long> = emptySet(),
     onPlayInLowTube: (Long) -> Unit = {},
     onOpen: (Long) -> Unit,
 ) {
     var refresh by remember { mutableIntStateOf(0) }
-    var retryingIds by remember { mutableStateOf(emptySet<Long>()) }
     var loadFailed by remember(repository) { mutableStateOf(false) }
     var resumeChecked by remember(repository) { mutableStateOf(false) }
     val loadedRecords by produceState<List<DownloadRecord>?>(null, repository, refresh) {
@@ -75,6 +75,7 @@ fun DownloadsScreen(
         }
     }
     val records = loadedRecords.orEmpty()
+    LaunchedEffect(retryingIds) { refresh++ }
     val hasActiveDownloads = records.any { it.status == DownloadStatus.PENDING || it.status == DownloadStatus.RUNNING }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
@@ -130,15 +131,7 @@ fun DownloadsScreen(
                         retrying = record.id in retryingIds,
                         onPlayInLowTube = { onPlayInLowTube(record.id) },
                         onOpen = { onOpen(record.id) },
-                        onRetry = {
-                            if (record.id !in retryingIds) {
-                                retryingIds = retryingIds + record.id
-                                onRetry(record.id) {
-                                    retryingIds = retryingIds - record.id
-                                    refresh++
-                                }
-                            }
-                        },
+                        onRetry = { onRetry(record.id) },
                     )
                 }
             }
