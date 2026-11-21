@@ -405,14 +405,13 @@ fun MainNavigation(
     DisposableEffect(sessionControllerFuture) {
         val activeFuture = sessionControllerFuture ?: return@DisposableEffect onDispose { }
         var connectedController: MediaController? = null
-                var queueTransitionListener: Media3Player.Listener? = null
+        var queueTransitionListener: Media3Player.Listener? = null
         activeFuture.addListener(
             {
                 val activeController = runCatching { activeFuture.get() }.getOrNull() ?: return@addListener
                 connectedController = activeController
                 val listener = object : Media3Player.Listener {
                     override fun onMediaItemTransition(mediaItem: androidx.media3.common.MediaItem?, reason: Int) {
-                        if (backStack.lastOrNull() == Player) return
                         val item = mediaItem ?: return
                         val rowId = item.mediaMetadata.extras?.getLong(PRELOADED_QUEUE_ROW_ID_EXTRA, 0L) ?: 0L
                         if (rowId <= 0L) return
@@ -420,7 +419,7 @@ fun MainNavigation(
                             val queuedEntry = withContext(Dispatchers.IO) {
                                 library.queue().firstOrNull { it.rowId == rowId && it.video.id == item.mediaId }
                             } ?: return@launch
-                            if (backStack.lastOrNull() == Player || activeController.currentMediaItem?.mediaId != item.mediaId) return@launch
+                            if (activeController.currentMediaItem?.mediaId != item.mediaId) return@launch
                             val removed = withContext(Dispatchers.IO) { library.removeQueueEntry(rowId) }
                             if (!removed) return@launch
                             shortsSession = emptyList()

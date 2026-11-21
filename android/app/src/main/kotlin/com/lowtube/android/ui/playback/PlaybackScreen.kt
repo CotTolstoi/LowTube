@@ -659,6 +659,20 @@ fun PlaybackScreen(
         preloadAttemptedVideoId = null
     }
 
+    LaunchedEffect(controller, video.id, playbackRequestId) {
+        val activeController = controller ?: return@LaunchedEffect
+        val upcomingIndex = activeController.currentMediaItemIndex + 1
+        if (upcomingIndex !in 0 until activeController.mediaItemCount) return@LaunchedEffect
+        val upcomingItem = activeController.getMediaItemAt(upcomingIndex)
+        val rowId = upcomingItem.mediaMetadata.extras?.getLong(PRELOADED_QUEUE_ROW_ID_EXTRA, 0L) ?: 0L
+        if (rowId <= 0L) return@LaunchedEffect
+        val queuedEntry = latestResolveNextQueueEntry() ?: return@LaunchedEffect
+        if (queuedEntry.rowId == rowId && queuedEntry.video.id == upcomingItem.mediaId) {
+            stagedQueueEntry = queuedEntry
+            preloadAttemptedVideoId = video.id
+        }
+    }
+
     LaunchedEffect(controller, video.id, playbackRequestId, queueHeadRowId) {
         val activeController = controller ?: return@LaunchedEffect
         val staged = stagedQueueEntry
