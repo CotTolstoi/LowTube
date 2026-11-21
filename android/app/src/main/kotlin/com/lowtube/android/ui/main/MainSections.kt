@@ -50,6 +50,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -103,9 +104,9 @@ internal fun SubscriptionsTab(
     val categories = remember(channels) { channels.map { it.category.trim() }.filter(String::isNotEmpty).distinct().sortedBy(String::lowercase) }
     val categoryByChannel = remember(channels) { channels.associate { it.id to it.category.trim() } }
     val videos = remember(feedRepository, revision, channelIds, accountEmail) { feedRepository.cached(accountEmail).filter { it.channelId in channelIds } }
-    var selectedChannel by remember(accountEmail) { mutableStateOf("") }
-    var selectedCategory by remember(accountEmail) { mutableStateOf("") }
-    var selectedKind by remember { mutableStateOf("all") }
+    var selectedChannel by rememberSaveable(accountEmail) { mutableStateOf("") }
+    var selectedCategory by rememberSaveable(accountEmail) { mutableStateOf("") }
+    var selectedKind by rememberSaveable { mutableStateOf("all") }
     var addChannelDialog by remember { mutableStateOf(false) }
     var channelInput by remember { mutableStateOf("") }
     var categoryTarget by remember(accountEmail) { mutableStateOf<SavedChannel?>(null) }

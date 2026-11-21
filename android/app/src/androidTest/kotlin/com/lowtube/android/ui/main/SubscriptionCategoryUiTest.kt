@@ -3,6 +3,7 @@ package com.lowtube.android.ui.main
 import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
@@ -41,7 +42,8 @@ class SubscriptionCategoryUiTest {
                 2L,
             )
 
-            composeTestRule.setContent {
+            val restoration = StateRestorationTester(composeTestRule)
+            restoration.setContent {
                 MaterialTheme {
                     SubscriptionsTab(
                         repository = repository,
@@ -62,6 +64,9 @@ class SubscriptionCategoryUiTest {
             composeTestRule.onNodeWithText("Science", useUnmergedTree = true).performClick()
             composeTestRule.onNodeWithText("Science upload").assertExists()
             assertTrue(composeTestRule.onAllNodesWithText("Other upload").fetchSemanticsNodes().isEmpty())
+            restoration.emulateSavedInstanceStateRestore()
+            composeTestRule.onNodeWithText("Science upload").assertExists()
+            composeTestRule.onNodeWithText("Other upload").assertDoesNotExist()
         } finally {
             repository.close()
             context.deleteDatabase(databaseName)

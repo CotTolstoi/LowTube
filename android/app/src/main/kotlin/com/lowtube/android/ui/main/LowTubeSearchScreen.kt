@@ -58,6 +58,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -187,6 +188,7 @@ fun LowTubeSearchScreen(
     val emptySearchMessage = stringResource(R.string.search_empty_query)
     val requestFailedMessage = stringResource(R.string.request_failed_retry)
     val downloadFailedMessage = stringResource(R.string.download_failed)
+    val mainTabState = rememberSaveableStateHolder()
     val searchGridState = rememberLazyGridState()
     val recommendationsGridState = rememberLazyGridState()
     val resultsGridState = if (selectedTab == "home") recommendationsGridState else searchGridState
@@ -418,19 +420,21 @@ fun LowTubeSearchScreen(
                 }
             }
             when (selectedTab) {
-                "subscriptions" -> SubscriptionsTab(
-                    repository = libraryRepository,
-                    accountEmail = googleAccountEmail,
-                    refreshRevision = libraryRevision,
-                    feedRefreshPreset = feedRefreshPreset,
-                    youtubeSyncBusy = youtubeSyncBusy,
-                    youtubeSyncMessage = youtubeSyncMessage,
-                    onSyncYouTubeSubscriptions = onSyncYouTubeSubscriptions,
-                    onAddChannel = onAddChannel,
-                    onBrowseChannel = onBrowseChannel,
-                    onPlay = onPlay,
-                    modifier = Modifier.weight(1f),
-                )
+                "subscriptions" -> mainTabState.SaveableStateProvider("subscriptions") {
+                    SubscriptionsTab(
+                        repository = libraryRepository,
+                        accountEmail = googleAccountEmail,
+                        refreshRevision = libraryRevision,
+                        feedRefreshPreset = feedRefreshPreset,
+                        youtubeSyncBusy = youtubeSyncBusy,
+                        youtubeSyncMessage = youtubeSyncMessage,
+                        onSyncYouTubeSubscriptions = onSyncYouTubeSubscriptions,
+                        onAddChannel = onAddChannel,
+                        onBrowseChannel = onBrowseChannel,
+                        onPlay = onPlay,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
                 "profile" -> ProfileTab(
                     accountName = googleAccountName,
                     accountEmail = googleAccountEmail,
