@@ -313,12 +313,15 @@ fun LowTubeSearchScreen(
         state.loading,
         state.loadingMore,
         state.error,
+        activeKind,
+        visibleItems.size,
         displayedItems.size,
         state.displayLimit,
     ) {
         if (selectedTab != "search" && selectedTab != "home") return@LaunchedEffect
-        val continuation = state.continuation ?: return@LaunchedEffect
-        val attemptKey = "$continuation|${state.displayLimit}"
+        val hasBufferedItems = FeedPagePolicy.hasBufferedResults(visibleItems.size, state.displayLimit)
+        if (!hasBufferedItems && state.continuation == null) return@LaunchedEffect
+        val attemptKey = "${state.continuation}|${state.displayLimit}|$activeKind|${visibleItems.size}"
         if (state.loading || state.loadingMore || state.error != null || visibleItems.isEmpty() ||
             autoLoadAttemptedToken == attemptKey
         ) return@LaunchedEffect
