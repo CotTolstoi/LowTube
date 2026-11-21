@@ -1001,6 +1001,7 @@ class DownloadServiceAcceptanceTest {
                 "Download publication acceptance is opt-in; pass -e runDownloadPublicationAcceptance true",
                 InstrumentationRegistry.getArguments().getString("runDownloadPublicationAcceptance") == "true",
             )
+            val reuseCompletePart = InstrumentationRegistry.getArguments().getString("reuseCompleteDownloadPart") == "true"
             val context = ApplicationProvider.getApplicationContext<Context>()
             val storagePermissionAvailable = Build.VERSION.SDK_INT > 28 ||
                 (context.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
@@ -1026,13 +1027,21 @@ class DownloadServiceAcceptanceTest {
                     partial.absolutePath,
                     maxBytesPerAttempt = RangeResumeLoopbackServer.TOTAL_BYTES,
                 )
+                val expectedBytes = ByteArray(RangeResumeLoopbackServer.TOTAL_BYTES.toInt()) { it.toByte() }
+                if (reuseCompletePart) {
+                    partial.writeBytes(expectedBytes)
+                    store.update(id, DownloadStatus.FAILED, "Fixture publication failure",
+                        downloaded = expectedBytes.size.toLong(), total = expectedBytes.size.toLong())
+                    assertTrue(store.requeueRetryable(id))
+                }
                 server.start()
                 startService(context, dbName, testStreamUrl = server.url)
                 val complete = waitForTerminalAttempt(store, id)
                 assertEquals("Bounded file did not reach SUCCESSFUL: ${complete.reason}", DownloadStatus.SUCCESSFUL, complete.status)
                 assertEquals(RangeResumeLoopbackServer.TOTAL_BYTES, complete.downloadedBytes)
                 assertEquals(RangeResumeLoopbackServer.TOTAL_BYTES, complete.totalBytes)
-                assertEquals("bytes=0-${RangeResumeLoopbackServer.TOTAL_BYTES - 1}", server.rangeHeader)
+                val expectedRange = if (reuseCompletePart) null else "bytes=0-${RangeResumeLoopbackServer.TOTAL_BYTES - 1}"
+                assertEquals(expectedRange, server.rangeHeader)
                 assertFalse("Private partial should be removed after publishing", partial.exists())
                 val resultUri = Uri.parse(complete.localUri)
                 publishedUri = resultUri
@@ -1042,9 +1051,8 @@ class DownloadServiceAcceptanceTest {
                     context.contentResolver.openInputStream(resultUri)?.use { it.readBytes() }
                         ?: error("Published content URI could not be opened.")
                 }
-                val expectedBytes = ByteArray(RangeResumeLoopbackServer.TOTAL_BYTES.toInt()) { it.toByte() }
                 assertTrue("Published file contents differ from the bounded source", expectedBytes.contentEquals(publishedBytes))
-                assertTrue("Publication server did not observe the client close", server.awaitClientClosed())
+                if (!reuseCompletePart) assertTrue("Publication server did not observe the client close", server.awaitClientClosed())
                 waitForServiceStopped(context)
                 assertTerminalNotificationText(context, R.string.download_complete)
                 DownloadFileStore(context).deletePublished(resultUri)
