@@ -1,3 +1,13 @@
+## Current artifact (2026-11-21, source revision b16808a)
+
+- File: `LowTube-Android-debug-0.1.8.apk`; version `0.1.8-android-dev` (version code 9); minimum Android 6.0 (API 23).
+- Build type: installable debug APK signed with the Android debug certificate; not production-signed.
+- Source revision: `b16808a` on `codex/android-shorts-continuation`.
+- Build: `:app:assembleDebug :app:assembleDebugAndroidTest --offline --no-configuration-cache` succeeded for armeabi-v7a, arm64-v8a and x86_64.
+- Change in 0.1.8: playback settings now offer system default, hardware preferred and software preferred video decoder modes; the selected preference is applied when PlaybackService next starts, transferred through PC JSON `Decoder`, and reported separately from the actual decoder.
+- Bounded API23 software-preferred playback acceptance passed: `OMX.google.h264.decoder`; 12-second first clip plus 1.095 seconds of the next item. No video was allowed to finish.
+- APK size: 24575848 bytes.
+- SHA-256: `9AD71DB281EBE145DE574EDAA8F5CB2F31719E8C5327AD81B2D264633EE9E8DE`.
 ## Current artifact (2026-11-21, source revision 45b0376)
 
 - File: `LowTube-Android-debug-0.1.7.apk`; version `0.1.7-android-dev` (version code 8); minimum Android 6.0 (API 23).
