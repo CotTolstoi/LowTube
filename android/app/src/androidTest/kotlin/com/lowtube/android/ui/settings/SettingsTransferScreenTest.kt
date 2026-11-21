@@ -1,6 +1,15 @@
 package com.lowtube.android.ui.settings
 
 import androidx.activity.ComponentActivity
+import androidx.activity.result.ActivityResultRegistry
+import androidx.activity.result.ActivityResultRegistryOwner
+import androidx.activity.compose.LocalActivityResultRegistryOwner
+import androidx.activity.result.contract.ActivityResultContract
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.test.junit4.StateRestorationTester
+import androidx.core.app.ActivityOptionsCompat
+import androidx.core.content.FileProvider
+import java.io.File
 import android.os.SystemClock
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -101,6 +110,62 @@ class SettingsTransferScreenTest {
         assertTrue(report.contains("excludes account details"))
         assertFalse(report.contains("https://"))
         assertFalse(report.contains("@"))
+    }
+
+    @Test
+    fun pendingDiagnosticExportWritesReportAfterStateRestoration() {
+        val activity = composeTestRule.activity
+        val destination = File.createTempFile("lowtube-diagnostic-export-", ".txt", activity.cacheDir)
+        val uri = FileProvider.getUriForFile(activity, activity.packageName + ".fileprovider", destination)
+        val launchedRequest = AtomicInteger(-1)
+        val registry = object : ActivityResultRegistry() {
+            override fun <I, O> onLaunch(
+                requestCode: Int,
+                contract: ActivityResultContract<I, O>,
+                input: I,
+                options: ActivityOptionsCompat?,
+            ) {
+                assertEquals("lowtube-diagnostics.txt", input)
+                launchedRequest.set(requestCode)
+            }
+        }
+        val owner = object : ActivityResultRegistryOwner {
+            override val activityResultRegistry = registry
+        }
+        val restoration = StateRestorationTester(composeTestRule)
+        try {
+            restoration.setContent {
+                CompositionLocalProvider(LocalActivityResultRegistryOwner provides owner) {
+                    SettingsScreen(
+                        onDarkThemeChanged = {},
+                        onLanguageChanged = {},
+                        discoveryTopic = "science and technology",
+                        discoveryLanguage = "any",
+                        onDiscoveryPreferencesChanged = { _, _ -> },
+                        playbackPreferences = PlaybackStreamPreferences(),
+                        onPlaybackPreferencesChanged = {},
+                    )
+                }
+            }
+            composeTestRule.onNodeWithText(activity.getString(R.string.export_diagnostic_report))
+                .performScrollTo()
+                .performClick()
+            composeTestRule.waitUntil(10_000L) { launchedRequest.get() != -1 }
+
+            restoration.emulateSavedInstanceStateRestore()
+            composeTestRule.onNodeWithText(activity.getString(R.string.diagnostic_report_exporting)).assertExists()
+            composeTestRule.runOnIdle { assertTrue(registry.dispatchResult(launchedRequest.get(), uri)) }
+            val exportedMessage = activity.getString(R.string.diagnostic_report_exported)
+            composeTestRule.waitUntil(10_000L) {
+                composeTestRule.onAllNodesWithText(exportedMessage).fetchSemanticsNodes().isNotEmpty()
+            }
+            val report = destination.readText()
+            assertTrue(report.startsWith("LowTube Android diagnostics"))
+            assertTrue(report.contains("excludes account details"))
+            assertFalse(report.contains("https://"))
+        } finally {
+            destination.delete()
+        }
     }
 
     @Test
