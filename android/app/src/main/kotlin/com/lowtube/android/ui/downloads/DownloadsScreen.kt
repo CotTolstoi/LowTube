@@ -35,6 +35,7 @@ import com.lowtube.android.data.DownloadRepository
 import com.lowtube.android.model.DownloadRecord
 import com.lowtube.android.model.DownloadStatus
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -51,16 +52,24 @@ fun DownloadsScreen(
 ) {
     var refresh by remember { mutableIntStateOf(0) }
     var retryingIds by remember { mutableStateOf(emptySet<Long>()) }
+    var loadFailed by remember(repository) { mutableStateOf(false) }
     val loadedRecords by produceState<List<DownloadRecord>?>(null, repository, refresh) {
-        value = withContext(Dispatchers.IO) { repository.records() }
+        try {
+            value = withContext(Dispatchers.IO) { repository.records() }
+            loadFailed = false
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            loadFailed = true
+        }
     }
     val records = loadedRecords.orEmpty()
     LaunchedEffect(Unit) {
         repository.resumePending()
     }
     val hasActiveDownloads = records.any { it.status == DownloadStatus.PENDING || it.status == DownloadStatus.RUNNING }
-    LaunchedEffect(hasActiveDownloads) {
-        if (hasActiveDownloads) {
+    LaunchedEffect(hasActiveDownloads, loadFailed) {
+        if (hasActiveDownloads && !loadFailed) {
             while (true) {
                 delay(1_500)
                 refresh++
@@ -76,7 +85,12 @@ fun DownloadsScreen(
             )
         },
     ) { padding ->
-        if (loadedRecords == null) {
+        if (loadFailed) {
+            Column(Modifier.fillMaxSize().padding(padding).padding(24.dp)) {
+                Text(stringResource(R.string.downloads_read_failed), color = MaterialTheme.colorScheme.error)
+                Button(onClick = { refresh++ }) { Text(stringResource(R.string.retry)) }
+            }
+        } else if (loadedRecords == null) {
             LinearProgressIndicator(Modifier.fillMaxWidth().padding(padding))
         } else if (records.isEmpty()) {
             Column(Modifier.fillMaxSize().padding(padding).padding(24.dp)) {
