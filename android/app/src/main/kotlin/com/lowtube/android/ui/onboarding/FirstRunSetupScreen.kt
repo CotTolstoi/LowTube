@@ -77,15 +77,13 @@ internal fun FirstRunSetupScreen(
     var playbackQualityExpanded by remember { mutableStateOf(false) }
     var downloadQualityExpanded by remember { mutableStateOf(false) }
     var bitrateExpanded by remember { mutableStateOf(false) }
-    var downloadTreeUri by remember(context) { mutableStateOf(DownloadDestination.selectedTreeUri(context)) }
+    val savedDownloadTreeUri = remember(context) { DownloadDestination.selectedTreeUri(context) }
+    var downloadTreeUri by remember(context) { mutableStateOf(savedDownloadTreeUri) }
     var downloadFolderError by remember { mutableStateOf(false) }
     val downloadFolderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri != null) {
-            val saved = runCatching { DownloadDestination.takeAndSaveTreeUri(context, uri) }.isSuccess
-            if (saved) {
-                downloadTreeUri = uri
-                downloadFolderError = false
-            } else downloadFolderError = true
+            downloadTreeUri = uri
+            downloadFolderError = false
         }
     }
 
@@ -198,11 +196,8 @@ internal fun FirstRunSetupScreen(
             }
             if (downloadTreeUri != null) {
                 TextButton(onClick = {
-                    val cleared = runCatching { DownloadDestination.clearTreeUri(context) }.isSuccess
-                    if (cleared) {
-                        downloadTreeUri = null
-                        downloadFolderError = false
-                    } else downloadFolderError = true
+                    downloadTreeUri = null
+                    downloadFolderError = false
                 }) {
                     Text(stringResource(R.string.use_default_download_folder))
                 }
@@ -217,6 +212,17 @@ internal fun FirstRunSetupScreen(
         }
         Button(
             onClick = {
+                val chosenFolder = downloadTreeUri
+                if (chosenFolder != savedDownloadTreeUri) {
+                    val saved = runCatching {
+                        if (chosenFolder == null) DownloadDestination.clearTreeUri(context)
+                        else DownloadDestination.takeAndSaveTreeUri(context, chosenFolder)
+                    }.isSuccess
+                    if (!saved) {
+                        downloadFolderError = true
+                        return@Button
+                    }
+                }
                 onApply(
                     FirstRunSetupSelection(
                         language = selectedLanguage,
