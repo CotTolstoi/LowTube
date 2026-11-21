@@ -209,10 +209,10 @@ fun SettingsScreen(
             val repository = localLibraryRepository
             val result = runCatching {
                 requireNotNull(repository) { "Local library is unavailable." }
-                val json = withContext(Dispatchers.IO) { LocalLibraryTransferRepository.encode(repository.exportLocalLibrary()) }
-                val bytes = json.toByteArray(Charsets.UTF_8)
-                require(bytes.size <= MAX_LOCAL_LIBRARY_TRANSFER_BYTES) { "Local library backup is larger than 16 MiB." }
                 withContext(Dispatchers.IO) {
+                    val json = LocalLibraryTransferRepository.encode(repository.exportLocalLibrary())
+                    val bytes = json.toByteArray(Charsets.UTF_8)
+                    require(bytes.size <= MAX_LOCAL_LIBRARY_TRANSFER_BYTES) { "Local library backup is larger than 16 MiB." }
                     context.contentResolver.openOutputStream(uri)?.use { it.write(bytes) }
                         ?: throw IOException("Could not open the selected library backup file.")
                 }
@@ -224,11 +224,11 @@ fun SettingsScreen(
     val importLocalLibraryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) transferScope.launch {
             val result = runCatching {
-                val json = withContext(Dispatchers.IO) {
-                    context.contentResolver.openInputStream(uri)?.use(::readLocalLibraryTransfer)
+                withContext(Dispatchers.IO) {
+                    val json = context.contentResolver.openInputStream(uri)?.use(::readLocalLibraryTransfer)
                         ?: throw IOException("Could not open the selected library backup file.")
+                    LocalLibraryTransferRepository.decode(json)
                 }
-                LocalLibraryTransferRepository.decode(json)
             }
             result.onSuccess { pendingLocalLibraryImport = it }
                 .onFailure { localLibraryTransferMessage = context.getString(R.string.local_library_transfer_error) }
