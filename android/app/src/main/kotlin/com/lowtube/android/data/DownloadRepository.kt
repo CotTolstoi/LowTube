@@ -159,6 +159,7 @@ class DownloadRepository private constructor(
                 File(job.partialPath).delete()
                 File(job.partialPath + ".mp3").delete()
                 File(job.partialPath + ".mkv").delete()
+                File(job.partialPath + ".ready.mkv").delete()
                 File(job.partialPath + ".pcm").delete()
                 File(job.partialPath + ".video").delete()
                 File(job.partialPath + ".audio").delete()

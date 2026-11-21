@@ -15,6 +15,7 @@ import java.io.IOException
 
 internal class DownloadFileStore(private val context: Context) {
     fun partialFile(job: DownloadJob): File = File(job.partialPath)
+    fun readyMatroskaFile(job: DownloadJob): File = File(job.partialPath + ".ready.mkv")
     fun matroskaFile(job: DownloadJob): File = File(job.partialPath + ".mkv")
     fun videoTrackFile(job: DownloadJob): File = File(job.partialPath + ".video")
     fun audioTrackFile(job: DownloadJob): File = File(job.partialPath + ".audio")

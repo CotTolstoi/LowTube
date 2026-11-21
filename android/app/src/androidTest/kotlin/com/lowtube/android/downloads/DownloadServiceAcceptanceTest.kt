@@ -1001,7 +1001,9 @@ class DownloadServiceAcceptanceTest {
                 "Download publication acceptance is opt-in; pass -e runDownloadPublicationAcceptance true",
                 InstrumentationRegistry.getArguments().getString("runDownloadPublicationAcceptance") == "true",
             )
-            val reuseCompletePart = InstrumentationRegistry.getArguments().getString("reuseCompleteDownloadPart") == "true"
+            val arguments = InstrumentationRegistry.getArguments()
+            val reuseMatroska = arguments.getString("reuseCompletedMatroska") == "true"
+            val reuseCompletePart = reuseMatroska || arguments.getString("reuseCompleteDownloadPart") == "true"
             val context = ApplicationProvider.getApplicationContext<Context>()
             val storagePermissionAvailable = Build.VERSION.SDK_INT > 28 ||
                 (context.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
@@ -1013,7 +1015,10 @@ class DownloadServiceAcceptanceTest {
             val store = DownloadJobStore(context, dbName)
             var id = 0L
             var publishedUri: Uri? = null
-            val publishedName = "lowtube-bounded-${System.currentTimeMillis()}.mp4"
+            val extension = if (reuseMatroska) "mkv" else "mp4"
+            val publishedName = "lowtube-bounded-${System.currentTimeMillis()}.$extension"
+            val readyMatroska = File(partial.path + ".ready.mkv")
+            val source = if (reuseMatroska) readyMatroska else partial
             try {
                 val video = VideoItem("fixture", "Publication fixture", duration = "—", url = "https://www.youtube.com/watch?v=fixture")
                 val videoJson = JSONObject().put("id", video.id).put("title", video.title).put("url", video.url).toString()
@@ -1022,14 +1027,14 @@ class DownloadServiceAcceptanceTest {
                     "publication-loopback-test",
                     false,
                     publishedName,
-                    "video/mp4",
+                    if (reuseMatroska) "video/x-matroska" else "video/mp4",
                     "LowTube publication acceptance",
                     partial.absolutePath,
                     maxBytesPerAttempt = RangeResumeLoopbackServer.TOTAL_BYTES,
                 )
                 val expectedBytes = ByteArray(RangeResumeLoopbackServer.TOTAL_BYTES.toInt()) { it.toByte() }
                 if (reuseCompletePart) {
-                    partial.writeBytes(expectedBytes)
+                    source.writeBytes(expectedBytes)
                     store.update(id, DownloadStatus.FAILED, "Fixture publication failure",
                         downloaded = expectedBytes.size.toLong(), total = expectedBytes.size.toLong())
                     assertTrue(store.requeueRetryable(id))
@@ -1042,7 +1047,7 @@ class DownloadServiceAcceptanceTest {
                 assertEquals(RangeResumeLoopbackServer.TOTAL_BYTES, complete.totalBytes)
                 val expectedRange = if (reuseCompletePart) null else "bytes=0-${RangeResumeLoopbackServer.TOTAL_BYTES - 1}"
                 assertEquals(expectedRange, server.rangeHeader)
-                assertFalse("Private partial should be removed after publishing", partial.exists())
+                assertFalse("Private source should be removed after publishing", source.exists())
                 val resultUri = Uri.parse(complete.localUri)
                 publishedUri = resultUri
                 val publishedBytes = if (resultUri.scheme == "file") {
@@ -1067,6 +1072,7 @@ class DownloadServiceAcceptanceTest {
                 context.stopService(Intent(context, DownloadService::class.java))
                 server.close()
                 partial.delete()
+                readyMatroska.delete()
                 publishedUri?.let { runCatching { DownloadFileStore(context).deletePublished(it) } }
                 if (id > 0) store.remove(id)
                 store.close()
