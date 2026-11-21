@@ -485,3 +485,5 @@
 21.11.2026 16:12:28 UTC, LowTube `0.1.9-android-dev` після встановлення на Xiaomi Pad 6 (`23043RP34G`, API33), MainActivity top-resumed, екран idle, playback не запускався. Пасивна вибірка 5 s: CPU 0% одного ядра, PSS 240,8 MiB, RSS 214,7 MiB, peak RSS 215,7 MiB; RAM пристрою 5612/965 MiB total/available. Одиничний знімок, не benchmark.
 
 21.11.2026 16:13:32 UTC, остаточний знімок після перевстановлення фінального APK 0.1.9 на Xiaomi Pad 6 (`23043RP34G`, API33), MainActivity top-resumed, idle 5 s: CPU 0,2% одного ядра, PSS 236,7 MiB, RSS 217,2 MiB, peak RSS 219,3 MiB; RAM 5612/931 MiB total/available. Цей знімок замінює попередню попередню вибірку для 0.1.9; це не benchmark.
+
+21.11.2026 16:20:19 UTC, після встановлення `0.1.10-android-dev` на Xiaomi Pad 6 (API33), LowTube MainActivity top-resumed, 5 s idle: CPU 0,4%, PSS 238,5 MiB, RSS 215,6 MiB, peak RSS 217,2 MiB; RAM 5612/956 MiB total/available. Одиничний знімок після інсталяції, не benchmark.

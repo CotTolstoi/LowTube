@@ -107,6 +107,10 @@ internal fun SubscriptionsTab(
     val categories = remember(channels) { channels.map { it.category.trim() }.filter(String::isNotEmpty).distinct().sortedBy(String::lowercase) }
     val categoryByChannel = remember(channels) { channels.associate { it.id to it.category.trim() } }
     val videos = remember(feedRepository, revision, channelIds, accountEmail) { feedRepository.cached(accountEmail).filter { it.channelId in channelIds } }
+    val channelAvatarById = remember(videos) {
+        videos.asSequence().filter { it.channelAvatarUrl.isNotBlank() }
+            .associate { it.channelId to it.channelAvatarUrl }
+    }
     var selectedChannel by rememberSaveable(accountEmail) { mutableStateOf("") }
     var selectedCategory by rememberSaveable(accountEmail) { mutableStateOf("") }
     var selectedKind by rememberSaveable { mutableStateOf("all") }
@@ -231,7 +235,27 @@ internal fun SubscriptionsTab(
                             categoryByChannel[channel.id] != selectedCategory
                         ) selectedCategory = ""
                     },
-                    label = { Text(channel.title.ifBlank { channel.id }, maxLines = 1) },
+                    label = {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            val avatar = channelAvatarById[channel.id]
+                            if (avatar.isNullOrBlank()) {
+                                Box(
+                                    Modifier.size(24.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Text(channel.title.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "•", style = MaterialTheme.typography.labelSmall)
+                                }
+                            } else {
+                                AsyncImage(
+                                    model = avatar,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(24.dp).clip(CircleShape),
+                                    contentScale = ContentScale.Crop,
+                                )
+                            }
+                            Text(channel.title.ifBlank { channel.id }, maxLines = 1)
+                        }
+                    },
                 )
             }
         }
