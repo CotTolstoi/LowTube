@@ -67,6 +67,9 @@ class DownloadsScreenTest {
             }
 
             composeTestRule.onNodeWithText(context.getString(R.string.downloads)).assertIsDisplayed()
+            composeTestRule.waitUntil(5_000) {
+                composeTestRule.onAllNodesWithText("Paused screen fixture").fetchSemanticsNodes().isNotEmpty()
+            }
             composeTestRule.onNodeWithText("Paused screen fixture").assertIsDisplayed()
             composeTestRule.onNodeWithText("50% • 32 B / 64 B").assertIsDisplayed()
             val density = context.resources.displayMetrics.density
@@ -113,7 +116,11 @@ class DownloadsScreenTest {
                 }
             }
 
-            composeTestRule.onNodeWithText(context.getString(R.string.downloads_empty)).assertIsDisplayed()
+            val empty = context.getString(R.string.downloads_empty)
+            composeTestRule.waitUntil(5_000) {
+                composeTestRule.onAllNodesWithText(empty).fetchSemanticsNodes().isNotEmpty()
+            }
+            composeTestRule.onNodeWithText(empty).assertIsDisplayed()
             composeTestRule.onNodeWithText(context.getString(R.string.back)).performClick()
             assertTrue("Back action should be forwarded from Downloads", backRequested)
         } finally {

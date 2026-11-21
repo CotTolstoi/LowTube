@@ -24,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -34,6 +35,8 @@ import com.lowtube.android.data.DownloadRepository
 import com.lowtube.android.model.DownloadRecord
 import com.lowtube.android.model.DownloadStatus
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 internal const val DOWNLOADS_GRID_TEST_TAG = "downloads-adaptive-grid"
 
@@ -48,7 +51,10 @@ fun DownloadsScreen(
 ) {
     var refresh by remember { mutableIntStateOf(0) }
     var retryingIds by remember { mutableStateOf(emptySet<Long>()) }
-    val records = remember(refresh) { repository.records() }
+    val loadedRecords by produceState<List<DownloadRecord>?>(null, repository, refresh) {
+        value = withContext(Dispatchers.IO) { repository.records() }
+    }
+    val records = loadedRecords.orEmpty()
     LaunchedEffect(Unit) {
         repository.resumePending()
     }
@@ -70,7 +76,9 @@ fun DownloadsScreen(
             )
         },
     ) { padding ->
-        if (records.isEmpty()) {
+        if (loadedRecords == null) {
+            LinearProgressIndicator(Modifier.fillMaxWidth().padding(padding))
+        } else if (records.isEmpty()) {
             Column(Modifier.fillMaxSize().padding(padding).padding(24.dp)) {
                 Text(stringResource(R.string.downloads_empty), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
