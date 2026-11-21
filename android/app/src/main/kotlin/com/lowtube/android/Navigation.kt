@@ -29,12 +29,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.core.content.ContextCompat
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.lowtube.android.ui.main.LowTubeSearchScreen
 import com.lowtube.android.ui.settings.SettingsScreen
+import com.lowtube.android.ui.settings.LibraryImportViewModel
 import com.lowtube.android.data.LocalLibraryRepository
 import com.lowtube.android.data.LocalAudioAvailability
 import com.lowtube.android.data.PlaybackStreamPreferences
@@ -463,8 +465,10 @@ fun MainNavigation(
             onOpenDownloadsConsumed()
         }
     }
+    val libraryImport = viewModel<LibraryImportViewModel>()
     val popBackStackEntry: () -> Unit = {
         val removed = backStack.removeLastOrNull()
+        if (removed == Settings) libraryImport.pendingBackup = null
         if (removed == Player) {
             // Playback persists watch progress while it is disposed. Refresh the library
             // after this navigation turn so the History screen reads the saved row.
@@ -641,6 +645,7 @@ fun MainNavigation(
             }
             entry<Settings> {
                 SettingsScreen(
+                    libraryImport = libraryImport,
                     onDarkThemeChanged = onDarkThemeChanged,
                     onLanguageChanged = onLanguageChanged,
                     uiScale = uiScale,

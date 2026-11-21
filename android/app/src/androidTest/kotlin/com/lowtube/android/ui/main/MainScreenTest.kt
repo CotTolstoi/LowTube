@@ -17,6 +17,8 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performScrollTo
 import com.lowtube.android.MainActivity
 import com.lowtube.android.R
+import com.lowtube.android.data.LocalLibraryTransferRepository
+import com.lowtube.android.ui.settings.LibraryImportViewModel
 import com.lowtube.android.ui.onboarding.FIRST_RUN_DOWNLOAD_FPS30_TAG
 import com.lowtube.android.ui.onboarding.FIRST_RUN_DOWNLOAD_QUALITY_TAG
 import com.lowtube.android.ui.onboarding.FIRST_RUN_FINISH_TAG
@@ -132,6 +134,26 @@ class MainScreenTest {
         queueAction.assertExists()
         field.performTextReplacement("science documentaries")
         queueAction.assertExists()
+    }
+
+    @Test
+    fun libraryImportConfirmationSurvivesRecreationAndCancelsWithoutApplying() {
+        val activity = composeTestRule.activity
+        composeTestRule.onNodeWithText(activity.getString(R.string.more_menu), substring = true).performClick()
+        composeTestRule.onNodeWithText(activity.getString(R.string.settings)).performClick()
+
+        val importModel = ViewModelProvider(activity)[LibraryImportViewModel::class.java]
+        val backup = LocalLibraryTransferRepository.Snapshot(emptyList(), emptyList(), emptyList())
+        val title = activity.getString(R.string.local_library_import_title)
+        composeTestRule.runOnIdle { importModel.pendingBackup = backup }
+        composeTestRule.onNodeWithText(title).assertExists()
+
+        composeTestRule.activityRule.scenario.recreate()
+        composeTestRule.onNodeWithText(title).assertExists()
+        assertEquals(backup, importModel.pendingBackup)
+        composeTestRule.onNodeWithText(activity.getString(R.string.cancel)).performClick()
+        composeTestRule.onNodeWithText(title).assertDoesNotExist()
+        assertEquals(null, importModel.pendingBackup)
     }
 
     @Test

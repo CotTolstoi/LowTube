@@ -75,7 +75,7 @@ import kotlinx.coroutines.CancellationException
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(
+internal fun SettingsScreen(
     onDarkThemeChanged: (Boolean) -> Unit,
     onLanguageChanged: (String) -> Unit,
     onBack: () -> Unit = {},
@@ -106,6 +106,7 @@ fun SettingsScreen(
     downloadRepository: DownloadRepository? = null,
     localLibraryRepository: LocalLibraryRepository? = null,
     onLocalLibraryChanged: () -> Unit = {},
+    libraryImport: LibraryImportViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
 ) {
     val context = LocalContext.current
     var language by remember { mutableStateOf(AppLocale.language(context)) }
@@ -129,7 +130,6 @@ fun SettingsScreen(
     var diagnosticReportExported by remember { mutableStateOf(false) }
     var pendingDiagnosticReport by rememberSaveable { mutableStateOf<String?>(null) }
     val diagnosticReportExportPending = diagnosticReportPreparing || pendingDiagnosticReport != null
-    var pendingLocalLibraryImport by remember { mutableStateOf<LocalLibraryTransferRepository.Snapshot?>(null) }
     var localLibraryTransferMessage by remember { mutableStateOf<String?>(null) }
     var downloadTreeUri by remember(context) { mutableStateOf(DownloadDestination.selectedTreeUri(context)) }
     var downloadFolderError by remember { mutableStateOf(false) }
@@ -230,19 +230,22 @@ fun SettingsScreen(
                     LocalLibraryTransferRepository.decode(json)
                 }
             }
-            result.onSuccess { pendingLocalLibraryImport = it }
-                .onFailure { localLibraryTransferMessage = context.getString(R.string.local_library_transfer_error) }
+            result.onSuccess { libraryImport.pendingBackup = it }
+                .onFailure {
+                    if (it is CancellationException) throw it
+                    localLibraryTransferMessage = context.getString(R.string.local_library_transfer_error)
+                }
         }
     }
-    val pendingImport = pendingLocalLibraryImport
+    val pendingImport = libraryImport.pendingBackup
     if (pendingImport != null) {
         AlertDialog(
-            onDismissRequest = { pendingLocalLibraryImport = null },
+            onDismissRequest = { libraryImport.pendingBackup = null },
             title = { Text(stringResource(R.string.local_library_import_title)) },
             text = { Text(stringResource(R.string.local_library_import_confirmation, pendingImport.channels.size, pendingImport.playlists.size, pendingImport.history.size)) },
             confirmButton = {
                 TextButton(onClick = {
-                    pendingLocalLibraryImport = null
+                    libraryImport.pendingBackup = null
                     val repository = localLibraryRepository
                     transferScope.launch {
                         val result = runCatching {
@@ -256,7 +259,7 @@ fun SettingsScreen(
                 }) { Text(stringResource(R.string.local_library_replace)) }
             },
             dismissButton = {
-                TextButton(onClick = { pendingLocalLibraryImport = null }) { Text(stringResource(R.string.cancel)) }
+                TextButton(onClick = { libraryImport.pendingBackup = null }) { Text(stringResource(R.string.cancel)) }
             },
         )
     }
