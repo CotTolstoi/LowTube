@@ -201,12 +201,12 @@ class DownloadService : Service() {
             requiresMuxing = option.requiresMuxing
             if (requiresMuxing) downloaded = files.videoTrackFile(job).length() + files.audioTrackFile(job).length()
             else downloaded = part.takeIf { it.isFile }?.length() ?: 0L
-            queue.update(job.id, DownloadStatus.RUNNING, downloaded = downloaded, total = 0)
+            queue.update(job.id, DownloadStatus.RUNNING, downloaded = downloaded)
             show(job, downloaded, 0, true)
             val rateLimit = getSharedPreferences("lowtube_settings", MODE_PRIVATE).getInt("download_limit_kib", 0).coerceAtLeast(0)
-            val existingCompleteMkvSource = option.container == "MKV" && !requiresMuxing && job.totalBytes > 0L &&
-                part.isFile && part.length() >= job.totalBytes
-            val outcome = if (existingCompleteMkvSource) {
+            val existingCompleteSource = (option.container == "MKV" || job.transcodeMp3) &&
+                !requiresMuxing && job.totalBytes > 0L && part.isFile && part.length() == job.totalBytes
+            val outcome = if (existingCompleteSource) {
                 TransferOutcome(part.length(), job.totalBytes, complete = true)
             } else if (requiresMuxing) {
                 downloadMuxedTracks(job, option, video, part, queue, rateLimit)
@@ -233,12 +233,13 @@ class DownloadService : Service() {
                 show(job, outcome.downloaded, outcome.total, false, getString(R.string.download_paused_resume))
             } else {
                 job = queue.get(job.id) ?: return
-                if (job.transcodeMp3) {
+                val publicationPart = if (job.transcodeMp3) {
                     show(job, outcome.downloaded, outcome.total, true, getString(R.string.download_mp3_converting))
-                    AudioMp3Transcoder.transcode(part, part, job.targetAudioBitrateKbps) { cancelId == job.id }
+                    val converted = File(job.partialPath + ".mp3")
+                    AudioMp3Transcoder.transcode(part, converted, job.targetAudioBitrateKbps) { cancelId == job.id }
                     if (cancelId == job.id) throw CancellationException("Cancelled by user.")
-                }
-                val publicationPart = if (option.container == "MKV" && !requiresMuxing) {
+                    converted
+                } else if (option.container == "MKV" && !requiresMuxing) {
                     show(job, outcome.downloaded, outcome.total, true, getString(R.string.download_preparing))
                     val converted = files.matroskaFile(job)
                     withContext(Dispatchers.IO) { MatroskaMuxer.muxSingle(part, converted) { cancelId == job.id } }
@@ -280,6 +281,7 @@ class DownloadService : Service() {
                 show(job, downloaded, job.totalBytes, false, getString(R.string.download_failed))
             }
         } finally {
+            if (job.transcodeMp3) File(job.partialPath + ".mp3").delete()
             synchronized(cancelLock) { activeCall = null }
         }
     }
