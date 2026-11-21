@@ -468,7 +468,7 @@ fun MainNavigation(
     val libraryImport = viewModel<LibraryImportViewModel>()
     val popBackStackEntry: () -> Unit = {
         val removed = backStack.removeLastOrNull()
-        if (removed == Settings) libraryImport.pendingBackup = null
+        if (removed == Settings) libraryImport.clear()
         if (removed == Player) {
             // Playback persists watch progress while it is disposed. Refresh the library
             // after this navigation turn so the History screen reads the saved row.

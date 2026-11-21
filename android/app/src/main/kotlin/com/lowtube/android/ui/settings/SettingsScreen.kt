@@ -222,19 +222,9 @@ internal fun SettingsScreen(
         }
     }
     val importLocalLibraryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) transferScope.launch {
-            val result = runCatching {
-                withContext(Dispatchers.IO) {
-                    val json = context.contentResolver.openInputStream(uri)?.use(::readLocalLibraryTransfer)
-                        ?: throw IOException("Could not open the selected library backup file.")
-                    LocalLibraryTransferRepository.decode(json)
-                }
-            }
-            result.onSuccess { libraryImport.pendingBackup = it }
-                .onFailure {
-                    if (it is CancellationException) throw it
-                    localLibraryTransferMessage = context.getString(R.string.local_library_transfer_error)
-                }
+        if (uri != null) {
+            localLibraryTransferMessage = null
+            libraryImport.loadBackup(context.applicationContext.contentResolver, uri)
         }
     }
     val pendingImport = libraryImport.pendingBackup
@@ -533,15 +523,20 @@ internal fun SettingsScreen(
             Text(stringResource(R.string.local_library_transfer_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 TextButton(
-                    enabled = localLibraryRepository != null,
-                    onClick = { exportLocalLibraryLauncher.launch("lowtube-library.json") },
+                    enabled = localLibraryRepository != null && !libraryImport.reading,
+                    onClick = {
+                        libraryImport.clear()
+                        exportLocalLibraryLauncher.launch("lowtube-library.json")
+                    },
                 ) { Text(stringResource(R.string.export_local_library)) }
                 TextButton(
-                    enabled = localLibraryRepository != null,
+                    enabled = localLibraryRepository != null && !libraryImport.reading,
                     onClick = { importLocalLibraryLauncher.launch(arrayOf("application/json", "text/plain", "*/*")) },
                 ) { Text(stringResource(R.string.import_local_library)) }
             }
-            localLibraryTransferMessage?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+            val libraryTransferStatus = if (libraryImport.readFailed) stringResource(R.string.local_library_transfer_error)
+                else localLibraryTransferMessage
+            libraryTransferStatus?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             Text(stringResource(R.string.resource_usage_title), style = MaterialTheme.typography.titleMedium)
             Text(stringResource(R.string.resource_usage_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -782,19 +777,3 @@ private fun readSettingsTransfer(input: java.io.InputStream): String {
     }
     return output.toString(Charsets.UTF_8.name())
 }
-
-private fun readLocalLibraryTransfer(input: java.io.InputStream): String {
-    val output = ByteArrayOutputStream()
-    val buffer = ByteArray(8192)
-    var total = 0
-    while (true) {
-        val count = input.read(buffer)
-        if (count < 0) break
-        total += count
-        if (total > MAX_LOCAL_LIBRARY_TRANSFER_BYTES) throw IOException("Local library backup is larger than 16 MiB.")
-        output.write(buffer, 0, count)
-    }
-    return output.toString(Charsets.UTF_8.name())
-}
-
-private const val MAX_LOCAL_LIBRARY_TRANSFER_BYTES = 16 * 1024 * 1024

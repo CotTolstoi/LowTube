@@ -11,6 +11,8 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.performTextReplacement
 import androidx.lifecycle.ViewModelProvider
+import androidx.core.content.FileProvider
+import java.io.File
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.onNodeWithTag
@@ -145,15 +147,24 @@ class MainScreenTest {
         val importModel = ViewModelProvider(activity)[LibraryImportViewModel::class.java]
         val backup = LocalLibraryTransferRepository.Snapshot(emptyList(), emptyList(), emptyList())
         val title = activity.getString(R.string.local_library_import_title)
-        composeTestRule.runOnIdle { importModel.pendingBackup = backup }
-        composeTestRule.onNodeWithText(title).assertExists()
-
-        composeTestRule.activityRule.scenario.recreate()
-        composeTestRule.onNodeWithText(title).assertExists()
-        assertEquals(backup, importModel.pendingBackup)
-        composeTestRule.onNodeWithText(activity.getString(R.string.cancel)).performClick()
-        composeTestRule.onNodeWithText(title).assertDoesNotExist()
-        assertEquals(null, importModel.pendingBackup)
+        val input = File.createTempFile("lowtube-library-import-", ".json", activity.cacheDir)
+        try {
+            input.writeText(LocalLibraryTransferRepository.encode(backup))
+            val uri = FileProvider.getUriForFile(activity, activity.packageName + ".fileprovider", input)
+            composeTestRule.runOnUiThread {
+                importModel.loadBackup(activity.contentResolver, uri)
+                assertTrue(importModel.reading || importModel.pendingBackup != null)
+            }
+            composeTestRule.activityRule.scenario.recreate()
+            composeTestRule.waitUntil(10_000L) { !importModel.reading }
+            composeTestRule.onNodeWithText(title).assertExists()
+            assertEquals(backup, importModel.pendingBackup)
+            composeTestRule.onNodeWithText(activity.getString(R.string.cancel)).performClick()
+            composeTestRule.onNodeWithText(title).assertDoesNotExist()
+            assertEquals(null, importModel.pendingBackup)
+        } finally {
+            input.delete()
+        }
     }
 
     @Test
