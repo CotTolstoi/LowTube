@@ -121,6 +121,10 @@
     <string name="category_name">Название категории</string>
     <string name="channel_category_saved">Категория канала сохранена</string>
     <string name="remove_category">Удалить категорию</string>
+    <string name="remove_local_channel">Удалить локальную подписку</string>
+    <string name="remove_local_channel_title">Удалить локальную подписку?</string>
+    <string name="remove_local_channel_confirmation">Убрать %1$s с этого устройства? Это не изменит подписку Google-аккаунта.</string>
+    <string name="local_channel_removed">Локальная подписка удалена</string>
     <string name="subscription_feed_filtered_empty">В кэше нет видео, соответствующих выбранным фильтрам.</string>
     <string name="refresh_feed">Обновить ленту</string>
     <string name="subscription_feed_empty">Кэшированных видео пока нет. Обновите ленту, чтобы загрузить последние публичные видео подписок.</string>

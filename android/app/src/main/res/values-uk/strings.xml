@@ -121,6 +121,10 @@
     <string name="category_name">Назва категорії</string>
     <string name="channel_category_saved">Категорію каналу збережено</string>
     <string name="remove_category">Прибрати категорію</string>
+    <string name="remove_local_channel">Видалити локальну підписку</string>
+    <string name="remove_local_channel_title">Видалити локальну підписку?</string>
+    <string name="remove_local_channel_confirmation">Прибрати %1$s із цього пристрою? Це не змінить підписку Google-акаунта.</string>
+    <string name="local_channel_removed">Локальну підписку видалено</string>
     <string name="subscription_feed_filtered_empty">Немає кешованих відео, що відповідають вибраним фільтрам.</string>
     <string name="refresh_feed">Оновити стрічку</string>
     <string name="subscription_feed_empty">Кешованих відео ще немає. Оновіть стрічку, щоб завантажити останні публічні відео підписок.</string>

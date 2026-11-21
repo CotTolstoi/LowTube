@@ -294,3 +294,7 @@ LowTube local library backup format v1 має необов’язкове пол
 ## Діагностика Google authorization — 2026-11-21
 
 Profile показує безпечну назву й числовий код `ApiException`, bounded пошук exception у cause chain, назву/версію провайдера та доступність Authorization API. Текст не містить account identifier, response body або token. На Xiaomi Pad 6 повторний дозвіл на перший акаунт двічі повернув `8 (INTERNAL_ERROR)`; встановлений провайдер — Google Play services 26.45.31. За офіційною таблицею це внутрішня помилка, яка може бути тимчасовою; один retry не допоміг. Runtime account acceptance лишається відкритим. Не запускати безкінечні retries.
+
+## Локальне керування підписками — 2026-11-21
+
+Для локального каналу, вибраного у фільтрі Subscriptions, додано дію `Remove local subscription` з confirm dialog EN/UK/RU. Вона використовує наявну транзакційну операцію `unfollow`, яка залишає кеш стрічки, якщо канал досі належить підписці Google-акаунта. Remote YouTube unsubscribe не виконується цим локальним меню. Збірка пройшла; UI acceptance і сценарій з активною однойменною account subscription ще не перевірялися.

@@ -118,6 +118,7 @@ internal fun SubscriptionsTab(
     var channelInput by remember { mutableStateOf("") }
     var categoryTarget by remember(accountEmail) { mutableStateOf<SavedChannel?>(null) }
     var categoryInput by remember { mutableStateOf("") }
+    var removeChannelTarget by remember(accountEmail) { mutableStateOf<SavedChannel?>(null) }
     var refreshJob by remember { mutableStateOf<Job?>(null) }
     var refreshMessage by remember { mutableStateOf<String?>(null) }
     var refreshFailed by remember { mutableStateOf<String?>(null) }
@@ -261,10 +262,17 @@ internal fun SubscriptionsTab(
         }
         val selectedCategoryChannel = channels.firstOrNull { it.id == selectedChannel }
         if (selectedCategoryChannel != null) {
-            TextButton(onClick = {
-                categoryInput = selectedCategoryChannel.category
-                categoryTarget = selectedCategoryChannel
-            }) { Text(stringResource(R.string.edit_channel_category)) }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(onClick = {
+                    categoryInput = selectedCategoryChannel.category
+                    categoryTarget = selectedCategoryChannel
+                }) { Text(stringResource(R.string.edit_channel_category)) }
+                if (!selectedCategoryChannel.fromYouTubeAccount) {
+                    TextButton(onClick = { removeChannelTarget = selectedCategoryChannel }) {
+                        Text(stringResource(R.string.remove_local_channel))
+                    }
+                }
+            }
         }
         if (categories.isNotEmpty()) {
             LazyRow(
@@ -412,6 +420,28 @@ internal fun SubscriptionsTab(
                     TextButton(onClick = { saveChannelCategory(target, "") }) { Text(stringResource(R.string.remove_category)) }
                     TextButton(onClick = { categoryTarget = null }) { Text(stringResource(R.string.cancel)) }
                 }
+            },
+        )
+    }
+    removeChannelTarget?.let { target ->
+        AlertDialog(
+            onDismissRequest = { removeChannelTarget = null },
+            title = { Text(stringResource(R.string.remove_local_channel_title)) },
+            text = { Text(stringResource(R.string.remove_local_channel_confirmation, target.title)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    runCatching { repository.unfollow(target.id) }
+                        .onSuccess {
+                            localRevision++
+                            selectedChannel = ""
+                            removeChannelTarget = null
+                            Toast.makeText(context, R.string.local_channel_removed, Toast.LENGTH_SHORT).show()
+                        }
+                        .onFailure { Toast.makeText(context, it.message ?: context.getString(R.string.action_failed), Toast.LENGTH_LONG).show() }
+                }) { Text(stringResource(R.string.remove_local_channel)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { removeChannelTarget = null }) { Text(stringResource(R.string.cancel)) }
             },
         )
     }

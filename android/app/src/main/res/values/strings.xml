@@ -121,6 +121,10 @@
     <string name="category_name">Category name</string>
     <string name="channel_category_saved">Channel category saved</string>
     <string name="remove_category">Remove category</string>
+    <string name="remove_local_channel">Remove local subscription</string>
+    <string name="remove_local_channel_title">Remove local subscription?</string>
+    <string name="remove_local_channel_confirmation">Remove %1$s from this device? This will not change your Google account subscription.</string>
+    <string name="local_channel_removed">Local subscription removed</string>
     <string name="subscription_feed_filtered_empty">No cached uploads match the selected filters.</string>
     <string name="refresh_feed">Refresh feed</string>
     <string name="subscription_feed_empty">No cached uploads yet. Refresh to load recent public videos from followed channels.</string>

@@ -834,3 +834,9 @@ Downloads тепер показує окремий стан «Download cancelled
 Mini-player тепер має тонку смугу прогресу відео, яка оновлюється раз на 500 ms під час відтворення та фіксує поточну позицію на паузі. Змінено лише відображення; Media3 playback не змінювався і не перевірявся. `:app:assembleDebug --offline --no-configuration-cache` успішна для armeabi-v7a, arm64-v8a та x86_64. APK встановлено на Xiaomi Pad 6 (API33), MainActivity top-resumed. Після стабілізації інтерфейсу idle 5 s: CPU 0%, PSS 226,6 MiB, RSS 198,3 MiB, peak RSS 222,1 MiB; RAM 5612/920 MiB total/available. Це одиничний знімок, не benchmark. UI acceptance mini-player-а не запускався.
 
 Публікація 0.1.13: вихідний код — commit `4fddd4a` у `codex/android-shorts-continuation`; APK опубліковано commit `3fe8c09` і metadata виправлено commit `2dd2572` у `android`. [Завантажити APK](https://github.com/CotTolstoi/LowTube/raw/refs/heads/android/LowTube-Android-debug-0.1.13.apk). Розмір 24 593 479 bytes; SHA-256 `9832001F4E80AADE3F3A1C39D57B11185D5EB9EFFE6E2FF3519278E225E3E578`.
+
+## Версія 0.1.14 — 2026-11-21
+
+У Subscriptions додано дію видалення вибраного локально збереженого каналу з окремим підтвердженням. Вона викликає локальний `unfollow`, очищає кеш каналу лише коли немає іншої підписки та не змінює віддалену підписку Google-акаунта. `:app:assembleDebug --offline --no-configuration-cache` успішна для armeabi-v7a, arm64-v8a та x86_64. APK встановлено на Xiaomi Pad 6 (API33), MainActivity top-resumed. UI сценарій видалення не перевірявся. Після стабілізації idle 5 s: CPU 0%, PSS 221,1 MiB, RSS 192,3 MiB, peak RSS 219,2 MiB; RAM 5612/918 MiB total/available. Це одиничний знімок, не benchmark. Відтворення не запускалося.
+
+Публікація 0.1.14 очікує commit вихідного коду та APK у гілках `codex/android-shorts-continuation` і `android`.
