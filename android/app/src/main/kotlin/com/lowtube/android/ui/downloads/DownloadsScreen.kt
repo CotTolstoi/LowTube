@@ -30,6 +30,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import com.lowtube.android.R
 import com.lowtube.android.data.DownloadRepository
 import com.lowtube.android.model.DownloadRecord
@@ -72,11 +76,17 @@ fun DownloadsScreen(
     }
     val records = loadedRecords.orEmpty()
     val hasActiveDownloads = records.any { it.status == DownloadStatus.PENDING || it.status == DownloadStatus.RUNNING }
-    LaunchedEffect(hasActiveDownloads, loadFailed) {
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        if (loadedRecords != null || loadFailed) refresh++
+    }
+    LaunchedEffect(lifecycle, hasActiveDownloads, loadFailed) {
         if (hasActiveDownloads && !loadFailed) {
-            while (true) {
-                delay(1_500)
-                refresh++
+            lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                while (true) {
+                    delay(1_500)
+                    refresh++
+                }
             }
         }
     }
