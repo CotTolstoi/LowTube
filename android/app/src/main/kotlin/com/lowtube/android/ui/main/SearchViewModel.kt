@@ -26,6 +26,7 @@ data class SearchUiState(
     val discoveryLanguage: String = "any",
     val homeCacheKey: String = "",
     val error: String? = null,
+    val homeRefreshFailed: Boolean = false,
 )
 
 class SearchViewModel(
@@ -87,7 +88,11 @@ class SearchViewModel(
                 }
             } catch (error: Exception) {
                 if (requestGeneration == generation) {
-                    val failed = mutableState.value.copy(loading = false, error = safeMessage(error, requestFailedMessage))
+                    val failed = mutableState.value.copy(
+                        loading = false,
+                        error = safeMessage(error, requestFailedMessage),
+                        homeRefreshFailed = true,
+                    )
                     mutableState.value = failed
                 }
             }
@@ -165,7 +170,7 @@ class SearchViewModel(
         }
         val token = current.continuation ?: return
         val requestGeneration = generation
-        mutableState.value = current.copy(loadingMore = true, error = null)
+        mutableState.value = current.copy(loadingMore = true, error = null, homeRefreshFailed = false)
         searchJob = viewModelScope.launch {
             try {
                 val page = if (current.isHome) repository.recommendations(

@@ -555,6 +555,13 @@ fun LowTubeSearchScreen(
                 }
             }
 
+            if (state.homeRefreshFailed && state.error != null && state.items.isNotEmpty()) {
+                Text(state.error.orEmpty(), color = MaterialTheme.colorScheme.error)
+                TextButton(onClick = {
+                    viewModel.loadHome(language, discoveryTopic, discoveryLanguage, force = true,
+                        requestFailedMessage = requestFailedMessage, pageSize = pageSize)
+                }) { Text(stringResource(R.string.retry)) }
+            }
             if (state.loading) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
             } else if (state.error != null && state.items.isEmpty()) {
@@ -668,7 +675,7 @@ fun LowTubeSearchScreen(
                     if (state.continuation != null || visibleItems.size > state.displayLimit) {
                         item(key = "load-more", span = { GridItemSpan(maxLineSpan) }) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                                if (state.error != null) Text(state.error.orEmpty(), color = MaterialTheme.colorScheme.error)
+                                if (state.error != null && !state.homeRefreshFailed) Text(state.error.orEmpty(), color = MaterialTheme.colorScheme.error)
                                 Button(onClick = { viewModel.loadMore(requestFailedMessage, pageSize, visibleItems.size) }, enabled = !state.loadingMore) {
                                     if (state.loadingMore) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
                                     else Text(stringResource(R.string.load_more))
@@ -676,7 +683,7 @@ fun LowTubeSearchScreen(
                             }
                         }
                     }
-                    if (state.error != null && state.continuation == null) item(span = { GridItemSpan(maxLineSpan) }) { Text(state.error.orEmpty(), color = MaterialTheme.colorScheme.error) }
+                    if (state.error != null && !state.homeRefreshFailed && state.continuation == null) item(span = { GridItemSpan(maxLineSpan) }) { Text(state.error.orEmpty(), color = MaterialTheme.colorScheme.error) }
                 }
             }
                 }
