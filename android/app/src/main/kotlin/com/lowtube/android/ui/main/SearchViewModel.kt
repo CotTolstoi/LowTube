@@ -77,15 +77,10 @@ class SearchViewModel(
             try {
                 val page = repository.recommendations(language, cleanTopic, cleanDiscoveryLanguage)
                 if (requestGeneration == generation) {
-                    val loaded = SearchUiState(
-                        requestLanguage = language,
+                    val loaded = mutableState.value.copy(
                         items = page.items,
                         continuation = page.continuation,
-                        isHome = true,
-                        displayLimit = pageSize,
-                        homeTopic = cleanTopic,
-                        discoveryLanguage = cleanDiscoveryLanguage,
-                        homeCacheKey = cacheKey,
+                        loading = false,
                     )
                     mutableState.value = loaded
                     rememberHomePage(loaded)
@@ -94,7 +89,6 @@ class SearchViewModel(
                 if (requestGeneration == generation) {
                     val failed = mutableState.value.copy(loading = false, error = safeMessage(error, requestFailedMessage))
                     mutableState.value = failed
-                    if (failed.items.isNotEmpty()) rememberHomePage(failed)
                 }
             }
         }
@@ -112,7 +106,6 @@ class SearchViewModel(
         if (current.displayLimit == pageSize) return
         val updated = current.copy(displayLimit = pageSize)
         mutableState.value = updated
-        if (updated.isHome) rememberHomePage(updated)
     }
 
     fun search(
@@ -137,20 +130,18 @@ class SearchViewModel(
             try {
                 val page = repository.search(normalized, language = language)
                 if (requestGeneration == generation) {
-                    mutableState.value = SearchUiState(
-                        query = normalized,
+                    mutableState.value = mutableState.value.copy(
                         requestLanguage = language,
                         items = page.items,
                         continuation = page.continuation,
                         playlistTitle = page.playlistTitle,
                         channelHeader = page.channelHeader,
-                        searched = true,
-                        displayLimit = pageSize,
+                        loading = false,
                     )
                 }
             } catch (error: Exception) {
                 if (requestGeneration == generation) {
-                    mutableState.value = SearchUiState(query = normalized, searched = true, error = safeMessage(error, requestFailedMessage), displayLimit = pageSize)
+                    mutableState.value = mutableState.value.copy(loading = false, error = safeMessage(error, requestFailedMessage))
                 }
             }
         }
@@ -175,7 +166,7 @@ class SearchViewModel(
         val token = current.continuation ?: return
         val requestGeneration = generation
         mutableState.value = current.copy(loadingMore = true, error = null)
-        viewModelScope.launch {
+        searchJob = viewModelScope.launch {
             try {
                 val page = if (current.isHome) repository.recommendations(
                     current.requestLanguage,
