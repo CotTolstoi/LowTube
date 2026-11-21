@@ -47,7 +47,7 @@ class FirstRunSetupScreenTest {
         compose.onNodeWithTag(FIRST_RUN_DOWNLOAD_FPS30_TAG).performScrollTo().performClick()
         compose.onNodeWithTag(FIRST_RUN_DOWNLOAD_QUALITY_TAG).performScrollTo().performClick()
         compose.onNodeWithText("480p").performClick()
-        compose.onNodeWithTag(FIRST_RUN_FINISH_TAG).performScrollTo().performClick()
+        compose.onNodeWithTag(FIRST_RUN_FINISH_TAG).performClick()
         compose.runOnIdle {
             assertEquals(1.15f, previewScale)
             assertEquals(
@@ -77,7 +77,7 @@ class FirstRunSetupScreenTest {
                 onSkip = { skipped = true },
             )
         }
-        compose.onNodeWithTag(FIRST_RUN_SKIP_TAG).performScrollTo().performClick()
+        compose.onNodeWithTag(FIRST_RUN_SKIP_TAG).performClick()
         compose.runOnIdle { assertTrue(skipped) }
     }
 
