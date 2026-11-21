@@ -7,7 +7,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import org.xmlpull.v1.XmlPullParser
@@ -35,7 +37,10 @@ class LocalSubscriptionFeedRepository(
     private val library: LocalLibraryRepository,
     private val innerTube: InnerTubeSearchRepository,
 ) {
-    suspend fun refreshBatch(language: String = "en", preset: Int = 1): SubscriptionFeedRefresh = withContext(Dispatchers.IO) {
+    suspend fun refreshBatch(language: String = "en", preset: Int = 1): SubscriptionFeedRefresh =
+        refreshMutex.withLock { refreshBatchOnIo(language, preset) }
+
+    private suspend fun refreshBatchOnIo(language: String, preset: Int): SubscriptionFeedRefresh = withContext(Dispatchers.IO) {
         val channels = library.channels()
         if (channels.isEmpty()) return@withContext SubscriptionFeedRefresh(emptyList(), 0, emptyList(), 0)
 
@@ -217,6 +222,8 @@ class LocalSubscriptionFeedRepository(
     private data class ChannelResult(val channel: SavedChannel, val error: String?, val usedBrowseFallback: Boolean)
 
     companion object {
+        // The worker and UI use separate repository instances but share the feed database.
+        private val refreshMutex = Mutex()
         private const val MAX_RESPONSE_BYTES = 2 * 1024 * 1024
         private const val MAX_ITEMS_PER_CHANNEL = 30
         private const val MAX_XML_DEPTH = 32
