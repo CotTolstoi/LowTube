@@ -2,6 +2,7 @@ package com.lowtube.android.data
 
 import android.content.ContentValues
 import android.content.Context
+import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import com.lowtube.android.model.DownloadJob
@@ -45,12 +46,14 @@ internal class DownloadJobStore(context: Context, databaseName: String = DEFAULT
     }
 
     @Synchronized fun get(id: Long): DownloadJob? = readableDatabase.query("jobs", null, "id=?", arrayOf(id.toString()), null, null, null).use { c ->
-        if (!c.moveToFirst()) return null
-        DownloadJob(c.getLong(c.getColumnIndexOrThrow("id")), c.getString(c.getColumnIndexOrThrow("video_json")), c.getString(c.getColumnIndexOrThrow("format_key")), c.getInt(c.getColumnIndexOrThrow("audio_only")) != 0, c.getInt(c.getColumnIndexOrThrow("status")), c.getString(c.getColumnIndexOrThrow("reason")), c.getLong(c.getColumnIndexOrThrow("downloaded")), c.getLong(c.getColumnIndexOrThrow("total")), c.getString(c.getColumnIndexOrThrow("local_uri")), c.getString(c.getColumnIndexOrThrow("partial_path")), c.getString(c.getColumnIndexOrThrow("file_name")), c.getString(c.getColumnIndexOrThrow("mime_type")), c.getString(c.getColumnIndexOrThrow("user_agent")), c.getLong(c.getColumnIndexOrThrow("created_at")), c.getLong(c.getColumnIndexOrThrow("max_bytes_per_attempt")), c.getInt(c.getColumnIndexOrThrow("transcode_mp3")) != 0, c.getInt(c.getColumnIndexOrThrow("target_audio_bitrate_kbps")))
+        if (c.moveToFirst()) readJob(c) else null
     }
 
+    private fun readJob(c: Cursor): DownloadJob =
+        DownloadJob(c.getLong(c.getColumnIndexOrThrow("id")), c.getString(c.getColumnIndexOrThrow("video_json")), c.getString(c.getColumnIndexOrThrow("format_key")), c.getInt(c.getColumnIndexOrThrow("audio_only")) != 0, c.getInt(c.getColumnIndexOrThrow("status")), c.getString(c.getColumnIndexOrThrow("reason")), c.getLong(c.getColumnIndexOrThrow("downloaded")), c.getLong(c.getColumnIndexOrThrow("total")), c.getString(c.getColumnIndexOrThrow("local_uri")), c.getString(c.getColumnIndexOrThrow("partial_path")), c.getString(c.getColumnIndexOrThrow("file_name")), c.getString(c.getColumnIndexOrThrow("mime_type")), c.getString(c.getColumnIndexOrThrow("user_agent")), c.getLong(c.getColumnIndexOrThrow("created_at")), c.getLong(c.getColumnIndexOrThrow("max_bytes_per_attempt")), c.getInt(c.getColumnIndexOrThrow("transcode_mp3")) != 0, c.getInt(c.getColumnIndexOrThrow("target_audio_bitrate_kbps")))
+
     @Synchronized fun all(): List<DownloadJob> = readableDatabase.query("jobs", null, null, null, null, null, "created_at DESC").use { c ->
-        buildList { while (c.moveToNext()) get(c.getLong(c.getColumnIndexOrThrow("id")))?.let(::add) }
+        buildList { while (c.moveToNext()) add(readJob(c)) }
     }
     @Synchronized fun statusCounts(): Map<Int, Long> = readableDatabase.rawQuery(
         "SELECT status, COUNT(*) FROM jobs GROUP BY status",
@@ -61,7 +64,7 @@ internal class DownloadJobStore(context: Context, databaseName: String = DEFAULT
         }
     }
     @Synchronized fun pending(): DownloadJob? = readableDatabase.query("jobs", null, "status IN (?,?)", arrayOf(DownloadStatus.PENDING.toString(), DownloadStatus.RUNNING.toString()), null, null, "created_at ASC", "1").use { c ->
-        if (c.moveToFirst()) get(c.getLong(c.getColumnIndexOrThrow("id"))) else null
+        if (c.moveToFirst()) readJob(c) else null
     }
     @Synchronized fun update(id: Long, status: Int, reason: String = "", downloaded: Long? = null, total: Long? = null, uri: String? = null) {
         val values = ContentValues().apply { put("status", status); put("reason", reason); downloaded?.let { put("downloaded", it) }; total?.let { put("total", it) }; uri?.let { put("local_uri", it) } }
