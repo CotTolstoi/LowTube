@@ -114,9 +114,12 @@ internal fun SubscriptionsTab(
     var refreshJob by remember { mutableStateOf<Job?>(null) }
     var refreshMessage by remember { mutableStateOf<String?>(null) }
     var refreshFailed by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(channelIds, categories) {
+    LaunchedEffect(channelIds, categories, categoryByChannel) {
         if (selectedChannel !in channelIds) selectedChannel = ""
         if (selectedCategory !in categories) selectedCategory = ""
+        if (selectedChannel.isNotBlank() && selectedCategory.isNotBlank() &&
+            categoryByChannel[selectedChannel] != selectedCategory
+        ) selectedChannel = ""
         if (categoryTarget?.id !in channelIds) categoryTarget = null
     }
     val visibleVideos = remember(videos, selectedChannel, selectedCategory, selectedKind, categoryByChannel) {
@@ -217,7 +220,12 @@ internal fun SubscriptionsTab(
             channels.forEach { channel ->
                 FilterChip(
                     selected = selectedChannel == channel.id,
-                    onClick = { selectedChannel = if (selectedChannel == channel.id) "" else channel.id },
+                    onClick = {
+                        selectedChannel = if (selectedChannel == channel.id) "" else channel.id
+                        if (selectedChannel.isNotBlank() && selectedCategory.isNotBlank() &&
+                            categoryByChannel[channel.id] != selectedCategory
+                        ) selectedCategory = ""
+                    },
                     label = { Text(channel.title.ifBlank { channel.id }, maxLines = 1) },
                 )
             }
@@ -242,7 +250,12 @@ internal fun SubscriptionsTab(
                 categories.forEach { category ->
                     FilterChip(
                         selected = selectedCategory == category,
-                        onClick = { selectedCategory = if (selectedCategory == category) "" else category },
+                        onClick = {
+                            selectedCategory = if (selectedCategory == category) "" else category
+                            if (selectedChannel.isNotBlank() && selectedCategory.isNotBlank() &&
+                                categoryByChannel[selectedChannel] != selectedCategory
+                            ) selectedChannel = ""
+                        },
                         label = { Text(category, maxLines = 1) },
                     )
                 }

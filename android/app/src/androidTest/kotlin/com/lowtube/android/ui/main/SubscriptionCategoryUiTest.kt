@@ -67,6 +67,13 @@ class SubscriptionCategoryUiTest {
             restoration.emulateSavedInstanceStateRestore()
             composeTestRule.onNodeWithText("Science upload").assertExists()
             composeTestRule.onNodeWithText("Other upload").assertDoesNotExist()
+
+            composeTestRule.onNodeWithText("Other channel", useUnmergedTree = true).performClick()
+            composeTestRule.onNodeWithText("Other upload").assertExists()
+            composeTestRule.onNodeWithText("Science upload").assertDoesNotExist()
+            composeTestRule.onNodeWithText("Science", useUnmergedTree = true).performClick()
+            composeTestRule.onNodeWithText("Science upload").assertExists()
+            composeTestRule.onNodeWithText("Other upload").assertDoesNotExist()
         } finally {
             repository.close()
             context.deleteDatabase(databaseName)
