@@ -2,6 +2,7 @@ package com.lowtube.android.ui.downloads
 
 import androidx.activity.ComponentActivity
 import android.database.sqlite.SQLiteDatabase
+import androidx.lifecycle.Lifecycle
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -108,6 +109,13 @@ class DownloadsScreenTest {
             }
             composeTestRule.onNodeWithText("Paused screen fixture").assertIsDisplayed()
             composeTestRule.onNodeWithText("50% • 32 B / 64 B").assertIsDisplayed()
+            composeTestRule.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
+            seedStore.update(jobId, DownloadStatus.PAUSED, downloaded = 48L, total = 64L)
+            composeTestRule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+            composeTestRule.waitUntil(5_000) {
+                composeTestRule.onAllNodesWithText("75% • 48 B / 64 B").fetchSemanticsNodes().isNotEmpty()
+            }
+            composeTestRule.onNodeWithText("75% • 48 B / 64 B").assertIsDisplayed()
             val density = context.resources.displayMetrics.density
             val gridBounds = composeTestRule.onNodeWithTag(DOWNLOADS_GRID_TEST_TAG).fetchSemanticsNode().boundsInRoot
             val cardBounds = composeTestRule.onNodeWithTag("download-entry-$jobId").fetchSemanticsNode().boundsInRoot
