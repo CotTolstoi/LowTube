@@ -839,4 +839,4 @@ Mini-player тепер має тонку смугу прогресу відео,
 
 У Subscriptions додано дію видалення вибраного локально збереженого каналу з окремим підтвердженням. Вона викликає локальний `unfollow`, очищає кеш каналу лише коли немає іншої підписки та не змінює віддалену підписку Google-акаунта. `:app:assembleDebug --offline --no-configuration-cache` успішна для armeabi-v7a, arm64-v8a та x86_64. APK встановлено на Xiaomi Pad 6 (API33), MainActivity top-resumed. UI сценарій видалення не перевірявся. Після стабілізації idle 5 s: CPU 0%, PSS 221,1 MiB, RSS 192,3 MiB, peak RSS 219,2 MiB; RAM 5612/918 MiB total/available. Це одиничний знімок, не benchmark. Відтворення не запускалося.
 
-Публікація 0.1.14 очікує commit вихідного коду та APK у гілках `codex/android-shorts-continuation` і `android`.
+Публікація 0.1.14: вихідний код — commit `2389777` у `codex/android-shorts-continuation`; APK і release metadata опубліковані commit `c745310` у `android`. [Завантажити APK](https://github.com/CotTolstoi/LowTube/raw/refs/heads/android/LowTube-Android-debug-0.1.14.apk). Розмір 24 595 972 bytes; SHA-256 `9CE72FB4F221CE4AC4980A9C704DC3E6E0460E8CB8DC3D1D298248821516ADC2`.
