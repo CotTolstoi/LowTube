@@ -57,14 +57,22 @@ internal class DownloadFileStore(private val context: Context) {
         }
     }
 
+    fun validateDestination() {
+        DownloadDestination.selectedTreeUri(context)?.let(::requireTreeWriteAccess)
+    }
+
+    private fun requireTreeWriteAccess(treeUri: Uri) {
+        if (context.contentResolver.persistedUriPermissions.none { it.uri == treeUri && it.isWritePermission }) {
+            throw IOException(context.getString(R.string.download_location_error))
+        }
+    }
+
     fun publish(job: DownloadJob, sourceFile: File = partialFile(job)): Uri {
         val partial = sourceFile
         if (!partial.isFile || partial.length() <= 0L) throw IOException("The downloaded file is empty or missing.")
         val selectedTree = DownloadDestination.selectedTreeUri(context)
         if (selectedTree != null) {
-            if (context.contentResolver.persistedUriPermissions.none { it.uri == selectedTree && it.isWritePermission }) {
-                throw IOException(context.getString(R.string.download_location_error))
-            }
+            requireTreeWriteAccess(selectedTree)
             try {
                 return publishToTree(job, partial, selectedTree)
             } catch (failure: SecurityException) {

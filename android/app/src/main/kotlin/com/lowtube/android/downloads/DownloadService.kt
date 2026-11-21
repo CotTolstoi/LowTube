@@ -162,6 +162,7 @@ class DownloadService : Service() {
         queue.update(job.id, DownloadStatus.RUNNING, downloaded = downloaded)
         show(job, downloaded, 0, true)
         try {
+            withContext(Dispatchers.IO) { files.validateDestination() }
             val root = JSONObject(job.videoJson)
             val video = VideoItem(root.getString("id"), root.getString("title"), root.optString("channel"), root.optString("channelId"), root.optString("published"), root.optString("duration", "—"), root.optString("kind", "video"), root.optString("liveStatus"), root.optString("thumbnailUrl"), root.getString("url"))
             // Re-resolve a fresh signed URL for each run; retain the user's selected itag.
