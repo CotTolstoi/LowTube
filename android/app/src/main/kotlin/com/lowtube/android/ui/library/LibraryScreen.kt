@@ -392,7 +392,7 @@ fun LibraryScreen(
                                     feedRefreshFailed = false
                                     feedJob = scope.launch {
                                         try {
-                                            feedRefreshResult = feedRepository.refreshBatch(AppLocale.language(context), feedRefreshPreset)
+                                            feedRefreshResult = feedRepository.refreshBatch(AppLocale.language(context), feedRefreshPreset, accountEmail)
                                             refresh++
                                         } catch (cancelled: CancellationException) {
                                             throw cancelled

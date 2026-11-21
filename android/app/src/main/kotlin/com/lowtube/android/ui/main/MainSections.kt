@@ -157,7 +157,7 @@ internal fun SubscriptionsTab(
                     refreshFailed = false
                     refreshJob = scope.launch {
                         try {
-                            val result = feedRepository.refreshBatch(AppLocale.language(context), feedRefreshPreset)
+                            val result = feedRepository.refreshBatch(AppLocale.language(context), feedRefreshPreset, accountEmail)
                             refreshMessage = context.getString(
                                 R.string.feed_refresh_summary,
                                 result.refreshedChannels,

@@ -294,9 +294,12 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
         return channels.sortedWith(compareBy<SavedChannel> { lastAttempt[it.id] ?: 0L }.thenBy { it.id }).take(limit)
     }
 
-    fun unattemptedFeedChannelCount(): Int = readableDatabase.rawQuery(
-        "SELECT COUNT(*) FROM subscriptions s LEFT JOIN channel_feed_state f ON f.channel_id=s.channel_id WHERE f.channel_id IS NULL",
-        null,
+    fun unattemptedFeedChannelCount(accountEmail: String = ""): Int = readableDatabase.rawQuery(
+        """SELECT COUNT(*) FROM (
+               SELECT channel_id FROM subscriptions
+               UNION SELECT channel_id FROM youtube_account_subscriptions WHERE owner_email=?
+           ) s WHERE NOT EXISTS (SELECT 1 FROM channel_feed_state f WHERE f.channel_id=s.channel_id)""",
+        arrayOf(accountEmail.trim().lowercase()),
     ).use { if (it.moveToFirst()) it.getInt(0) else 0 }
 
     fun replaceChannelFeed(channelId: String, videos: List<VideoItem>, updatedAt: Long): Boolean {

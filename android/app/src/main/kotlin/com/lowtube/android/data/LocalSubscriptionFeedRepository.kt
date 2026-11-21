@@ -37,11 +37,11 @@ class LocalSubscriptionFeedRepository(
     private val library: LocalLibraryRepository,
     private val innerTube: InnerTubeSearchRepository,
 ) {
-    suspend fun refreshBatch(language: String = "en", preset: Int = 1): SubscriptionFeedRefresh =
-        refreshMutex.withLock { refreshBatchOnIo(language, preset) }
+    suspend fun refreshBatch(language: String = "en", preset: Int = 1, accountEmail: String = ""): SubscriptionFeedRefresh =
+        refreshMutex.withLock { refreshBatchOnIo(language, preset, accountEmail) }
 
-    private suspend fun refreshBatchOnIo(language: String, preset: Int): SubscriptionFeedRefresh = withContext(Dispatchers.IO) {
-        val channels = library.channels()
+    private suspend fun refreshBatchOnIo(language: String, preset: Int, accountEmail: String): SubscriptionFeedRefresh = withContext(Dispatchers.IO) {
+        val channels = library.channels(accountEmail)
         if (channels.isEmpty()) return@withContext SubscriptionFeedRefresh(emptyList(), 0, emptyList(), 0)
 
         val policy = SubscriptionFeedRefreshPolicy.fromPreset(preset)
@@ -71,7 +71,7 @@ class LocalSubscriptionFeedRepository(
             videos = library.subscriptionFeed(),
             refreshedChannels = outcomes.count { it.error == null },
             failedChannels = failed,
-            remainingChannels = library.unattemptedFeedChannelCount(),
+            remainingChannels = library.unattemptedFeedChannelCount(accountEmail),
             failureDetails = outcomes.mapNotNull { it.error?.take(160) },
             browseFallbackChannels = outcomes.count { it.usedBrowseFallback },
         )
