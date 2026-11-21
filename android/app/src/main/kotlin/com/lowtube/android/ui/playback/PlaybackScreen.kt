@@ -956,10 +956,11 @@ fun PlaybackScreen(
                     if (hasQueuedItems) TextButton(onClick = onAdvanceQueue, enabled = !loading) { Text(stringResource(R.string.next_in_queue)) }
                     TextButton(
                         modifier = Modifier.testTag(PLAYBACK_START_OVER_TEST_TAG),
-                        enabled = !loading && controller?.currentMediaItem != null,
+                        enabled = !loading && controller?.currentMediaItem?.mediaId == watchedVideo.id,
                         onClick = {
-                            controller?.let { active ->
-                                library.resetWatchProgress(watchedVideo.id)
+                            val targetId = watchedVideo.id
+                            controller?.takeIf { it.currentMediaItem?.mediaId == targetId }?.let { active ->
+                                library.resetWatchProgress(targetId)
                                 active.seekTo(0L)
                                 message = null
                             }
