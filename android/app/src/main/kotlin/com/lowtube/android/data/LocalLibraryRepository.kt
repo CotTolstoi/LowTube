@@ -794,8 +794,20 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
         }
     }
 
-    fun previousWatchedVideo(currentVideoId: String): VideoItem? =
-        watchHistory().firstOrNull { it.video.id != currentVideoId }?.video
+    fun previousWatchedVideo(currentVideoId: String): VideoItem? = readableDatabase.rawQuery(
+        """SELECT video_id, title, channel, channel_id, published, duration, kind, thumbnail_url, url, channel_avatar_url
+           FROM watch_history WHERE video_id != ? ORDER BY updated_at DESC LIMIT 1""",
+        arrayOf(currentVideoId),
+    ).use { cursor ->
+        if (!cursor.moveToFirst()) return@use null
+        VideoItem(
+            id = cursor.getString(0), title = cursor.getString(1),
+            channel = cursor.getString(2), channelId = cursor.getString(3),
+            published = cursor.getString(4), duration = cursor.getString(5),
+            kind = cursor.getString(6), thumbnailUrl = cursor.getString(7),
+            url = cursor.getString(8), channelAvatarUrl = cursor.getString(9),
+        )
+    }
 
     fun resumePositionMs(videoId: String): Long {
         if (!VIDEO_ID.matches(videoId)) return 0
