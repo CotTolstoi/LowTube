@@ -392,9 +392,10 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
             LocalLibraryTransferRepository.PlaylistSnapshot(playlist.id, playlist.name, videos(playlist.id))
         },
         history = watchHistory(),
+        queue = queue(),
     )
 
-    /** Replaces only local channels, local playlists, and watch progress in one SQLite transaction. */
+    /** Replaces the local library and watch queue in one SQLite transaction, preserving account data. */
     internal fun replaceLocalLibrary(snapshot: LocalLibraryTransferRepository.Snapshot) {
         LocalLibraryTransferRepository.validate(snapshot)
         val db = writableDatabase
@@ -403,6 +404,7 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
             db.delete("subscriptions", null, null)
             db.delete("playlists", null, null)
             db.delete("watch_history", null, null)
+            if (snapshot.queue != null) db.delete("queue_entries", null, null)
             val addedAt = System.currentTimeMillis()
             snapshot.channels.forEach { channel ->
                 val values = ContentValues().apply {
@@ -437,6 +439,13 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
                     put("updated_at", entry.updatedAt)
                 }
                 check(db.insert("watch_history", null, values) != -1L) { "Could not import watch history." }
+            }
+            snapshot.queue.orEmpty().forEachIndexed { position, entry ->
+                val values = videoValues(entry.video).apply {
+                    put("position", position)
+                    put("continuation", entry.continuation)
+                }
+                check(db.insert("queue_entries", null, values) != -1L) { "Could not import the watch queue." }
             }
             db.setTransactionSuccessful()
         } finally {

@@ -1,6 +1,7 @@
 package com.lowtube.android.data
 
 import com.lowtube.android.model.SavedChannel
+import com.lowtube.android.model.QueueEntry
 import com.lowtube.android.model.VideoItem
 import com.lowtube.android.model.WatchHistoryEntry
 import org.json.JSONArray
@@ -15,6 +16,7 @@ internal object LocalLibraryTransferRepository {
         val channels: List<SavedChannel>,
         val playlists: List<PlaylistSnapshot>,
         val history: List<WatchHistoryEntry>,
+        val queue: List<QueueEntry>? = null,
     )
 
     fun encode(snapshot: Snapshot): String {
@@ -47,6 +49,11 @@ internal object LocalLibraryTransferRepository {
                         .put("UpdatedAt", entry.updatedAt))
                 }
             })
+            .put("Queue", snapshot.queue?.let { entries -> JSONArray().apply {
+                entries.forEach { entry ->
+                    put(queueVideoObject(entry.video).put("Continuation", entry.continuation))
+                }
+            } } ?: JSONObject.NULL)
             .toString(2)
         require(json.length <= MAX_JSON_CHARS) { "Local library backup exceeds the supported size." }
         return json
@@ -109,7 +116,23 @@ internal object LocalLibraryTransferRepository {
                 }
             }
         }
-        val snapshot = Snapshot(channels, playlists, history)
+        // Queue was added as an optional field in v1. Older backups leave the current queue untouched.
+        val queue = (if (root.has("Queue") && !root.isNull("Queue")) root.requiredArray("Queue") else null)?.let { array ->
+            require(array.length() <= LocalLibraryRepository.MAX_QUEUE_ITEMS) { "Backup contains too many queued items." }
+            totalVideos += array.length()
+            require(totalVideos <= MAX_TOTAL_VIDEO_ROWS + LocalLibraryRepository.MAX_QUEUE_ITEMS) { "Local library backup contains too many video records." }
+            buildList {
+                for (index in 0 until array.length()) {
+                    val item = array.getJSONObject(index)
+                    val video = decodeQueueVideo(item)
+                    val continuation = item.optString("Continuation", "")
+                    require(continuation.length <= MAX_QUEUE_CONTINUATION_LENGTH) { "The playlist continuation is too large." }
+                    require(video.kind == "playlist" || continuation.isEmpty()) { "Backup contains an invalid queue continuation." }
+                    add(QueueEntry(rowId = 0L, video = video, continuation = continuation))
+                }
+            }
+        }
+        val snapshot = Snapshot(channels, playlists, history, queue)
         validate(snapshot)
         return snapshot
     }
@@ -118,6 +141,7 @@ internal object LocalLibraryTransferRepository {
         require(snapshot.channels.size <= LocalLibraryRepository.MAX_CHANNELS)
         require(snapshot.playlists.size <= LocalLibraryRepository.MAX_PLAYLISTS)
         require(snapshot.history.size <= LocalLibraryRepository.MAX_HISTORY_ITEMS)
+        require((snapshot.queue?.size ?: 0) <= LocalLibraryRepository.MAX_QUEUE_ITEMS) { "Backup contains too many queued items." }
         require(snapshot.playlists.sumOf { it.videos.size } + snapshot.history.size <= MAX_TOTAL_VIDEO_ROWS) {
             "Local library backup contains too many video records."
         }
@@ -138,6 +162,11 @@ internal object LocalLibraryTransferRepository {
             validateVideo(entry.video)
             require(entry.positionMs >= 0L && entry.durationMs >= 0L && entry.updatedAt >= 0L) { "Backup contains invalid watch progress." }
         }
+        snapshot.queue.orEmpty().forEach { entry ->
+            validateQueueVideo(entry.video)
+            require(entry.continuation.length <= MAX_QUEUE_CONTINUATION_LENGTH) { "The playlist continuation is too large." }
+            require(entry.video.kind == "playlist" || entry.continuation.isEmpty()) { "Backup contains an invalid queue continuation." }
+        }
     }
 
     private fun validateVideo(video: VideoItem) {
@@ -150,6 +179,36 @@ internal object LocalLibraryTransferRepository {
     }
 
     private fun videoArray(videos: List<VideoItem>) = JSONArray().apply { videos.forEach { put(videoObject(it)) } }
+
+    private fun queueVideoObject(video: VideoItem): JSONObject {
+        validateQueueVideo(video)
+        return videoObject(video)
+    }
+
+    private fun decodeQueueVideo(item: JSONObject): VideoItem {
+        if (item.optString("Kind", "video") != "playlist") return decodeVideo(item)
+        val id = item.requiredString("Id")
+        val title = item.requiredString("Title")
+        val video = VideoItem(
+            id = id,
+            title = title,
+            channel = item.optString("Channel", ""),
+            kind = "playlist",
+            thumbnailUrl = "",
+            url = "https://www.youtube.com/playlist?list=$id",
+        )
+        validateQueueVideo(video)
+        return video
+    }
+
+    private fun validateQueueVideo(video: VideoItem) {
+        if (video.kind == "playlist") {
+            require(QUEUE_PLAYLIST_ID.matches(video.id)) { "Backup contains an invalid queued playlist." }
+            require(video.title.isNotBlank() && video.title.length <= MAX_VIDEO_TITLE_LENGTH)
+        } else {
+            validateVideo(video)
+        }
+    }
 
     private fun videoObject(video: VideoItem) = JSONObject()
         .put("Id", video.id)
@@ -211,7 +270,9 @@ internal object LocalLibraryTransferRepository {
     private const val MAX_DURATION_LENGTH = 30
     private const val MAX_CATEGORY_LENGTH = 64
     private const val MAX_PLAYLIST_NAME_LENGTH = 100
+    private const val MAX_QUEUE_CONTINUATION_LENGTH = 16 * 1024
     private val VIDEO_ID = Regex("^[A-Za-z0-9_-]{11}$")
     private val CHANNEL_ID = Regex("^UC[A-Za-z0-9_-]{22}$")
     private val PLAYLIST_ID = Regex("^[A-Za-z0-9_-]{1,64}$")
+    private val QUEUE_PLAYLIST_ID = Regex("^[A-Za-z0-9_-]{1,256}$")
 }

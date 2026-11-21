@@ -36,7 +36,7 @@ class LocalLibraryTransferAcceptanceTest {
     }
 
     @Test
-    fun importReplacesOnlyLocalLibraryCollectionsAndKeepsQueueAndAccountCache() {
+    fun importReplacesLocalLibraryAndQueueButKeepsAccountCache() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val databaseName = "library-transfer-${System.nanoTime()}.db"
         context.deleteDatabase(databaseName)
@@ -55,6 +55,8 @@ class LocalLibraryTransferAcceptanceTest {
             repository.setYouTubeAccountSubscription("test@example.invalid", remoteChannelId, "Remote account channel", true)
             val backup = LocalLibraryTransferRepository.decode(LocalLibraryTransferRepository.encode(repository.exportLocalLibrary()))
 
+            repository.clearQueue()
+            repository.enqueue(oldVideo)
             repository.unfollow(localChannelId)
             repository.deletePlaylist(playlistId)
             repository.follow("UCabcdefghijklmnopqrstuv", "Temporary channel", "https://www.youtube.com/channel/UCabcdefghijklmnopqrstuv")

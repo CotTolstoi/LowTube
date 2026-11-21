@@ -309,7 +309,7 @@
     <string name="export_local_library">Export local library</string>
     <string name="import_local_library">Import local library</string>
     <string name="local_library_import_title">Replace local library?</string>
-    <string name="local_library_import_confirmation">This replaces %1$d saved channels, %2$d playlists and %3$d watch history entries on this device. Google account data, downloads, queue and local audio files stay unchanged.</string>
+    <string name="local_library_import_confirmation">This replaces %1$d saved channels, %2$d playlists and %3$d watch history entries. If the backup includes a queue, it replaces it with %4$d items. Google account data, downloads and local audio files stay unchanged.</string>
     <string name="local_library_replace">Replace</string>
     <string name="local_library_exported">Local library exported.</string>
     <string name="local_library_imported">Local library imported.</string>

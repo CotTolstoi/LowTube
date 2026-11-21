@@ -241,7 +241,7 @@ internal fun SettingsScreen(
         AlertDialog(
             onDismissRequest = { libraryImport.pendingBackup = null },
             title = { Text(stringResource(R.string.local_library_import_title)) },
-            text = { Text(stringResource(R.string.local_library_import_confirmation, pendingImport.channels.size, pendingImport.playlists.size, pendingImport.history.size)) },
+            text = { Text(stringResource(R.string.local_library_import_confirmation, pendingImport.channels.size, pendingImport.playlists.size, pendingImport.history.size, pendingImport.queue?.size ?: 0)) },
             confirmButton = {
                 TextButton(onClick = {
                     libraryImport.pendingBackup = null

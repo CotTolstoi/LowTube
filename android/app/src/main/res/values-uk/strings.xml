@@ -309,7 +309,7 @@
     <string name="export_local_library">Експортувати бібліотеку</string>
     <string name="import_local_library">Імпортувати бібліотеку</string>
     <string name="local_library_import_title">Замінити локальну бібліотеку?</string>
-    <string name="local_library_import_confirmation">На цьому пристрої буде замінено %1$d збережених каналів, %2$d плейлистів і %3$d записів історії перегляду. Дані Google-акаунта, завантаження, черга та локальні аудіофайли не зміняться.</string>
+    <string name="local_library_import_confirmation">Буде замінено %1$d збережених каналів, %2$d плейлистів і %3$d записів історії перегляду. Якщо резервна копія містить чергу, її буде замінено на %4$d елементів. Дані Google-акаунта, завантаження й локальні аудіофайли не зміняться.</string>
     <string name="local_library_replace">Замінити</string>
     <string name="local_library_exported">Локальну бібліотеку експортовано.</string>
     <string name="local_library_imported">Локальну бібліотеку імпортовано.</string>
