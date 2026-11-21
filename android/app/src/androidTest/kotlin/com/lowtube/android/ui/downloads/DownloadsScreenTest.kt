@@ -1,6 +1,7 @@
 package com.lowtube.android.ui.downloads
 
 import androidx.activity.ComponentActivity
+import android.database.sqlite.SQLiteDatabase
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -23,6 +24,41 @@ import java.io.File
 class DownloadsScreenTest {
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
+
+    @Test
+    fun retryReloadsQueueAfterDatabaseReadFailure() {
+        val context = composeTestRule.activity
+        val databaseName = "downloads-read-error-${System.nanoTime()}.db"
+        val seedStore = DownloadJobStore(context, databaseName)
+        val expectedVersion = try { seedStore.writableDatabase.version } finally { seedStore.close() }
+        fun changeVersion(version: Int) {
+            val db = SQLiteDatabase.openDatabase(context.getDatabasePath(databaseName).path, null, SQLiteDatabase.OPEN_READWRITE)
+            try { db.version = version } finally { db.close() }
+        }
+        changeVersion(expectedVersion + 1)
+        val repository = DownloadRepository(context, databaseName)
+        try {
+            composeTestRule.setContent {
+                LowTubeTheme {
+                    DownloadsScreen(repository, onBack = {}, onRetry = { _, done -> done() }, onOpen = {})
+                }
+            }
+            val error = context.getString(R.string.downloads_read_failed)
+            composeTestRule.waitUntil(5_000) {
+                composeTestRule.onAllNodesWithText(error).fetchSemanticsNodes().isNotEmpty()
+            }
+            changeVersion(expectedVersion)
+            composeTestRule.onNodeWithText(context.getString(R.string.retry)).performClick()
+            val empty = context.getString(R.string.downloads_empty)
+            composeTestRule.waitUntil(5_000) {
+                composeTestRule.onAllNodesWithText(empty).fetchSemanticsNodes().isNotEmpty()
+            }
+            composeTestRule.onNodeWithText(empty).assertIsDisplayed()
+        } finally {
+            repository.close()
+            context.deleteDatabase(databaseName)
+        }
+    }
 
     @Test
     fun pausedQueueEntryShowsProgressCanRetryAndCanBeRemoved() {
