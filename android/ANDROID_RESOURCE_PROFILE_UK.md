@@ -489,3 +489,5 @@
 21.11.2026 16:20:19 UTC, після встановлення `0.1.10-android-dev` на Xiaomi Pad 6 (API33), LowTube MainActivity top-resumed, 5 s idle: CPU 0,4%, PSS 238,5 MiB, RSS 215,6 MiB, peak RSS 217,2 MiB; RAM 5612/956 MiB total/available. Одиничний знімок після інсталяції, не benchmark.
 
 21.11.2026 16:28:19 UTC, після встановлення `0.1.12-android-dev` на Xiaomi Pad 6 (API33), MainActivity top-resumed, 5 s idle: CPU 0%, PSS 227,5 MiB, RSS 209,5 MiB, peak RSS 216,8 MiB; RAM 5612/1111 MiB total/available. Одиничний знімок, не benchmark.
+
+21.11.2026 16:35:06 UTC, після встановлення `0.1.13-android-dev` на Xiaomi Pad 6 (API33), MainActivity top-resumed, settled idle 5 s: CPU 0%, PSS 226,6 MiB, RSS 198,3 MiB, peak RSS 222,1 MiB; RAM 5612/920 MiB total/available. Одиничний післяінсталяційний знімок, не benchmark; відтворення не запускалося.
