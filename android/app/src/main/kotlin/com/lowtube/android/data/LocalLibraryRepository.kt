@@ -751,10 +751,11 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
         if (positionMs < 0 || durationMs < 0) return
         if (positionMs == 0L && !complete) return
         val db = writableDatabase
-        val previousDuration = db.rawQuery("SELECT duration_ms FROM watch_history WHERE video_id=?", arrayOf(video.id)).use {
-            if (it.moveToFirst()) it.getLong(0) else 0L
+        val effectiveDuration = if (durationMs > 0) durationMs else {
+            db.rawQuery("SELECT duration_ms FROM watch_history WHERE video_id=?", arrayOf(video.id)).use {
+                if (it.moveToFirst()) it.getLong(0) else 0L
+            }
         }
-        val effectiveDuration = durationMs.takeIf { it > 0 } ?: previousDuration
         val savedPosition = if (complete && effectiveDuration > 0) effectiveDuration else positionMs
         val values = videoValues(video).apply {
             put("position_ms", savedPosition)
