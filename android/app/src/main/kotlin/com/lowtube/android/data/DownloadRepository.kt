@@ -158,6 +158,7 @@ class DownloadRepository private constructor(
             jobs.get(id)?.let { job ->
                 File(job.partialPath).delete()
                 File(job.partialPath + ".mp3").delete()
+                File(job.partialPath + ".ready.mp3").delete()
                 File(job.partialPath + ".mkv").delete()
                 File(job.partialPath + ".ready.mkv").delete()
                 File(job.partialPath + ".pcm").delete()

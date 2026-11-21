@@ -55,6 +55,7 @@ class DownloadServiceAcceptanceTest {
                 "MP3 service acceptance is opt-in; pass -e runMp3DownloadAcceptance true",
                 InstrumentationRegistry.getArguments().getString("runMp3DownloadAcceptance") == "true",
             )
+            val reuseMp3 = InstrumentationRegistry.getArguments().getString("reuseCompletedMp3") == "true"
             val context = ApplicationProvider.getApplicationContext<Context>()
             val storagePermissionAvailable = Build.VERSION.SDK_INT > 28 ||
                 (context.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
@@ -65,6 +66,7 @@ class DownloadServiceAcceptanceTest {
                 .open("com/lowtube/android/downloads/mux_audio_track.mp4").use { it.readBytes() }
             val dbName = "lowtube-mp3-download-${System.currentTimeMillis()}.db"
             val partial = File(context.cacheDir, "$dbName.part")
+            val readyMp3 = File(partial.path + ".ready.mp3")
             val publishedCopy = File(context.cacheDir, "$dbName-published.mp3")
             val server = FixedBodyHttpServer(audioBytes, "audio/mp4")
             val store = DownloadJobStore(context, dbName)
@@ -74,7 +76,7 @@ class DownloadServiceAcceptanceTest {
             var publishedUri: Uri? = null
             try {
                 id = store.insert(
-                    videoJson,
+                    if (reuseMp3) "unavailable metadata" else videoJson,
                     "aac-to-mp3-acceptance",
                     true,
                     "lowtube-mp3-${System.currentTimeMillis()}.mp3",
@@ -84,8 +86,19 @@ class DownloadServiceAcceptanceTest {
                     transcodeMp3 = true,
                     targetAudioBitrateKbps = 192,
                 )
-                server.start()
-                startService(context, dbName, testStreamUrl = server.url)
+                val expectedMp3 = if (reuseMp3) {
+                    partial.writeBytes(audioBytes)
+                    AudioMp3Transcoder.transcode(partial, readyMp3, 192) { false }
+                    assertTrue(partial.delete())
+                    store.update(id, DownloadStatus.FAILED, "Fixture publication failure",
+                        downloaded = audioBytes.size.toLong(), total = audioBytes.size.toLong())
+                    assertTrue(store.requeueRetryable(id))
+                    readyMp3.readBytes()
+                } else {
+                    server.start()
+                    null
+                }
+                startService(context, dbName, testStreamUrl = if (reuseMp3) null else server.url)
                 val result = waitForTerminalAttempt(store, id)
                 assertEquals("Foreground MP3 job failed: ${result.reason}", DownloadStatus.SUCCESSFUL, result.status)
                 assertTrue("Completed MP3 job lost its transcode setting", result.transcodeMp3)
@@ -95,11 +108,14 @@ class DownloadServiceAcceptanceTest {
                 val header = publishedCopy.inputStream().use { byteArrayOf(it.read().toByte(), it.read().toByte()) }
                 assertTrue("Published MP3 should contain encoded audio", publishedCopy.length() > 1_000L)
                 assertTrue("Published file should begin with an MPEG audio frame", header[0].toInt() and 0xff == 0xff && header[1].toInt() and 0xe0 == 0xe0)
+                if (expectedMp3 != null) assertTrue(expectedMp3.contentEquals(publishedCopy.readBytes()))
+                assertFalse("Completed MP3 should be removed from private storage", readyMp3.exists())
                 waitForServiceStopped(context)
             } finally {
                 context.stopService(Intent(context, DownloadService::class.java))
                 server.close()
                 partial.delete()
+                readyMp3.delete()
                 publishedCopy.delete()
                 publishedUri?.let { runCatching { DownloadFileStore(context).deletePublished(it) } }
                 if (id > 0L) store.remove(id)
