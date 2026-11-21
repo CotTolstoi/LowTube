@@ -44,6 +44,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -101,16 +102,21 @@ internal fun SubscriptionsTab(
     val categories = remember(channels) { channels.map { it.category.trim() }.filter(String::isNotEmpty).distinct().sortedBy(String::lowercase) }
     val categoryByChannel = remember(channels) { channels.associate { it.id to it.category.trim() } }
     val videos = remember(feedRepository, revision, channelIds, accountEmail) { feedRepository.cached(accountEmail).filter { it.channelId in channelIds } }
-    var selectedChannel by remember { mutableStateOf("") }
-    var selectedCategory by remember { mutableStateOf("") }
+    var selectedChannel by remember(accountEmail) { mutableStateOf("") }
+    var selectedCategory by remember(accountEmail) { mutableStateOf("") }
     var selectedKind by remember { mutableStateOf("all") }
     var addChannelDialog by remember { mutableStateOf(false) }
     var channelInput by remember { mutableStateOf("") }
-    var categoryTarget by remember { mutableStateOf<SavedChannel?>(null) }
+    var categoryTarget by remember(accountEmail) { mutableStateOf<SavedChannel?>(null) }
     var categoryInput by remember { mutableStateOf("") }
     var refreshJob by remember { mutableStateOf<Job?>(null) }
     var refreshMessage by remember { mutableStateOf<String?>(null) }
     var refreshFailed by remember { mutableStateOf(false) }
+    LaunchedEffect(channelIds, categories) {
+        if (selectedChannel !in channelIds) selectedChannel = ""
+        if (selectedCategory !in categories) selectedCategory = ""
+        if (categoryTarget?.id !in channelIds) categoryTarget = null
+    }
     val visibleVideos = remember(videos, selectedChannel, selectedCategory, selectedKind, categoryByChannel) {
         videos.filter {
             (selectedChannel.isBlank() || it.channelId == selectedChannel) &&
