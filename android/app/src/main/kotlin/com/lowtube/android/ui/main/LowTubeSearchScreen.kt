@@ -166,7 +166,7 @@ fun LowTubeSearchScreen(
     val lowtubePreferences = remember(context) {
         context.getSharedPreferences("lowtube_settings", android.content.Context.MODE_PRIVATE)
     }
-    var query by rememberSaveable { mutableStateOf("") }
+    var query by rememberSaveable { mutableStateOf(state.query) }
     var searchFocused by remember { mutableStateOf(false) }
     var recentSearches by remember(searchHistory) { mutableStateOf(searchHistory.recent()) }
     var searchKind by rememberSaveable { mutableStateOf("all") }
@@ -298,10 +298,6 @@ fun LowTubeSearchScreen(
         onSelectedTabChanged("search")
         viewModel.search(target, language, emptySearchMessage, requestFailedMessage, pageSize)
         onChannelBrowseConsumed()
-    }
-
-    LaunchedEffect(state.query) {
-        if (state.query.isNotEmpty()) query = state.query
     }
 
     LaunchedEffect(

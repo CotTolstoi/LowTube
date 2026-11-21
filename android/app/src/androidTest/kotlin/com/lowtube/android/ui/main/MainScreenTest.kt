@@ -8,6 +8,9 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.performTextReplacement
+import androidx.lifecycle.ViewModelProvider
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performScrollTo
@@ -62,6 +65,24 @@ class MainScreenTest {
         composeTestRule.onNodeWithText(activity.getString(R.string.watch_queue)).assertExists()
         composeTestRule.onNodeWithText(activity.getString(R.string.downloads)).assertExists()
         composeTestRule.onNodeWithText(activity.getString(R.string.settings)).assertExists()
+    }
+
+    @Test
+    fun recreatedSearchKeepsEditedDraftAndSubmittedQuery() {
+        val activity = composeTestRule.activity
+        val searchTab = hasText(activity.getString(R.string.search_tab)) and
+            SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab)
+        composeTestRule.onNode(searchTab).performClick()
+
+        val viewModel = ViewModelProvider(activity)[SearchViewModel::class.java]
+        composeTestRule.runOnIdle { viewModel.search("NASA", language = "en") }
+        val draft = "NASA documentaries"
+        composeTestRule.onNode(hasSetTextAction()).performTextReplacement(draft)
+
+        composeTestRule.activityRule.scenario.recreate()
+        composeTestRule.onNode(searchTab).assertIsSelected()
+        composeTestRule.onNode(hasSetTextAction() and hasText(draft)).assertExists()
+        assertEquals("NASA", viewModel.state.value.query)
     }
 
     @Test
