@@ -1,6 +1,7 @@
 package com.lowtube.android.data
 
 import android.os.Build
+import android.os.SystemClock
 import android.content.Context
 import android.net.Uri
 import com.lowtube.android.model.SearchPage
@@ -51,7 +52,6 @@ class InnerTubeSearchRepository(context: Context? = null) {
     private var configuredAt = 0L
     private var cachedMwebClientConfiguration: MwebClientConfiguration? = null
     private var mwebConfiguredAt = 0L
-    private var cooldownUntil = 0L
     private var configuredPlayerScriptUrl = ""
     internal var playerClientStreamSummaryObserver: ((PlayerClientStreamSummary) -> Unit)? = null
     internal var playerRequestOverrideForAcceptance: ((String, String, String, String) -> JSONObject)? = null
@@ -1848,11 +1848,14 @@ class InnerTubeSearchRepository(context: Context? = null) {
     private fun updateCooldown(status: Int, retryAfter: String?) {
         val fallback = if (status == 429) 60L else 30L
         val seconds = retryAfterSeconds(retryAfter, fallback, MAX_COOLDOWN_SECONDS)
-        cooldownUntil = maxOf(cooldownUntil, System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(seconds))
+        val retryAt = SystemClock.elapsedRealtime() + TimeUnit.SECONDS.toMillis(seconds)
+        synchronized(catalogueCooldown) {
+            catalogueCooldown.set(maxOf(catalogueCooldown.get(), retryAt))
+        }
     }
 
     private fun throwIfCoolingDown() {
-        val remaining = ((cooldownUntil - System.currentTimeMillis() + 999) / 1000).coerceAtLeast(0)
+        val remaining = ((catalogueCooldown.get() - SystemClock.elapsedRealtime() + 999) / 1000).coerceAtLeast(0)
         if (remaining > 0) throw IOException("YouTube paused catalogue requests. Retry in $remaining s.")
     }
 
@@ -1865,6 +1868,7 @@ class InnerTubeSearchRepository(context: Context? = null) {
     }
 
     companion object {
+        private val catalogueCooldown = java.util.concurrent.atomic.AtomicLong()
         private const val REQUEST_TIMEOUT_MS = 25_000
         private const val PLAYER_TIMEOUT_MS = 12_000
         private val CHANNEL_ID = Regex("^UC[A-Za-z0-9_-]{22}$")
