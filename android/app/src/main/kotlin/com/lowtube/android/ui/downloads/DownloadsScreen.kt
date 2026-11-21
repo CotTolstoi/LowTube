@@ -53,9 +53,16 @@ fun DownloadsScreen(
     var refresh by remember { mutableIntStateOf(0) }
     var retryingIds by remember { mutableStateOf(emptySet<Long>()) }
     var loadFailed by remember(repository) { mutableStateOf(false) }
+    var resumeChecked by remember(repository) { mutableStateOf(false) }
     val loadedRecords by produceState<List<DownloadRecord>?>(null, repository, refresh) {
         try {
-            value = withContext(Dispatchers.IO) { repository.records() }
+            val records = withContext(Dispatchers.IO) {
+                repository.records().also {
+                    if (!resumeChecked) repository.resumePending()
+                }
+            }
+            resumeChecked = true
+            value = records
             loadFailed = false
         } catch (cancelled: CancellationException) {
             throw cancelled
@@ -64,9 +71,6 @@ fun DownloadsScreen(
         }
     }
     val records = loadedRecords.orEmpty()
-    LaunchedEffect(Unit) {
-        repository.resumePending()
-    }
     val hasActiveDownloads = records.any { it.status == DownloadStatus.PENDING || it.status == DownloadStatus.RUNNING }
     LaunchedEffect(hasActiveDownloads, loadFailed) {
         if (hasActiveDownloads && !loadFailed) {
