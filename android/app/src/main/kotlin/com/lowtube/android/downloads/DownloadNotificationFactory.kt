@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.lowtube.android.MainActivity
@@ -44,9 +45,10 @@ internal object DownloadNotificationFactory {
         if (active && id > 0) {
             val cancel = PendingIntent.getService(
                 context,
-                id.toInt(),
+                0,
                 Intent(context, DownloadService::class.java)
                     .setAction(DownloadService.ACTION_CANCEL)
+                    .setData(Uri.fromParts("lowtube-download", id.toString(), null))
                     .putExtra(DownloadService.EXTRA_ID, id),
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )
