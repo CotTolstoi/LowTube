@@ -214,6 +214,10 @@ fun LowTubeSearchScreen(
             youtubePlaylistQueueMarker(state.query, state.playlistTitle?.takeIf(String::isNotBlank) ?: context.getString(R.string.playlist))
         } else null
     }
+    val submitSearch: (String) -> Unit = { target ->
+        searchGridState.requestScrollToItem(0)
+        viewModel.search(target, language, emptySearchMessage, requestFailedMessage, pageSize)
+    }
     val executeSearch: (String) -> Unit = { input ->
         val normalized = input.trim()
         if (normalized.isNotEmpty()) {
@@ -222,7 +226,7 @@ fun LowTubeSearchScreen(
             query = target
             searchKind = channelBrowseTab(target)?.kind ?: "all"
             onSelectedTabChanged("search")
-            viewModel.search(target, language, emptySearchMessage, requestFailedMessage, pageSize)
+            submitSearch(target)
         }
         searchFocused = false
         focusManager.clearFocus()
@@ -298,7 +302,7 @@ fun LowTubeSearchScreen(
         query = target
         searchKind = channelBrowseTab(target)?.kind ?: "all"
         onSelectedTabChanged("search")
-        viewModel.search(target, language, emptySearchMessage, requestFailedMessage, pageSize)
+        submitSearch(target)
         onChannelBrowseConsumed()
     }
 
@@ -539,7 +543,7 @@ fun LowTubeSearchScreen(
                                     if (target != null) {
                                         searchKind = value
                                         query = target
-                                        viewModel.search(target, language, emptySearchMessage, requestFailedMessage, pageSize)
+                                        submitSearch(target)
                                     }
                                 } else {
                                     searchKind = value
@@ -654,7 +658,7 @@ fun LowTubeSearchScreen(
                             onClick = if (item.kind == "playlist") {
                             {
                                 query = item.url
-                                viewModel.search(item.url, language, emptySearchMessage, requestFailedMessage, pageSize)
+                                submitSearch(item.url)
                             }
                             } else ({
                                 if (item.kind == "shorts") {

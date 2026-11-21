@@ -10,6 +10,8 @@ import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.lowtube.android.MainActivity
@@ -90,6 +92,18 @@ class SearchScrollPaginationAcceptanceTest {
         assertEquals("Recommendations should start at the top", 0f, scrollPosition(), 0f)
         composeTestRule.onNode(searchTab).performClick()
         assertEquals("Search scroll position should survive a tab round trip", searchPosition, scrollPosition(), 0f)
+
+        val newQuery = "European Space Agency"
+        composeTestRule.onNode(hasSetTextAction()).performTextReplacement(newQuery)
+        val submit = hasText(activity.getString(R.string.search_action)) and
+            SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button)
+        composeTestRule.onNode(submit).performClick()
+        composeTestRule.waitUntil(30_000) {
+            val state = viewModel.state.value
+            state.query == newQuery && !state.loading
+        }
+        assertTrue("New search did not load results", viewModel.state.value.items.isNotEmpty())
+        assertEquals("New search should start at the top", 0f, scrollPosition(), 0f)
     }
 
     private companion object {
