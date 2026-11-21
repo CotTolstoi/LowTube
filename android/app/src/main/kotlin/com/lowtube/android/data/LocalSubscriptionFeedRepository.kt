@@ -124,6 +124,7 @@ class LocalSubscriptionFeedRepository(
 
     private fun parseFeed(bytes: ByteArray, channel: SavedChannel, language: String): List<VideoItem> {
         val parser = XmlPullParserFactory.newInstance().newPullParser().apply {
+            setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, true)
             setFeature(XmlPullParser.FEATURE_PROCESS_DOCDECL, false)
             setInput(ByteArrayInputStream(bytes), "UTF-8")
         }
@@ -144,8 +145,8 @@ class LocalSubscriptionFeedRepository(
                     if (depth > MAX_XML_DEPTH) throw IOException("Channel feed XML is too deeply nested.")
                     val name = parser.name
                     val namespace = parser.namespace.orEmpty()
-                    if (depth == 1) rootName = name
-                    if (name == "entry" && namespace == ATOM_NAMESPACE) {
+                    if (depth == 1 && namespace == ATOM_NAMESPACE) rootName = name
+                    if (depth == 2 && name == "entry" && namespace == ATOM_NAMESPACE) {
                         inEntry = true
                         currentId = ""
                         title = ""
@@ -153,7 +154,7 @@ class LocalSubscriptionFeedRepository(
                         author = ""
                     } else if (name == "author" && inEntry && namespace == ATOM_NAMESPACE) {
                         inAuthor = true
-                    } else if (name == "channelId" && namespace == YOUTUBE_NAMESPACE && !inEntry) {
+                    } else if (depth == 2 && name == "channelId" && namespace == YOUTUBE_NAMESPACE) {
                         rootChannelId = parser.nextText().trim()
                         depth--
                     } else if (inEntry) {
@@ -167,7 +168,7 @@ class LocalSubscriptionFeedRepository(
                 }
                 XmlPullParser.END_TAG -> {
                     if (parser.name == "author" && parser.namespace == ATOM_NAMESPACE) inAuthor = false
-                    if (parser.name == "entry" && parser.namespace == ATOM_NAMESPACE) {
+                    if (depth == 2 && parser.name == "entry" && parser.namespace == ATOM_NAMESPACE) {
                         inEntry = false
                         if (VIDEO_ID.matches(currentId) && title.isNotBlank()) {
                             val publishedAt = parseDate(published)
