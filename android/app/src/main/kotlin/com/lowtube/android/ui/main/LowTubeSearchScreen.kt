@@ -187,7 +187,9 @@ fun LowTubeSearchScreen(
     val emptySearchMessage = stringResource(R.string.search_empty_query)
     val requestFailedMessage = stringResource(R.string.request_failed_retry)
     val downloadFailedMessage = stringResource(R.string.download_failed)
-    val resultsGridState = rememberLazyGridState()
+    val searchGridState = rememberLazyGridState()
+    val recommendationsGridState = rememberLazyGridState()
+    val resultsGridState = if (selectedTab == "home") recommendationsGridState else searchGridState
     val forYouItems = remember(state.items, state.isHome, selectedTab, followedChannelItems) {
         if (state.isHome && selectedTab == "home") {
             ForYouMixer.blend(state.items, followedChannelItems)
@@ -340,13 +342,7 @@ fun LowTubeSearchScreen(
 
     val selectMainTab: (String) -> Unit = { tab ->
         onSelectedTabChanged(tab)
-        when (tab) {
-            "search" -> viewModel.showSearch(requestFailedMessage, pageSize)
-            "home" -> {
-                recommendationKind = "all"
-                viewModel.loadHome(language, discoveryTopic, discoveryLanguage, force = true, requestFailedMessage = requestFailedMessage, pageSize = pageSize)
-            }
-        }
+        if (tab == "search") viewModel.showSearch(requestFailedMessage, pageSize)
     }
 
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {

@@ -14,6 +14,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.lowtube.android.MainActivity
 import com.lowtube.android.R
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Rule
@@ -74,6 +75,21 @@ class SearchScrollPaginationAcceptanceTest {
                 "hasContinuation=${!afterScroll.continuation.isNullOrBlank()}, error=${afterScroll.error}",
             afterScroll.items.any { (it.kind + ":" + it.id) !in firstIds },
         )
+
+        fun scrollPosition() = resultsList.fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange].value()
+        val searchPosition = scrollPosition()
+        assertTrue("Search must have scrolled before tab navigation", searchPosition > 0f)
+        val recommendationsTab = hasText(activity.getString(R.string.recommendations_tab)) and
+            SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab)
+        composeTestRule.onNode(recommendationsTab).performClick()
+        composeTestRule.waitUntil(30_000) {
+            val state = viewModel.state.value
+            state.isHome && !state.loading
+        }
+        assertTrue("Recommendations did not load", viewModel.state.value.items.isNotEmpty())
+        assertEquals("Recommendations should start at the top", 0f, scrollPosition(), 0f)
+        composeTestRule.onNode(searchTab).performClick()
+        assertEquals("Search scroll position should survive a tab round trip", searchPosition, scrollPosition(), 0f)
     }
 
     private companion object {
