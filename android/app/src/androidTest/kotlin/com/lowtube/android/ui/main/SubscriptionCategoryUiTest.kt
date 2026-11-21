@@ -5,10 +5,15 @@ import androidx.activity.ComponentActivity
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToIndex
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.test.core.app.ApplicationProvider
 import com.lowtube.android.model.VideoItem
 import com.lowtube.android.data.LocalLibraryRepository
@@ -74,6 +79,70 @@ class SubscriptionCategoryUiTest {
             composeTestRule.onNodeWithText("Science", useUnmergedTree = true).performClick()
             composeTestRule.onNodeWithText("Science upload").assertExists()
             composeTestRule.onNodeWithText("Other upload").assertDoesNotExist()
+        } finally {
+            repository.close()
+            context.deleteDatabase(databaseName)
+        }
+    }
+
+    @Test
+    fun finalFiltersRemainReachableAtLocalChannelLimit() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val databaseName = "lowtube-long-subscription-filters-${System.nanoTime()}.db"
+        val repository = LocalLibraryRepository(context, databaseName)
+        val channelCount = LocalLibraryRepository.MAX_CHANNELS
+        try {
+            for (index in 1..channelCount) {
+                val number = index.toString().padStart(3, '0')
+                val id = "UC${number.padStart(22, '0')}"
+                repository.follow(id, "Channel $number", "https://www.youtube.com/channel/$id")
+                repository.setChannelCategory(id, "Category $number")
+                if (index == 1 || index == channelCount) {
+                    val videoId = number.padStart(11, '0')
+                    repository.replaceChannelFeed(
+                        id,
+                        listOf(VideoItem(videoId, "Upload $number", "Channel $number", id, url = "https://www.youtube.com/watch?v=$videoId")),
+                        index.toLong(),
+                    )
+                }
+            }
+
+            composeTestRule.setContent {
+                MaterialTheme {
+                    SubscriptionsTab(
+                        repository = repository,
+                        accountEmail = "",
+                        refreshRevision = 0,
+                        youtubeSyncBusy = false,
+                        youtubeSyncMessage = "",
+                        onSyncYouTubeSubscriptions = {},
+                        onAddChannel = {},
+                        onBrowseChannel = {},
+                        onPlay = {},
+                    )
+                }
+            }
+
+            val lastNumber = channelCount.toString().padStart(3, '0')
+            val lastChannel = composeTestRule.onNode(
+                hasText("Channel $lastNumber") and hasAnyAncestor(hasTestTag(SUBSCRIPTIONS_CHANNEL_FILTER_TEST_TAG)),
+                useUnmergedTree = true,
+            )
+            val lastCategory = composeTestRule.onNodeWithText("Category $lastNumber", useUnmergedTree = true)
+            // Exact labels also occur in card metadata. Scroll the filter rows independently.
+            lastCategory.assertDoesNotExist()
+            composeTestRule.onNodeWithTag(SUBSCRIPTIONS_CATEGORY_FILTER_TEST_TAG).performScrollToIndex(channelCount)
+            lastCategory.assertIsDisplayed().performClick()
+            composeTestRule.onNodeWithText("Upload $lastNumber").assertExists()
+            composeTestRule.onNodeWithText("Upload 001").assertDoesNotExist()
+
+            composeTestRule.onNodeWithTag(SUBSCRIPTIONS_CHANNEL_FILTER_TEST_TAG).performScrollToIndex(channelCount)
+            composeTestRule.onNodeWithTag(SUBSCRIPTIONS_CATEGORY_FILTER_TEST_TAG).performScrollToIndex(0)
+            composeTestRule.onNodeWithText(context.getString(com.lowtube.android.R.string.all_categories), useUnmergedTree = true).performClick()
+            composeTestRule.onNodeWithText("Upload 001").assertExists()
+            lastChannel.performClick()
+            composeTestRule.onNodeWithText("Upload $lastNumber").assertExists()
+            composeTestRule.onNodeWithText("Upload 001").assertDoesNotExist()
         } finally {
             repository.close()
             context.deleteDatabase(databaseName)

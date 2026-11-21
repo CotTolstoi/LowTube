@@ -74,6 +74,8 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
+internal const val SUBSCRIPTIONS_CHANNEL_FILTER_TEST_TAG = "subscriptions-channel-filter"
+internal const val SUBSCRIPTIONS_CATEGORY_FILTER_TEST_TAG = "subscriptions-category-filter"
 internal const val SUBSCRIPTIONS_FEED_GRID_TEST_TAG = "subscriptions-adaptive-grid"
 internal const val PROFILE_TWO_PANE_TEST_TAG = "profile-two-pane"
 internal const val PROFILE_ACCOUNT_PANE_TEST_TAG = "profile-account-pane"
@@ -210,7 +212,7 @@ internal fun SubscriptionsTab(
         refreshFailed?.let { Text(it, color = MaterialTheme.colorScheme.error) }
 
         LazyRow(
-            Modifier.fillMaxWidth().padding(vertical = 4.dp),
+            Modifier.fillMaxWidth().padding(vertical = 4.dp).testTag(SUBSCRIPTIONS_CHANNEL_FILTER_TEST_TAG),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             item {
@@ -242,7 +244,7 @@ internal fun SubscriptionsTab(
         }
         if (categories.isNotEmpty()) {
             LazyRow(
-                Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                Modifier.fillMaxWidth().padding(vertical = 4.dp).testTag(SUBSCRIPTIONS_CATEGORY_FILTER_TEST_TAG),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 item {
