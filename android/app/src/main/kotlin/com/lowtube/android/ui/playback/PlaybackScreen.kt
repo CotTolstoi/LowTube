@@ -537,6 +537,18 @@ fun PlaybackScreen(
         }
     }
 
+    fun saveCurrentWatchProgress(active: Player) {
+        if (localAudioTrack != null ||
+            watchedVideo.id != video.id ||
+            active.currentMediaItem?.mediaId != video.id ||
+            active.playbackState == Player.STATE_ENDED
+        ) return
+        val position = active.currentPosition
+        if (position > 0) {
+            library.recordWatchProgress(watchedVideo, position, active.duration.coerceAtLeast(0))
+        }
+    }
+
     DisposableEffect(controller, video.id, playbackRequestId, localAudioTrack?.uri, localVideoSource?.uri) {
         onDispose {
             onPictureInPictureEligibilityChanged(false, immersiveShorts)
@@ -548,14 +560,7 @@ fun PlaybackScreen(
                 stagedQueueEntry?.let { removeFutureMediaItem(active, it.video.id) }
                 stagedQueueEntry = null
                 resolvingQueueRowId = null
-                if (localAudioTrack == null &&
-                    watchedVideo.id == video.id &&
-                    active.currentMediaItem?.mediaId == video.id &&
-                    active.playbackState != Player.STATE_ENDED &&
-                    active.currentPosition > 0
-                ) {
-                    library.recordWatchProgress(watchedVideo, active.currentPosition, active.duration.coerceAtLeast(0))
-                }
+                saveCurrentWatchProgress(active)
             }
         }
     }
@@ -754,13 +759,7 @@ fun PlaybackScreen(
         if (localAudioTrack != null) return@LaunchedEffect
         while (true) {
             delay(3_000)
-            if (watchedVideo.id == video.id &&
-                activeController.currentMediaItem?.mediaId == video.id &&
-                activeController.playbackState == Player.STATE_READY &&
-                activeController.currentPosition > 0
-            ) {
-                library.recordWatchProgress(watchedVideo, activeController.currentPosition, activeController.duration.coerceAtLeast(0))
-            }
+            if (activeController.playbackState == Player.STATE_READY) saveCurrentWatchProgress(activeController)
         }
     }
 
@@ -829,23 +828,11 @@ fun PlaybackScreen(
                             onDragEnd = {
                                 when {
                                     verticalDrag <= -swipeThresholdPx && canNavigateShortsForward -> {
-                                        controller?.let { active ->
-                                            if (active.currentPosition > 0) {
-                                                library.recordWatchProgress(
-                                                    watchedVideo, active.currentPosition, active.duration.coerceAtLeast(0),
-                                                )
-                                            }
-                                        }
+                                        controller?.let { saveCurrentWatchProgress(it) }
                                         onNavigateShorts(1)
                                     }
                                     verticalDrag >= swipeThresholdPx && canNavigateShortsBack -> {
-                                        controller?.let { active ->
-                                            if (active.currentPosition > 0) {
-                                                library.recordWatchProgress(
-                                                    watchedVideo, active.currentPosition, active.duration.coerceAtLeast(0),
-                                                )
-                                            }
-                                        }
+                                        controller?.let { saveCurrentWatchProgress(it) }
                                         onNavigateShorts(-1)
                                     }
                                 }
