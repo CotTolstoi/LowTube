@@ -2,6 +2,7 @@ package com.lowtube.android.ui.onboarding
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.onNodeWithTag
@@ -26,9 +27,10 @@ class FirstRunSetupScreenTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
 
     @Test fun appliesLanguageScaleThemeAndQualityChoices() {
+        val restoration = StateRestorationTester(compose)
         var previewScale = 1.0f
         var applied: FirstRunSetupSelection? = null
-        compose.setContent {
+        restoration.setContent {
             FirstRunSetupScreen(
                 language = "en",
                 uiScale = 1.0f,
@@ -47,6 +49,8 @@ class FirstRunSetupScreenTest {
         compose.onNodeWithTag(FIRST_RUN_DOWNLOAD_FPS30_TAG).performScrollTo().performClick()
         compose.onNodeWithTag(FIRST_RUN_DOWNLOAD_QUALITY_TAG).performScrollTo().performClick()
         compose.onNodeWithText("480p").performClick()
+        compose.runOnIdle { previewScale = 1.0f }
+        restoration.emulateSavedInstanceStateRestore()
         compose.onNodeWithTag(FIRST_RUN_FINISH_TAG).performClick()
         compose.runOnIdle {
             assertEquals(1.15f, previewScale)
