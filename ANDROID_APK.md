@@ -1,3 +1,14 @@
+## Current artifact (2026-11-21, source revision 672a592)
+
+- File: `LowTube-Android-debug-0.1.12.apk`; version `0.1.12-android-dev` (version code 13); minimum Android 6.0 (API 23).
+- Build type: installable debug APK signed with the Android debug certificate; not production-signed.
+- Source revision: `672a592` on `codex/android-shorts-continuation`.
+- Build: `:app:assembleDebug --offline --no-configuration-cache` succeeded for armeabi-v7a, arm64-v8a and x86_64.
+- Change in 0.1.12: Google authorization failures now show a safe status name/code and provider/version, including ApiException values found in the bounded cause chain; no account data or token is shown. On Xiaomi Pad 6, two first-account attempts returned status 8 (`INTERNAL_ERROR`) from Google Play services 26.45.31; sign-in remains unaccepted.
+- Playback was not run; player code was unchanged. APK installed on Xiaomi Pad 6 and MainActivity verified foreground.
+- APK size: 24593478 bytes.
+- SHA-256: `E3689CB9E38D55581906060E96716B6C95B89CF8F821B4E47A892E500522E04D`.
+
 ## Current artifact (2026-11-21, source revision b4edbb4)
 
 - File: `LowTube-Android-debug-0.1.10.apk`; version `0.1.10-android-dev` (version code 11); minimum Android 6.0 (API 23).
