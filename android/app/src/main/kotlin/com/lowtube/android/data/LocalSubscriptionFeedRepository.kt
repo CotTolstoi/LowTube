@@ -68,7 +68,7 @@ class LocalSubscriptionFeedRepository(
         }
         val failed = outcomes.filter { it.error != null }.map { it.channel.title.ifBlank { it.channel.id } }
         SubscriptionFeedRefresh(
-            videos = library.subscriptionFeed(),
+            videos = library.subscriptionFeed(accountEmail),
             refreshedChannels = outcomes.count { it.error == null },
             failedChannels = failed,
             remainingChannels = library.unattemptedFeedChannelCount(accountEmail),
@@ -77,7 +77,7 @@ class LocalSubscriptionFeedRepository(
         )
     }
 
-    fun cached(): List<VideoItem> = library.subscriptionFeed()
+    fun cached(accountEmail: String = ""): List<VideoItem> = library.subscriptionFeed(accountEmail)
 
     private suspend fun fetch(channel: SavedChannel, language: String): Pair<List<VideoItem>, Boolean> = try {
         fetchAtom(channel, language) to false

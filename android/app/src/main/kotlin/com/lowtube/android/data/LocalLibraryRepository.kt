@@ -340,9 +340,13 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
         )
     }
 
-    fun subscriptionFeed(): List<VideoItem> = readableDatabase.rawQuery(
-        "SELECT video_id, title, channel, channel_id, published, duration, kind, thumbnail_url, url, published_at_ms, channel_avatar_url FROM channel_feed_items ORDER BY published_at_ms DESC, video_id LIMIT ?",
-        arrayOf(MAX_SUBSCRIPTION_FEED_ITEMS.toString()),
+    fun subscriptionFeed(accountEmail: String = ""): List<VideoItem> = readableDatabase.rawQuery(
+        """SELECT video_id, title, channel, channel_id, published, duration, kind, thumbnail_url, url, published_at_ms, channel_avatar_url
+           FROM channel_feed_items WHERE channel_id IN (
+               SELECT channel_id FROM subscriptions
+               UNION SELECT channel_id FROM youtube_account_subscriptions WHERE owner_email=?
+           ) ORDER BY published_at_ms DESC, video_id LIMIT ?""",
+        arrayOf(accountEmail.trim().lowercase(), MAX_SUBSCRIPTION_FEED_ITEMS.toString()),
     ).use { cursor ->
         buildList {
             while (cursor.moveToNext()) add(VideoItem(

@@ -181,7 +181,7 @@ fun LowTubeSearchScreen(
     var downloadAudioOnly by remember { mutableStateOf(false) }
     var downloadRequestGeneration by remember { mutableStateOf(0) }
     var moreMenuExpanded by rememberSaveable { mutableStateOf(false) }
-    var followedChannelItems by remember(libraryRepository) { mutableStateOf(emptyList<VideoItem>()) }
+    var followedChannelItems by remember(libraryRepository, googleAccountEmail) { mutableStateOf(emptyList<VideoItem>()) }
     val language = currentLanguage()
     val emptySearchMessage = stringResource(R.string.search_empty_query)
     val requestFailedMessage = stringResource(R.string.request_failed_retry)
@@ -283,9 +283,9 @@ fun LowTubeSearchScreen(
 
     LaunchedEffect(pageSize) { viewModel.setPageSize(pageSize) }
 
-    LaunchedEffect(libraryRepository, libraryRevision, selectedTab) {
+    LaunchedEffect(libraryRepository, libraryRevision, selectedTab, googleAccountEmail) {
         if (selectedTab == "home") {
-            followedChannelItems = withContext(Dispatchers.IO) { libraryRepository.subscriptionFeed() }
+            followedChannelItems = withContext(Dispatchers.IO) { libraryRepository.subscriptionFeed(googleAccountEmail) }
         }
     }
 

@@ -100,7 +100,7 @@ internal fun SubscriptionsTab(
     val channelIds = remember(channels) { channels.mapTo(HashSet()) { it.id } }
     val categories = remember(channels) { channels.map { it.category.trim() }.filter(String::isNotEmpty).distinct().sortedBy(String::lowercase) }
     val categoryByChannel = remember(channels) { channels.associate { it.id to it.category.trim() } }
-    val videos = remember(feedRepository, revision, channelIds) { feedRepository.cached().filter { it.channelId in channelIds } }
+    val videos = remember(feedRepository, revision, channelIds, accountEmail) { feedRepository.cached(accountEmail).filter { it.channelId in channelIds } }
     var selectedChannel by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf("") }
     var selectedKind by remember { mutableStateOf("all") }

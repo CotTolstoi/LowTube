@@ -104,7 +104,7 @@ fun LibraryScreen(
     val channelIds = remember(channels) { channels.mapTo(HashSet()) { it.id } }
     val history = remember(refresh) { repository.watchHistory() }
     val localAudioTracks = remember(refresh) { repository.localAudioTracks() }
-    val subscriptionVideos = remember(refresh, channelIds) { feedRepository.cached().filter { it.channelId in channelIds } }
+    val subscriptionVideos = remember(refresh, channelIds, accountEmail) { feedRepository.cached(accountEmail).filter { it.channelId in channelIds } }
     var selectedFeedChannelId by rememberSaveable { mutableStateOf("") }
     var selectedFeedKind by rememberSaveable { mutableStateOf("all") }
     var feedChannelMenuExpanded by remember { mutableStateOf(false) }
