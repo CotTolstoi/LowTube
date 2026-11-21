@@ -558,7 +558,23 @@ fun LowTubeSearchScreen(
             if (state.loading) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
             } else if (state.error != null && state.items.isEmpty()) {
-                MessagePanel(state.error.orEmpty())
+                Column(
+                    modifier = Modifier.fillMaxSize().padding(16.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(state.error.orEmpty(), color = MaterialTheme.colorScheme.error)
+                    if (state.isHome || state.query.isNotBlank()) {
+                        Button(onClick = {
+                            if (state.isHome) {
+                                viewModel.loadHome(language, discoveryTopic, discoveryLanguage, force = true,
+                                    requestFailedMessage = requestFailedMessage, pageSize = pageSize)
+                            } else {
+                                viewModel.search(state.query, language, emptySearchMessage, requestFailedMessage, pageSize)
+                            }
+                        }) { Text(stringResource(R.string.retry)) }
+                    }
+                }
             } else if (visibleItems.isEmpty() && channelHeader == null) {
                 MessagePanel(when {
                     state.isHome -> stringResource(R.string.recommendations_empty)
