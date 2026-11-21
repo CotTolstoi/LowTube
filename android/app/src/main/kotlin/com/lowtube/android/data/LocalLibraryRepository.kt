@@ -296,12 +296,17 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
         null,
     ).use { if (it.moveToFirst()) it.getInt(0) else 0 }
 
-    fun replaceChannelFeed(channelId: String, videos: List<VideoItem>, updatedAt: Long) {
+    fun replaceChannelFeed(channelId: String, videos: List<VideoItem>, updatedAt: Long): Boolean {
         require(CHANNEL_ID.matches(channelId))
         require(videos.size <= MAX_FEED_ITEMS_PER_CHANNEL && videos.all { VIDEO_ID.matches(it.id) && it.channelId == channelId })
         val db = writableDatabase
         db.beginTransaction()
         try {
+            val subscribed = db.rawQuery(
+                "SELECT 1 FROM subscriptions WHERE channel_id=? UNION ALL SELECT 1 FROM youtube_account_subscriptions WHERE channel_id=? LIMIT 1",
+                arrayOf(channelId, channelId),
+            ).use { it.moveToFirst() }
+            if (!subscribed) return false
             db.delete("channel_feed_items", "channel_id=?", arrayOf(channelId))
             videos.forEach { video ->
                 val values = videoValues(video).apply {
@@ -316,12 +321,17 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
             db.insertWithOnConflict("channel_feed_state", null, state, SQLiteDatabase.CONFLICT_REPLACE)
             db.execSQL("DELETE FROM channel_feed_items WHERE row_id NOT IN (SELECT row_id FROM channel_feed_items ORDER BY published_at_ms DESC, video_id LIMIT ?)", arrayOf<Any>(MAX_SUBSCRIPTION_FEED_ITEMS))
             db.setTransactionSuccessful()
+            return true
         } finally { db.endTransaction() }
     }
 
     fun markChannelFeedAttempt(channelId: String, attemptedAt: Long) {
-        val values = ContentValues().apply { put("channel_id", channelId); put("last_attempt_ms", attemptedAt) }
-        writableDatabase.insertWithOnConflict("channel_feed_state", null, values, SQLiteDatabase.CONFLICT_REPLACE)
+        writableDatabase.execSQL(
+            """INSERT OR REPLACE INTO channel_feed_state(channel_id, last_attempt_ms)
+               SELECT ?, ? WHERE EXISTS (SELECT 1 FROM subscriptions WHERE channel_id=?)
+               OR EXISTS (SELECT 1 FROM youtube_account_subscriptions WHERE channel_id=?)""",
+            arrayOf<Any>(channelId, attemptedAt, channelId, channelId),
+        )
     }
 
     fun subscriptionFeed(): List<VideoItem> = readableDatabase.rawQuery(

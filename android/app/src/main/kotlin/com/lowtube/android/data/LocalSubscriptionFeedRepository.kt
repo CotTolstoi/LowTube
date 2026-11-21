@@ -48,8 +48,9 @@ class LocalSubscriptionFeedRepository(
                     gate.withPermit {
                         try {
                             val (items, usedBrowseFallback) = fetch(channel, language)
-                            library.replaceChannelFeed(channel.id, items, System.currentTimeMillis())
-                            ChannelResult(channel, null, usedBrowseFallback)
+                            if (library.replaceChannelFeed(channel.id, items, System.currentTimeMillis())) {
+                                ChannelResult(channel, null, usedBrowseFallback)
+                            } else null
                         } catch (cancelled: CancellationException) {
                             throw cancelled
                         } catch (failure: Exception) {
@@ -58,7 +59,7 @@ class LocalSubscriptionFeedRepository(
                         }
                     }
                 }
-            }.awaitAll()
+            }.awaitAll().filterNotNull()
         }
         val failed = outcomes.filter { it.error != null }.map { it.channel.title.ifBlank { it.channel.id } }
         SubscriptionFeedRefresh(
