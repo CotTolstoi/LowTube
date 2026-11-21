@@ -5,6 +5,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.lowtube.android.model.DownloadStatus
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -51,6 +52,14 @@ class DownloadJobStoreTest {
             assertTrue("Persisted job metadata must not contain a signed GoogleVideo URL", store.all().none { it.videoJson.contains("googlevideo") })
             store.update(id, DownloadStatus.FAILED, "fixture error")
             assertNull(store.pending())
+            assertTrue(store.requeueRetryable(id))
+            assertEquals(DownloadStatus.PENDING, store.get(id)?.status)
+            assertEquals(65_536L, store.get(id)?.downloadedBytes)
+            assertEquals(1_000_000L, store.get(id)?.totalBytes)
+            assertFalse(store.requeueRetryable(id))
+            store.update(id, DownloadStatus.SUCCESSFUL)
+            assertFalse(store.requeueRetryable(id))
+            assertEquals(DownloadStatus.SUCCESSFUL, store.get(id)?.status)
         } finally {
             store.close()
             context.deleteDatabase(database)
