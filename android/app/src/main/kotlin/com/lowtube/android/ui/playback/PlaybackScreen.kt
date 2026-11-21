@@ -561,7 +561,8 @@ fun PlaybackScreen(
             controller?.let { active ->
                 stagedQueueJob?.cancel()
                 stagedQueueJob = null
-                stagedQueueEntry?.let { removeFutureMediaItem(active, it.video.id) }
+                // The MediaSession outlives this screen. Keep an already prepared next item in
+                // the service playlist so AutoNext can still work while the user browses.
                 stagedQueueEntry = null
                 resolvingQueueRowId = null
                 saveCurrentWatchProgress(active)
@@ -742,7 +743,13 @@ fun PlaybackScreen(
                     if (activeController.mediaItemCount > activeController.currentMediaItemIndex + 1) {
                         activeController.removeMediaItems(activeController.currentMediaItemIndex + 1, activeController.mediaItemCount)
                     }
-                    activeController.addMediaItem(remoteMediaItem(stream, playbackRequestId = latestPlaybackRequestId))
+                    activeController.addMediaItem(
+                        remoteMediaItem(
+                            stream,
+                            playbackRequestId = latestPlaybackRequestId,
+                            queueRowId = candidate.rowId,
+                        ),
+                    )
                     stagedQueueEntry = candidate
                     Log.i("LowTubePlayback", "next queue item prepared")
                 } catch (failure: CancellationException) {
@@ -1162,6 +1169,7 @@ internal fun remoteMediaItem(
     stream: ResolvedVideoStream,
     externalAudio: ExternalAudioConfiguration? = null,
     playbackRequestId: Long? = null,
+    queueRowId: Long? = null,
 ): MediaItem {
     val metadataBuilder = MediaMetadata.Builder()
         .setTitle(stream.video.title)
@@ -1169,7 +1177,7 @@ internal fun remoteMediaItem(
     PlaybackArtworkPolicy.resolve(stream.video)?.let { metadataBuilder.setArtworkUri(Uri.parse(it)) }
     val metadata = metadataBuilder.build()
     val withExternalAudio = if (externalAudio == null) metadata else metadataWithExternalAudio(metadata, externalAudio)
-    val itemMetadata = playbackRequestId?.let { metadataWithPlaybackRequestId(withExternalAudio, it) } ?: withExternalAudio
+    val itemMetadata = metadataWithQueueIdentity(withExternalAudio, playbackRequestId, queueRowId)
     val builder = MediaItem.Builder()
         .setMediaId(stream.video.id)
         .setUri(stream.uri)
@@ -1185,10 +1193,16 @@ internal fun remoteMediaItem(
     return builder.build()
 }
 
-private fun metadataWithPlaybackRequestId(metadata: MediaMetadata, requestId: Long): MediaMetadata {
-    val extras = Bundle(metadata.extras ?: Bundle()).apply { putLong(PLAYBACK_REQUEST_ID_EXTRA, requestId) }
+private fun metadataWithQueueIdentity(metadata: MediaMetadata, requestId: Long?, queueRowId: Long?): MediaMetadata {
+    if (requestId == null && queueRowId == null) return metadata
+    val extras = Bundle(metadata.extras ?: Bundle()).apply {
+        requestId?.let { putLong(PLAYBACK_REQUEST_ID_EXTRA, it) }
+        queueRowId?.let { putLong(PRELOADED_QUEUE_ROW_ID_EXTRA, it) }
+    }
     return metadata.buildUpon().setExtras(extras).build()
 }
+
+internal const val PRELOADED_QUEUE_ROW_ID_EXTRA = "com.lowtube.android.playback.PRELOADED_QUEUE_ROW_ID"
 
 internal data class ExternalAudioConfiguration(
     val uri: Uri,

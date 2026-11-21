@@ -298,3 +298,7 @@ Profile показує безпечну назву й числовий код `A
 ## Локальне керування підписками — 2026-11-21
 
 Для локального каналу, вибраного у фільтрі Subscriptions, додано дію `Remove local subscription` з confirm dialog EN/UK/RU. Вона використовує наявну транзакційну операцію `unfollow`, яка залишає кеш стрічки, якщо канал досі належить підписці Google-акаунта. Remote YouTube unsubscribe не виконується цим локальним меню. Збірка пройшла; UI acceptance і сценарій з активною однойменною account subscription ще не перевірялися.
+
+## Життєвий цикл черги в mini-player — 2026-11-21
+
+Підготовлений наступний Media3 item тепер переживає dispose Player route; MediaItem несе queue row ID, а постійний поки є вибране відео MainNavigation observer обробляє перехід при поверненні користувача до каталогу. Після transition він видаляє рядок черги й оновлює поточний VideoItem, щоб mini-player відповідав MediaSession. Побудова пройшла, існуючий bounded stream→Media3 queue playback acceptance пройшов на API23 (12 s clip + приблизно 1 s наступного). Власне маршрут navigate-away → background auto-next → mini-player UI, зокрема IPC-передача metadata extras, ще не прийнятий.

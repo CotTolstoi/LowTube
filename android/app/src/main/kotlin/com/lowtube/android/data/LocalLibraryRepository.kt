@@ -727,9 +727,8 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
         }
     }
 
-    fun removeQueueEntry(rowId: Long) {
-        writableDatabase.delete("queue_entries", "row_id=?", arrayOf(rowId.toString()))
-    }
+    fun removeQueueEntry(rowId: Long): Boolean =
+        writableDatabase.delete("queue_entries", "row_id=?", arrayOf(rowId.toString())) > 0
 
     fun clearQueue() {
         writableDatabase.delete("queue_entries", null, null)

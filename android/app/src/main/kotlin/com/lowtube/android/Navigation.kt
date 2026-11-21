@@ -3,6 +3,7 @@ package com.lowtube.android
 import android.widget.Toast
 import android.Manifest
 import android.content.Context
+import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -32,6 +33,9 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.core.content.ContextCompat
+import androidx.media3.common.Player as Media3Player
+import androidx.media3.session.MediaController
+import androidx.media3.session.SessionToken
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
@@ -49,6 +53,7 @@ import com.lowtube.android.data.DownloadRepository
 import com.lowtube.android.data.InnerTubeSearchRepository
 import com.lowtube.android.data.YouTubeAccountHistoryHttpException
 import com.lowtube.android.data.SubscriptionFeedRefreshScheduler
+import com.lowtube.android.playback.PlaybackService
 import com.lowtube.android.downloads.DownloadDestination
 import com.lowtube.android.model.VideoItem
 import com.lowtube.android.model.QueueEntry
@@ -63,6 +68,7 @@ import com.lowtube.android.ui.queue.QueueScreen
 import com.lowtube.android.ui.downloads.DownloadsScreen
 import com.lowtube.android.ui.downloads.DownloadRetryViewModel
 import com.lowtube.android.ui.playback.PlaybackScreen
+import com.lowtube.android.ui.playback.PRELOADED_QUEUE_ROW_ID_EXTRA
 import com.lowtube.android.ui.playback.MAX_SHORTS_SESSION_ITEMS
 import com.lowtube.android.ui.playback.loadShortsContinuation
 import com.lowtube.android.benchmark.DecoderBenchmarkScreen
@@ -356,6 +362,7 @@ fun MainNavigation(
         }
         library.queue().firstOrNull()?.takeIf { it.video.kind != "playlist" }
     }
+    val backStack = rememberNavBackStack(Main)
     val advanceQueuedPlayback: () -> Unit = advance@{
         if (advancingQueue) return@advance
         advancingQueue = true
@@ -387,6 +394,53 @@ fun MainNavigation(
             } finally {
                 advancingQueue = false
             }
+        }
+    }
+    val sessionControllerFuture = remember(context, selectedVideo != null) {
+        if (selectedVideo == null) null else MediaController.Builder(
+            context,
+            SessionToken(context, ComponentName(context, PlaybackService::class.java)),
+        ).buildAsync()
+    }
+    DisposableEffect(sessionControllerFuture) {
+        val activeFuture = sessionControllerFuture ?: return@DisposableEffect onDispose { }
+        var connectedController: MediaController? = null
+                var queueTransitionListener: Media3Player.Listener? = null
+        activeFuture.addListener(
+            {
+                val activeController = runCatching { activeFuture.get() }.getOrNull() ?: return@addListener
+                connectedController = activeController
+                val listener = object : Media3Player.Listener {
+                    override fun onMediaItemTransition(mediaItem: androidx.media3.common.MediaItem?, reason: Int) {
+                        if (backStack.lastOrNull() == Player) return
+                        val item = mediaItem ?: return
+                        val rowId = item.mediaMetadata.extras?.getLong(PRELOADED_QUEUE_ROW_ID_EXTRA, 0L) ?: 0L
+                        if (rowId <= 0L) return
+                        scope.launch {
+                            val queuedEntry = withContext(Dispatchers.IO) {
+                                library.queue().firstOrNull { it.rowId == rowId && it.video.id == item.mediaId }
+                            } ?: return@launch
+                            if (backStack.lastOrNull() == Player || activeController.currentMediaItem?.mediaId != item.mediaId) return@launch
+                            val removed = withContext(Dispatchers.IO) { library.removeQueueEntry(rowId) }
+                            if (!removed) return@launch
+                            shortsSession = emptyList()
+                            shortsSessionIndex = -1
+                            selectedQueueRowId = null
+                            selectedLocalAudio = null
+                            selectedLocalVideoSource = null
+                            selectedVideo = queuedEntry.video
+                            queueRevision++
+                        }
+                    }
+                }
+                queueTransitionListener = listener
+                activeController.addListener(listener)
+            },
+            ContextCompat.getMainExecutor(context),
+        )
+        onDispose {
+            queueTransitionListener?.let { connectedController?.removeListener(it) }
+            MediaController.releaseFuture(activeFuture)
         }
     }
     val startDownload: (VideoItem, DownloadFormatOption) -> Unit = { video, option ->
@@ -465,7 +519,6 @@ fun MainNavigation(
         if (added > 0) libraryRevision++
         Toast.makeText(context, context.getString(R.string.audio_import_result, added, skipped), Toast.LENGTH_LONG).show()
     }
-    val backStack = rememberNavBackStack(Main)
     LaunchedEffect(openDownloadsRequested) {
         if (openDownloadsRequested) {
             if (backStack.lastOrNull() != Downloads) backStack.add(Downloads)
