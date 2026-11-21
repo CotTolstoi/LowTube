@@ -116,6 +116,25 @@ class MainScreenTest {
     }
 
     @Test
+    fun playlistQueueActionFollowsSubmittedUrlAndIgnoresDraft() {
+        val activity = composeTestRule.activity
+        val searchTab = hasText(activity.getString(R.string.search_tab)) and
+            SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab)
+        composeTestRule.onNode(searchTab).performClick()
+        val field = composeTestRule.onNode(hasSetTextAction())
+        val queueAction = composeTestRule.onNodeWithText(activity.getString(R.string.add_playlist_to_queue_action))
+        val url = "https://www.youtube.com/playlist?list=PL12345678901234567890"
+
+        field.performTextReplacement(url)
+        queueAction.assertDoesNotExist()
+        val viewModel = ViewModelProvider(activity)[SearchViewModel::class.java]
+        composeTestRule.runOnIdle { viewModel.search(url, language = "en") }
+        queueAction.assertExists()
+        field.performTextReplacement("science documentaries")
+        queueAction.assertExists()
+    }
+
+    @Test
     fun settingsBackRestoresSearchTabSelection() {
         val search = composeTestRule.activity.getString(R.string.search_tab)
         val settings = composeTestRule.activity.getString(R.string.settings)

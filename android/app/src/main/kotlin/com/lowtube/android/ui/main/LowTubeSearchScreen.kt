@@ -195,8 +195,8 @@ fun LowTubeSearchScreen(
             ForYouMixer.blend(state.items, followedChannelItems)
         } else state.items
     }
-    val channelBrowse = remember(query, selectedTab) {
-        if (selectedTab == "search") channelBrowseTab(query) else null
+    val channelBrowse = remember(state.query, selectedTab) {
+        if (selectedTab == "search") channelBrowseTab(state.query) else null
     }
     val channelHeader = state.channelHeader.takeIf { channelBrowse != null }
     val activeKind = when {
@@ -209,9 +209,9 @@ fun LowTubeSearchScreen(
         else forYouItems.filter { it.kind == activeKind }
     }
     val displayedItems = remember(visibleItems, state.displayLimit) { visibleItems.take(state.displayLimit) }
-    val directPlaylistQueueItem = remember(query, selectedTab, state.playlistTitle) {
+    val directPlaylistQueueItem = remember(state.query, selectedTab, state.playlistTitle, context) {
         if (selectedTab == "search") {
-            youtubePlaylistQueueMarker(query, state.playlistTitle?.takeIf(String::isNotBlank) ?: context.getString(R.string.playlist))
+            youtubePlaylistQueueMarker(state.query, state.playlistTitle?.takeIf(String::isNotBlank) ?: context.getString(R.string.playlist))
         } else null
     }
     val executeSearch: (String) -> Unit = { input ->
@@ -535,7 +535,7 @@ fun LowTubeSearchScreen(
                                     recommendationKind = value
                                     lowtubePreferences.edit().putString(PREF_RECOMMENDATION_FILTER, value).apply()
                                 } else if (channelBrowse != null) {
-                                    val target = channelBrowseUrl(query, value)
+                                    val target = channelBrowseUrl(state.query, value)
                                     if (target != null) {
                                         searchKind = value
                                         query = target
