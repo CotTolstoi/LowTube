@@ -22,6 +22,7 @@ object FirstRunSetupPreferences {
             .putBoolean("playback_h264", selection.playback.h264Only)
             .putBoolean("playback_fps30", selection.playback.fps30Only)
             .putBoolean("playback_audio_only", selection.playback.audioOnly)
+            .putString("playback_decoder_mode", selection.playback.decoderMode.transferValue)
             .putInt("download_height", selection.downloads.maxHeight)
             .putBoolean("download_h264", selection.downloads.h264Only)
             .putBoolean("download_fps30", selection.downloads.fps30Only)

@@ -18,6 +18,7 @@ internal data class DiagnosticReportSnapshot(
     val resourceSample: ResourceUsageSample?,
     val downloadJobs: DownloadJobCounts? = null,
     val playbackFailure: PlaybackFailureSnapshot = PlaybackFailureSnapshot(),
+    val requestedDecoderMode: PlaybackDecoderMode = PlaybackDecoderMode.SYSTEM_DEFAULT,
 )
 
 internal data class DownloadJobCounts(
@@ -79,6 +80,7 @@ internal object DiagnosticReportFormatter {
         appendLine("App: ${safe(snapshot.appVersion)}")
         appendLine("Android: ${safe(snapshot.androidRelease)} (API ${snapshot.androidApi.coerceAtLeast(0)})")
         appendLine("Device model: ${safe(snapshot.deviceModel)}")
+        appendLine("Requested video decoder: ${snapshot.requestedDecoderMode.name.lowercase(Locale.ROOT)} (preference, best effort)")
         appendLine("Video decoder: ${safe(snapshot.decoder.name).ifBlank { "not observed" }}")
         appendLine("Input format: ${safe(snapshot.decoder.inputFormat).ifBlank { "not observed" }}")
         appendLine("Hardware decoder: ${hardwareStatus(snapshot.decoder.hardwareStatus)}")

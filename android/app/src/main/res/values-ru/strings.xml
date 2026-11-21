@@ -279,6 +279,11 @@
     <string name="h264_only">Предпочитать видео H.264</string>
     <string name="fps_30_only">Ограничить воспроизведение до 30 FPS</string>
     <string name="audio_only">Только аудио</string>
+    <string name="playback_decoder_mode">Предпочтение видеодекодера</string>
+    <string name="playback_decoder_system">По умолчанию системы</string>
+    <string name="playback_decoder_hardware">Предпочитать аппаратный</string>
+    <string name="playback_decoder_software">Предпочитать программный</string>
+    <string name="playback_decoder_mode_hint">Применяется при следующем запуске службы воспроизведения. Аппаратный режим является предпочтением и переключится на запасной декодер, если нужный недоступен.</string>
     <string name="playback_buffer_title">Буфер и память</string>
     <string name="playback_buffer_hint">Память ограничивается в MiB. Media3 переводит размер обратного буфера в примерную длительность при 8 Мбит/с; фактический объём зависит от битрейта. Изменения применяются при запуске службы плеера.</string>
     <string name="playback_buffer_seconds">Максимальный буфер вперёд (сек, 5–3600)</string>

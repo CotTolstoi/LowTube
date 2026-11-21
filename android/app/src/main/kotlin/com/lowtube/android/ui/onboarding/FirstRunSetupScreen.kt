@@ -47,10 +47,18 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.lowtube.android.R
 import com.lowtube.android.data.PlaybackStreamPreferences
+import com.lowtube.android.data.PlaybackDecoderMode
 import com.lowtube.android.data.DownloadStreamPreferences
 import com.lowtube.android.data.FirstRunSetupSelection
 import com.lowtube.android.data.UiScaleOptions
 import com.lowtube.android.downloads.DownloadDestination
+
+private val PlaybackDecoderMode.labelResource: Int
+    get() = when (this) {
+        PlaybackDecoderMode.SYSTEM_DEFAULT -> R.string.playback_decoder_system
+        PlaybackDecoderMode.HARDWARE_PREFERRED -> R.string.playback_decoder_hardware
+        PlaybackDecoderMode.SOFTWARE_PREFERRED -> R.string.playback_decoder_software
+    }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,11 +80,13 @@ internal fun FirstRunSetupScreen(
     var selectedPlaybackH264 by rememberSaveable(playbackPreferences.h264Only) { mutableStateOf(playbackPreferences.h264Only) }
     var selectedPlaybackFps30 by rememberSaveable(playbackPreferences.fps30Only) { mutableStateOf(playbackPreferences.fps30Only) }
     var selectedPlaybackAudioOnly by rememberSaveable(playbackPreferences.audioOnly) { mutableStateOf(playbackPreferences.audioOnly) }
+    var selectedDecoderMode by rememberSaveable(playbackPreferences.decoderMode) { mutableStateOf(playbackPreferences.decoderMode) }
     var selectedDownloadHeight by rememberSaveable(downloadPreferences.maxHeight) { mutableStateOf(downloadPreferences.maxHeight) }
     var selectedDownloadH264 by rememberSaveable(downloadPreferences.h264Only) { mutableStateOf(downloadPreferences.h264Only) }
     var selectedDownloadFps30 by rememberSaveable(downloadPreferences.fps30Only) { mutableStateOf(downloadPreferences.fps30Only) }
     var selectedBitrate by rememberSaveable(downloadPreferences.audioBitrateKbps) { mutableStateOf(downloadPreferences.audioBitrateKbps) }
     var playbackQualityExpanded by remember { mutableStateOf(false) }
+    var decoderModeExpanded by remember { mutableStateOf(false) }
     var downloadQualityExpanded by remember { mutableStateOf(false) }
     var bitrateExpanded by remember { mutableStateOf(false) }
     val savedDownloadTreeUri = remember(context) { DownloadDestination.selectedTreeUri(context) }
@@ -153,6 +163,19 @@ internal fun FirstRunSetupScreen(
         SetupPreferenceSwitch(stringResource(R.string.audio_only), selectedPlaybackAudioOnly, FIRST_RUN_PLAYBACK_AUDIO_ONLY_TAG) {
             selectedPlaybackAudioOnly = it
         }
+        Text(stringResource(R.string.playback_decoder_mode), style = MaterialTheme.typography.titleMedium)
+        TextButton(onClick = { decoderModeExpanded = true }) {
+            Text(stringResource(selectedDecoderMode.labelResource))
+        }
+        DropdownMenu(expanded = decoderModeExpanded, onDismissRequest = { decoderModeExpanded = false }) {
+            PlaybackDecoderMode.entries.forEach { mode ->
+                DropdownMenuItem(
+                    text = { Text(stringResource(mode.labelResource)) },
+                    onClick = { selectedDecoderMode = mode; decoderModeExpanded = false },
+                )
+            }
+        }
+        Text(stringResource(R.string.playback_decoder_mode_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
         Text(stringResource(R.string.download_settings), style = MaterialTheme.typography.titleMedium)
         Text(stringResource(R.string.maximum_download_quality), style = MaterialTheme.typography.titleMedium)
@@ -236,6 +259,7 @@ internal fun FirstRunSetupScreen(
                             h264Only = selectedPlaybackH264,
                             fps30Only = selectedPlaybackFps30,
                             audioOnly = selectedPlaybackAudioOnly,
+                            decoderMode = selectedDecoderMode,
                         ),
                         downloads = DownloadStreamPreferences(
                             maxHeight = selectedDownloadHeight,

@@ -286,6 +286,9 @@ fun MainNavigation(
                 h264Only = preferences.getBoolean("playback_h264", true),
                 fps30Only = preferences.getBoolean("playback_fps30", true),
                 audioOnly = preferences.getBoolean("playback_audio_only", false),
+                decoderMode = com.lowtube.android.data.PlaybackDecoderMode.fromStoredValue(
+                    preferences.getString("playback_decoder_mode", "auto"),
+                ),
             ),
         )
     }
@@ -694,6 +697,7 @@ fun MainNavigation(
                             .putBoolean("playback_h264", updated.h264Only)
                             .putBoolean("playback_fps30", updated.fps30Only)
                             .putBoolean("playback_audio_only", updated.audioOnly)
+                            .putString("playback_decoder_mode", updated.decoderMode.transferValue)
                             .apply()
                     },
                     downloadPreferences = downloadPreferences,

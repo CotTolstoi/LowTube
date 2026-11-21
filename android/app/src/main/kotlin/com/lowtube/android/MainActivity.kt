@@ -243,6 +243,9 @@ class MainActivity : ComponentActivity() {
                   h264Only = preferences.getBoolean("playback_h264", true),
                   fps30Only = preferences.getBoolean("playback_fps30", true),
                   audioOnly = preferences.getBoolean("playback_audio_only", false),
+                  decoderMode = com.lowtube.android.data.PlaybackDecoderMode.fromStoredValue(
+                    preferences.getString("playback_decoder_mode", "auto"),
+                  ),
                 ),
                 downloadPreferences = DownloadStreamPreferences(
                   maxHeight = preferences.getInt("download_height", 720),

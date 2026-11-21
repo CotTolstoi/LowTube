@@ -41,7 +41,7 @@ class DownloadsScreenTest {
         try {
             composeTestRule.setContent {
                 LowTubeTheme {
-                    DownloadsScreen(repository, onBack = {}, onRetry = { _, done -> done() }, onOpen = {})
+                    DownloadsScreen(repository, onBack = {}, onRetry = {}, onOpen = {})
                 }
             }
             val error = context.getString(R.string.downloads_read_failed)
@@ -94,9 +94,8 @@ class DownloadsScreenTest {
                     DownloadsScreen(
                         repository = repository,
                         onBack = {},
-                        onRetry = { id, finished ->
+                        onRetry = { id ->
                             retryId = id
-                            finished()
                         },
                         onOpen = {},
                     )
@@ -154,7 +153,7 @@ class DownloadsScreenTest {
                     DownloadsScreen(
                         repository = repository,
                         onBack = { backRequested = true },
-                        onRetry = { _, finished -> finished() },
+                        onRetry = {},
                         onOpen = {},
                     )
                 }

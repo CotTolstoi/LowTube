@@ -19,12 +19,15 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.PlayerView
 import androidx.test.core.app.ActivityScenario
 import com.lowtube.android.MainActivity
 import com.lowtube.android.model.VideoItem
+import com.lowtube.android.data.PlaybackDecoderMode
 import com.lowtube.android.playback.PlaybackDecoderDiagnostics
+import com.lowtube.android.playback.PlaybackDecoderSelector
 import com.lowtube.android.playback.configurePlaybackPreload
 import com.lowtube.android.playback.createPlaybackLoadControl
 import com.lowtube.android.playback.createPlaybackDataSourceFactory
@@ -226,7 +229,12 @@ class YoutubeResolverPlaybackAcceptanceTest {
         val rssStarted = readRssKiB()
         val stream = InnerTubeSearchRepository(context).resolvePlayback(video)
         withContext(Dispatchers.Main.immediate) {
-            val player = ExoPlayer.Builder(context).setLoadControl(createPlaybackLoadControl(context)).build().apply {
+            val requestedMode = InstrumentationRegistry.getArguments().getString("decoderMode")
+                ?.let { value -> PlaybackDecoderMode.entries.firstOrNull { it.name.equals(value, ignoreCase = true) } }
+                ?: PlaybackDecoderMode.SYSTEM_DEFAULT
+            val renderersFactory = DefaultRenderersFactory(context)
+                .setMediaCodecSelector(PlaybackDecoderSelector.forMode(requestedMode))
+            val player = ExoPlayer.Builder(context, renderersFactory).setLoadControl(createPlaybackLoadControl(context)).build().apply {
                 configurePlaybackPreload(this, true)
                 addAnalyticsListener(PlaybackDecoderDiagnostics.analyticsListener(context))
             }
@@ -284,7 +292,8 @@ class YoutubeResolverPlaybackAcceptanceTest {
                     assertEquals(PlaybackDecoderDiagnostics.HARDWARE_STATUS_UNKNOWN, decoderSnapshot.hardwareStatus)
                 }
                 System.out.println(
-                    "preloadAcceptance=enabled; targetPreloadUs=${player.preloadConfiguration.targetPreloadDurationUs}; " +
+                    "requestedVideoDecoderPreference=${requestedMode.name}; " +
+                        "preloadAcceptance=enabled; targetPreloadUs=${player.preloadConfiguration.targetPreloadDurationUs}; " +
                         "currentMediaItemIndex=${player.currentMediaItemIndex}; resumePlaybackAcceptance=disabled; " +
                         "actualVideoDecoder=${decoderSnapshot.name}; inputFormat=${decoderSnapshot.inputFormat}; " +
                         "hardwareAccelerationStatus=${decoderSnapshot.hardwareStatus}; " +

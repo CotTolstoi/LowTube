@@ -58,6 +58,7 @@ import androidx.compose.ui.unit.dp
 import com.lowtube.android.AppLocale
 import com.lowtube.android.R
 import com.lowtube.android.data.PlaybackStreamPreferences
+import com.lowtube.android.data.PlaybackDecoderMode
 import com.lowtube.android.data.PlaybackBufferPreferences
 import com.lowtube.android.data.DownloadStreamPreferences
 import com.lowtube.android.data.UiScaleOptions
@@ -72,6 +73,13 @@ import com.lowtube.android.data.LocalLibraryTransferRepository
 import com.lowtube.android.downloads.DownloadDestination
 import com.lowtube.android.playback.PlaybackDecoderDiagnostics
 import kotlinx.coroutines.CancellationException
+
+private val PlaybackDecoderMode.labelResource: Int
+    get() = when (this) {
+        PlaybackDecoderMode.SYSTEM_DEFAULT -> R.string.playback_decoder_system
+        PlaybackDecoderMode.HARDWARE_PREFERRED -> R.string.playback_decoder_hardware
+        PlaybackDecoderMode.SOFTWARE_PREFERRED -> R.string.playback_decoder_software
+    }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -114,6 +122,7 @@ internal fun SettingsScreen(
         mutableStateOf(context.getSharedPreferences("lowtube_settings", android.content.Context.MODE_PRIVATE).getBoolean("dark_theme", true))
     }
     var qualityMenuExpanded by remember { mutableStateOf(false) }
+    var decoderModeMenuExpanded by remember { mutableStateOf(false) }
     var downloadQualityMenuExpanded by remember { mutableStateOf(false) }
     var downloadAudioBitrateMenuExpanded by remember { mutableStateOf(false) }
     var discoveryLanguageMenuExpanded by remember { mutableStateOf(false) }
@@ -162,7 +171,7 @@ internal fun SettingsScreen(
     }
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         if (uri != null) transferScope.launch {
-            val snapshot = SettingsTransferRepository.Snapshot(language, darkTheme, discoveryTopic, discoveryLanguage, playbackPreferences.maxHeight, playbackPreferences.h264Only, playbackPreferences.fps30Only, playbackPreferences.audioOnly, downloadPreferences.maxHeight, downloadPreferences.h264Only, downloadPreferences.fps30Only, downloadPreferences.limitKiB, resumePlayback, playbackBufferPreferences.maximumSeconds, playbackBufferPreferences.memoryLimitMiB, playbackBufferPreferences.backBufferMiB, playbackBufferPreferences.startupSeconds, autoRecover, autoNext, preloadNext, feedRefreshPreset, pageSize, downloadPreferences.audioBitrateKbps, uiScale)
+            val snapshot = SettingsTransferRepository.Snapshot(language, darkTheme, discoveryTopic, discoveryLanguage, playbackPreferences.maxHeight, playbackPreferences.h264Only, playbackPreferences.fps30Only, playbackPreferences.audioOnly, downloadPreferences.maxHeight, downloadPreferences.h264Only, downloadPreferences.fps30Only, downloadPreferences.limitKiB, resumePlayback, playbackBufferPreferences.maximumSeconds, playbackBufferPreferences.memoryLimitMiB, playbackBufferPreferences.backBufferMiB, playbackBufferPreferences.startupSeconds, autoRecover, autoNext, preloadNext, feedRefreshPreset, pageSize, downloadPreferences.audioBitrateKbps, uiScale, playbackPreferences.decoderMode)
             val result = runCatching {
                 val json = SettingsTransferRepository.encode(snapshot)
                 withContext(Dispatchers.IO) {
@@ -175,7 +184,7 @@ internal fun SettingsScreen(
     }
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) transferScope.launch {
-            val fallback = SettingsTransferRepository.Snapshot(language, darkTheme, discoveryTopic, discoveryLanguage, playbackPreferences.maxHeight, playbackPreferences.h264Only, playbackPreferences.fps30Only, playbackPreferences.audioOnly, downloadPreferences.maxHeight, downloadPreferences.h264Only, downloadPreferences.fps30Only, downloadPreferences.limitKiB, resumePlayback, playbackBufferPreferences.maximumSeconds, playbackBufferPreferences.memoryLimitMiB, playbackBufferPreferences.backBufferMiB, playbackBufferPreferences.startupSeconds, autoRecover, autoNext, preloadNext, feedRefreshPreset, pageSize, downloadPreferences.audioBitrateKbps, uiScale)
+            val fallback = SettingsTransferRepository.Snapshot(language, darkTheme, discoveryTopic, discoveryLanguage, playbackPreferences.maxHeight, playbackPreferences.h264Only, playbackPreferences.fps30Only, playbackPreferences.audioOnly, downloadPreferences.maxHeight, downloadPreferences.h264Only, downloadPreferences.fps30Only, downloadPreferences.limitKiB, resumePlayback, playbackBufferPreferences.maximumSeconds, playbackBufferPreferences.memoryLimitMiB, playbackBufferPreferences.backBufferMiB, playbackBufferPreferences.startupSeconds, autoRecover, autoNext, preloadNext, feedRefreshPreset, pageSize, downloadPreferences.audioBitrateKbps, uiScale, playbackPreferences.decoderMode)
             val result = runCatching {
                 val json = withContext(Dispatchers.IO) {
                     context.contentResolver.openInputStream(uri)?.use(::readSettingsTransfer)
@@ -187,7 +196,7 @@ internal fun SettingsScreen(
                 darkTheme = imported.darkTheme
                 onDarkThemeChanged(imported.darkTheme)
                 onDiscoveryPreferencesChanged(imported.discoveryTopic, imported.discoveryLanguage)
-                onPlaybackPreferencesChanged(PlaybackStreamPreferences(imported.maxHeight, imported.h264Only, imported.fps30Only, imported.audioOnly))
+                onPlaybackPreferencesChanged(PlaybackStreamPreferences(imported.maxHeight, imported.h264Only, imported.fps30Only, imported.audioOnly, imported.decoderMode))
                 onPlaybackBufferPreferencesChanged(PlaybackBufferPreferences(imported.bufferSeconds, imported.bufferMiB, imported.backBufferMiB, imported.bufferStartSeconds))
                 onDownloadPreferencesChanged(DownloadStreamPreferences(imported.downloadMaxHeight, imported.downloadH264Only, imported.downloadFps30Only, imported.downloadLimitKiB, imported.downloadAudioBitrateKbps))
                 onUiScaleChanged(imported.uiScale)
@@ -389,6 +398,24 @@ internal fun SettingsScreen(
             PreferenceSwitch(stringResource(R.string.audio_only), playbackPreferences.audioOnly) {
                 onPlaybackPreferencesChanged(playbackPreferences.copy(audioOnly = it))
             }
+            Text(stringResource(R.string.playback_decoder_mode), style = MaterialTheme.typography.bodyMedium)
+            androidx.compose.foundation.layout.Box {
+                TextButton(onClick = { decoderModeMenuExpanded = true }) {
+                    Text(stringResource(playbackPreferences.decoderMode.labelResource))
+                }
+                DropdownMenu(expanded = decoderModeMenuExpanded, onDismissRequest = { decoderModeMenuExpanded = false }) {
+                    PlaybackDecoderMode.entries.forEach { mode ->
+                        DropdownMenuItem(
+                            text = { Text(stringResource(mode.labelResource)) },
+                            onClick = {
+                                decoderModeMenuExpanded = false
+                                onPlaybackPreferencesChanged(playbackPreferences.copy(decoderMode = mode))
+                            },
+                        )
+                    }
+                }
+            }
+            Text(stringResource(R.string.playback_decoder_mode_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             Text(stringResource(R.string.playback_buffer_title), style = MaterialTheme.typography.titleSmall)
             Text(stringResource(R.string.playback_buffer_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -569,6 +596,7 @@ internal fun SettingsScreen(
                     try {
                         val report = createDiagnosticReport(
                             context = context.applicationContext,
+                            decoderMode = playbackPreferences.decoderMode,
                             playbackBufferPreferences = playbackBufferPreferences,
                             resourceSample = resourceSample,
                             downloadRepository = downloadRepository,
@@ -593,6 +621,7 @@ internal fun SettingsScreen(
                     try {
                         pendingDiagnosticReport = createDiagnosticReport(
                             context = context.applicationContext,
+                            decoderMode = playbackPreferences.decoderMode,
                             playbackBufferPreferences = playbackBufferPreferences,
                             resourceSample = resourceSample,
                             downloadRepository = downloadRepository,
@@ -679,6 +708,7 @@ internal const val SETTINGS_SINGLE_COLUMN_TEST_TAG = "lowtube-settings-single-co
 
 private suspend fun createDiagnosticReport(
     context: Context,
+    decoderMode: PlaybackDecoderMode,
     playbackBufferPreferences: PlaybackBufferPreferences,
     resourceSample: ResourceUsageSample?,
     downloadRepository: DownloadRepository?,
@@ -700,6 +730,7 @@ private suspend fun createDiagnosticReport(
             androidApi = Build.VERSION.SDK_INT,
             deviceModel = "${Build.MANUFACTURER.orEmpty()} ${Build.MODEL.orEmpty()}".trim(),
             decoder = PlaybackDecoderDiagnostics.read(decoderPreferences),
+            requestedDecoderMode = decoderMode,
             buffer = playbackBufferPreferences,
             resourceSample = resourceSample,
             downloadJobs = downloadJobs,

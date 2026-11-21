@@ -13,6 +13,8 @@
 
 ## Перші знімки
 
+21.11.2026, API23 x86_64 AVD, `SOFTWARE_PREFERRED` bounded playback acceptance: весь instrumentation/probe інтервал 15,167 s, CPU process 3 201 ms (~21,1% одного ядра), PSS 27 317 → 51 405 KiB, RSS 58 040 → 84 236 KiB. Media3 ініціалізував `OMX.google.h264.decoder`; перший кліп був обмежений 12 s, а наступний зупинений на 1,095 s (<2 хв). Значення охоплюють instrumentation/resolver/Media3, це короткий ріст від початкового стану, не steady-state LowTube, не benchmark; системну RAM у цьому запуску не записано.
+
 21.11.2026 15:43 UTC, LowTube 0.1.7 на підключеному Xiaomi Pad 6 (`23043RP34G`, Android 13/API33), головний екран у foreground після встановлення: 5-секундний sample — CPU 0% одного ядра, PSS 219,3 MiB, RSS 194,0 MiB, peak RSS 216,6 MiB, системна RAM 5612/1187 MiB total/available. Відео та завантаження не запускалися. Це одиничний idle-знімок, не benchmark; з PSS/RSS інших запусків напряму не виводити тренд.
 
 15.11.2026, debug APK, локальний профіль, одиночні вимірювання:

@@ -53,6 +53,10 @@ class PlaybackService : MediaSessionService() {
     private var settingsListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
+    companion object {
+        const val PREF_DECODER_MODE = "playback_decoder_mode"
+    }
+
     override fun onCreate() {
         super.onCreate()
         val dataSourceFactory = createPlaybackDataSourceFactory(this)
@@ -60,8 +64,15 @@ class PlaybackService : MediaSessionService() {
         settings = preferences
         val preloadEnabled = preferences.getBoolean(PREF_PRELOAD_NEXT, true) &&
             preferences.getBoolean(PREF_AUTO_NEXT, true)
+        val decoderMode = com.lowtube.android.data.PlaybackDecoderMode.fromStoredValue(
+            preferences.getString(PREF_DECODER_MODE, PlaybackStreamPreferences().decoderMode.transferValue),
+        )
         var activeAudioContentType = PlaybackAudioAttributesPolicy.contentType(null)
-        val player = ExoPlayer.Builder(this)
+        val player = ExoPlayer.Builder(
+            this,
+            androidx.media3.exoplayer.DefaultRenderersFactory(this)
+                .setMediaCodecSelector(PlaybackDecoderSelector.forMode(decoderMode)),
+        )
             .setMediaSourceFactory(ExternalAudioMediaSourceFactory(DefaultMediaSourceFactory(dataSourceFactory)))
             .setLoadControl(createPlaybackLoadControl(this))
             .build().apply {

@@ -30,6 +30,7 @@ internal object SettingsTransferRepository {
         val pageSize: Int = 25,
         val downloadAudioBitrateKbps: Int = DownloadStreamPreferences.DEFAULT_AUDIO_BITRATE_KBPS,
         val uiScale: Float = UiScaleOptions.DEFAULT,
+        val decoderMode: PlaybackDecoderMode = PlaybackDecoderMode.SYSTEM_DEFAULT,
     )
 
     fun encode(snapshot: Snapshot): String {
@@ -60,6 +61,7 @@ internal object SettingsTransferRepository {
             .put("PreloadNext", snapshot.preloadNext)
             .put("FeedPreset", snapshot.feedPreset)
             .put("PageSize", snapshot.pageSize)
+            .put("Decoder", snapshot.decoderMode.transferValue)
             .toString(2)
     }
 
@@ -102,6 +104,7 @@ internal object SettingsTransferRepository {
             preloadNext = bool(root, "PreloadNext", "preloadNext", fallback.preloadNext),
             feedPreset = int(root, "FeedPreset", "feedPreset", fallback.feedPreset),
             pageSize = int(root, "PageSize", "pageSize", fallback.pageSize),
+            decoderMode = decoderMode(root, fallback.decoderMode),
         )
         validate(result)
         return result
@@ -148,6 +151,21 @@ internal object SettingsTransferRepository {
         }
         val value = root.get(key) as? Number ?: throw IllegalArgumentException("Invalid $pc setting.")
         return value.toFloat().takeIf { it.isFinite() } ?: throw IllegalArgumentException("Invalid $pc setting.")
+    }
+
+    private fun decoderMode(root: JSONObject, fallback: PlaybackDecoderMode): PlaybackDecoderMode {
+        val key = when {
+            root.has("Decoder") -> "Decoder"
+            root.has("decoderMode") -> "decoderMode"
+            else -> return fallback
+        }
+        val value = root.get(key) as? String ?: throw IllegalArgumentException("Invalid Decoder setting.")
+        return when (value) {
+            "auto" -> PlaybackDecoderMode.SYSTEM_DEFAULT
+            "auto-copy", "d3d11va", "d3d11va-copy", "dxva2", "dxva2-copy", "nvdec", "nvdec-copy" -> PlaybackDecoderMode.HARDWARE_PREFERRED
+            "no" -> PlaybackDecoderMode.SOFTWARE_PREFERRED
+            else -> throw IllegalArgumentException("Unsupported Decoder setting.")
+        }
     }
 
     private fun validate(snapshot: Snapshot) {

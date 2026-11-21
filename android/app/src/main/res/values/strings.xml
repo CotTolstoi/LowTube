@@ -279,6 +279,11 @@
     <string name="h264_only">Prefer H.264 video</string>
     <string name="fps_30_only">Limit playback to 30 FPS</string>
     <string name="audio_only">Audio only</string>
+    <string name="playback_decoder_mode">Video decoder preference</string>
+    <string name="playback_decoder_system">System default</string>
+    <string name="playback_decoder_hardware">Prefer hardware</string>
+    <string name="playback_decoder_software">Prefer software</string>
+    <string name="playback_decoder_mode_hint">Used when the playback service next starts. Hardware preference is best effort and falls back if unavailable.</string>
     <string name="playback_buffer_title">Buffer and memory</string>
     <string name="playback_buffer_hint">Memory is capped in MiB. Media3 converts the back-buffer size to an estimated duration at 8 Mbps; actual retained media depends on its bitrate. Changes apply when the playback service starts.</string>
     <string name="playback_buffer_seconds">Maximum forward buffer (seconds, 5–3600)</string>
