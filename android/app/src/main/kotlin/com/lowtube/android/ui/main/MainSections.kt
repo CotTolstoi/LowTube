@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -208,16 +209,18 @@ internal fun SubscriptionsTab(
         refreshMessage?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
         refreshFailed?.let { Text(it, color = MaterialTheme.colorScheme.error) }
 
-        Row(
-            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(vertical = 4.dp),
+        LazyRow(
+            Modifier.fillMaxWidth().padding(vertical = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            FilterChip(
-                selected = selectedChannel.isBlank(),
-                onClick = { selectedChannel = "" },
-                label = { Text(stringResource(R.string.all_channels)) },
-            )
-            channels.forEach { channel ->
+            item {
+                FilterChip(
+                    selected = selectedChannel.isBlank(),
+                    onClick = { selectedChannel = "" },
+                    label = { Text(stringResource(R.string.all_channels)) },
+                )
+            }
+            items(channels, key = { it.id }) { channel ->
                 FilterChip(
                     selected = selectedChannel == channel.id,
                     onClick = {
@@ -238,16 +241,18 @@ internal fun SubscriptionsTab(
             }) { Text(stringResource(R.string.edit_channel_category)) }
         }
         if (categories.isNotEmpty()) {
-            Row(
-                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(vertical = 4.dp),
+            LazyRow(
+                Modifier.fillMaxWidth().padding(vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                FilterChip(
-                    selected = selectedCategory.isBlank(),
-                    onClick = { selectedCategory = "" },
-                    label = { Text(stringResource(R.string.all_categories)) },
-                )
-                categories.forEach { category ->
+                item {
+                    FilterChip(
+                        selected = selectedCategory.isBlank(),
+                        onClick = { selectedCategory = "" },
+                        label = { Text(stringResource(R.string.all_categories)) },
+                    )
+                }
+                items(categories, key = { it }) { category ->
                     FilterChip(
                         selected = selectedCategory == category,
                         onClick = {
