@@ -6,6 +6,7 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -124,9 +125,10 @@ fun SettingsScreen(
     var diagnosticReportCopied by remember { mutableStateOf(false) }
     var diagnosticReportFailed by remember { mutableStateOf(false) }
     var diagnosticReportCopying by remember { mutableStateOf(false) }
-    var diagnosticReportExportPending by remember { mutableStateOf(false) }
+    var diagnosticReportPreparing by remember { mutableStateOf(false) }
     var diagnosticReportExported by remember { mutableStateOf(false) }
-    var pendingDiagnosticReport by remember { mutableStateOf<String?>(null) }
+    var pendingDiagnosticReport by rememberSaveable { mutableStateOf<String?>(null) }
+    val diagnosticReportExportPending = diagnosticReportPreparing || pendingDiagnosticReport != null
     var pendingLocalLibraryImport by remember { mutableStateOf<LocalLibraryTransferRepository.Snapshot?>(null) }
     var localLibraryTransferMessage by remember { mutableStateOf<String?>(null) }
     var downloadTreeUri by remember(context) { mutableStateOf(DownloadDestination.selectedTreeUri(context)) }
@@ -135,7 +137,7 @@ fun SettingsScreen(
     val diagnosticReportExportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
         val report = pendingDiagnosticReport
         pendingDiagnosticReport = null
-        diagnosticReportExportPending = false
+        if (uri != null && report == null) diagnosticReportFailed = true
         if (uri != null && report != null) transferScope.launch {
             val result = runCatching {
                 withContext(Dispatchers.IO) {
@@ -588,7 +590,7 @@ fun SettingsScreen(
             TextButton(enabled = !diagnosticReportExportPending, onClick = {
                 diagnosticReportExported = false
                 diagnosticReportFailed = false
-                diagnosticReportExportPending = true
+                diagnosticReportPreparing = true
                 transferScope.launch {
                     try {
                         pendingDiagnosticReport = createDiagnosticReport(
@@ -602,8 +604,9 @@ fun SettingsScreen(
                         throw cancelled
                     } catch (_: Exception) {
                         pendingDiagnosticReport = null
-                        diagnosticReportExportPending = false
                         diagnosticReportFailed = true
+                    } finally {
+                        diagnosticReportPreparing = false
                     }
                 }
             }) {
