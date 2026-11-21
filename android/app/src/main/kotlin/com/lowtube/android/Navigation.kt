@@ -26,6 +26,9 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.runtime.SideEffect
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.core.content.ContextCompat
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
@@ -105,6 +108,14 @@ fun MainNavigation(
         onDispose { library.close() }
     }
     var libraryRevision by remember(library) { mutableIntStateOf(0) }
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(lifecycle, library) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) libraryRevision++
+        }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer) }
+    }
     var pendingYouTubeSubscriptionChanges by remember(library) { mutableStateOf(emptyMap<String, Boolean>()) }
     var previousGoogleAccountEmail by remember(library) { mutableStateOf(googleAccountEmail) }
     LaunchedEffect(library, googleAccountEmail) {
