@@ -1,5 +1,6 @@
 package com.lowtube.android.data
 
+import android.os.SystemClock
 import com.lowtube.android.model.SavedChannel
 import com.lowtube.android.model.VideoItem
 import kotlinx.coroutines.CancellationException
@@ -44,6 +45,8 @@ class LocalSubscriptionFeedRepository(
     private suspend fun refreshBatchOnIo(language: String, preset: Int, accountEmail: String): SubscriptionFeedRefresh = withContext(Dispatchers.IO) {
         val channels = library.channels(accountEmail)
         if (channels.isEmpty()) return@withContext SubscriptionFeedRefresh(emptyList(), 0, emptyList(), 0)
+        val waitMs = cooldownUntilMs.get() - SystemClock.elapsedRealtime()
+        if (waitMs > 0) throw IOException("Subscription refresh paused. Retry in ${(waitMs + 999) / 1_000} s.")
 
         val policy = SubscriptionFeedRefreshPolicy.fromPreset(preset)
         val selected = library.channelsForFeedRefresh(channels, policy.channelsPerBatch)
@@ -64,6 +67,10 @@ class LocalSubscriptionFeedRepository(
                         } catch (failure: Exception) {
                             if (failure is FeedHttpException && failure.isTemporaryRestriction) {
                                 servicePaused.set(true)
+                                val retryAt = SystemClock.elapsedRealtime() + failure.retryDelayMs
+                                synchronized(cooldownUntilMs) {
+                                    cooldownUntilMs.set(maxOf(cooldownUntilMs.get(), retryAt))
+                                }
                             }
                             runCatching { library.markChannelFeedAttempt(channel.id, System.currentTimeMillis()) }
                             ChannelResult(channel, failure.message ?: "Feed unavailable", false)
@@ -115,7 +122,7 @@ class LocalSubscriptionFeedRepository(
         }
         try {
             val status = connection.responseCode
-            if (status !in 200..299) throw FeedHttpException(status)
+            if (status !in 200..299) throw FeedHttpException(status, connection.getHeaderField("Retry-After"))
             if (connection.contentLength > MAX_RESPONSE_BYTES) throw IOException("Channel feed exceeds the 2 MB limit.")
             val bytes = ByteArrayOutputStream()
             connection.inputStream.use { input ->
@@ -229,13 +236,16 @@ class LocalSubscriptionFeedRepository(
     }.getOrDefault("")
 
     private data class ChannelResult(val channel: SavedChannel, val error: String?, val usedBrowseFallback: Boolean)
-    private class FeedHttpException(status: Int) : IOException("Channel feed request failed with HTTP $status.") {
+    private class FeedHttpException(status: Int, retryAfter: String?) : IOException("Channel feed request failed with HTTP $status.") {
         val isTemporaryRestriction = status == 429 || status == 503
+        val retryDelayMs = (retryAfter?.trim()?.toLongOrNull()?.coerceIn(1L, 3_600L)
+            ?: if (status == 429) 60L else 30L) * 1_000L
     }
 
     companion object {
         // The worker and UI use separate repository instances but share the feed database.
         private val refreshMutex = Mutex()
+        private val cooldownUntilMs = java.util.concurrent.atomic.AtomicLong()
         private const val MAX_RESPONSE_BYTES = 2 * 1024 * 1024
         private const val MAX_ITEMS_PER_CHANNEL = 30
         private const val MAX_XML_DEPTH = 32
