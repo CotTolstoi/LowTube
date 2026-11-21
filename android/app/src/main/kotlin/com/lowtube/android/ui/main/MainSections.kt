@@ -172,6 +172,9 @@ internal fun SubscriptionsTab(
                                 result.remainingChannels,
                                 result.browseFallbackChannels,
                             )
+                            if (result.retryInSeconds > 0) {
+                                refreshFailed = context.getString(R.string.feed_refresh_paused, result.retryInSeconds)
+                            }
                             localRevision++
                         } catch (cancelled: CancellationException) {
                             throw cancelled

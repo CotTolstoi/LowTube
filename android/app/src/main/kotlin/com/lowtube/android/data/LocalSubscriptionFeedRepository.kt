@@ -34,6 +34,7 @@ data class SubscriptionFeedRefresh(
     val remainingChannels: Int,
     val failureDetails: List<String> = emptyList(),
     val browseFallbackChannels: Int = 0,
+    val retryInSeconds: Long = 0,
 )
 
 /** Explicit, bounded refresh of local channel uploads using YouTube's public Atom feeds. */
@@ -47,8 +48,8 @@ class LocalSubscriptionFeedRepository(
     private suspend fun refreshBatchOnIo(language: String, preset: Int, accountEmail: String): SubscriptionFeedRefresh = withContext(Dispatchers.IO) {
         val channels = library.channels(accountEmail)
         if (channels.isEmpty()) return@withContext SubscriptionFeedRefresh(emptyList(), 0, emptyList(), 0)
-        val waitMs = cooldownUntilMs.get() - SystemClock.elapsedRealtime()
-        if (waitMs > 0) throw SubscriptionFeedCooldownException((waitMs + 999) / 1_000)
+        val retryInSeconds = remainingCooldownSeconds()
+        if (retryInSeconds > 0) throw SubscriptionFeedCooldownException(retryInSeconds)
 
         val policy = SubscriptionFeedRefreshPolicy.fromPreset(preset)
         val selected = library.channelsForFeedRefresh(channels, policy.channelsPerBatch)
@@ -91,10 +92,14 @@ class LocalSubscriptionFeedRepository(
             remainingChannels = library.unattemptedFeedChannelCount(accountEmail),
             failureDetails = outcomes.mapNotNull { it.error?.take(160) },
             browseFallbackChannels = outcomes.count { it.usedBrowseFallback },
+            retryInSeconds = remainingCooldownSeconds(),
         )
     }
 
     fun cached(accountEmail: String = ""): List<VideoItem> = library.subscriptionFeed(accountEmail)
+
+    private fun remainingCooldownSeconds(): Long =
+        ((cooldownUntilMs.get() - SystemClock.elapsedRealtime()).coerceAtLeast(0) + 999) / 1_000
 
     private suspend fun fetch(channel: SavedChannel, language: String): Pair<List<VideoItem>, Boolean> = try {
         fetchAtom(channel, language) to false

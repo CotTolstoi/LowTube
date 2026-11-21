@@ -393,7 +393,11 @@ fun LibraryScreen(
                                     feedRefreshFailed = null
                                     feedJob = scope.launch {
                                         try {
-                                            feedRefreshResult = feedRepository.refreshBatch(AppLocale.language(context), feedRefreshPreset, accountEmail)
+                                            val result = feedRepository.refreshBatch(AppLocale.language(context), feedRefreshPreset, accountEmail)
+                                            feedRefreshResult = result
+                                            if (result.retryInSeconds > 0) {
+                                                feedRefreshFailed = context.getString(R.string.feed_refresh_paused, result.retryInSeconds)
+                                            }
                                             refresh++
                                         } catch (cancelled: CancellationException) {
                                             throw cancelled
