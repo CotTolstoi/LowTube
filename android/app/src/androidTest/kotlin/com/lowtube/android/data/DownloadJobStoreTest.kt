@@ -15,6 +15,31 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class DownloadJobStoreTest {
     @Test
+    fun removedLastJobIdIsNotReusedAfterReopeningQueue() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val database = "download-queue-sequence-${System.nanoTime()}.db"
+        fun insert(store: DownloadJobStore): Long =
+            store.insert("{}", "fixture", false, "fixture.mp4", "video/mp4", "test-agent", "/tmp/fixture.part")
+        try {
+            val original = DownloadJobStore(context, database)
+            val removedId = try {
+                insert(original).also(original::remove)
+            } finally {
+                original.close()
+            }
+            val reopened = DownloadJobStore(context, database)
+            try {
+                assertTrue(insert(reopened) > removedId)
+                assertNull(reopened.get(removedId))
+            } finally {
+                reopened.close()
+            }
+        } finally {
+            context.deleteDatabase(database)
+        }
+    }
+
+    @Test
     fun aggregatesOnlyPersistedDownloadStatusesForDiagnostics() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val database = "download-queue-status-${System.currentTimeMillis()}.db"
