@@ -245,8 +245,7 @@ class LocalSubscriptionFeedRepository(
     private data class ChannelResult(val channel: SavedChannel, val error: String?, val usedBrowseFallback: Boolean)
     private class FeedHttpException(status: Int, retryAfter: String?) : IOException("Channel feed request failed with HTTP $status.") {
         val isTemporaryRestriction = status == 429 || status == 503
-        val retryDelayMs = (retryAfter?.trim()?.toLongOrNull()?.coerceIn(1L, 3_600L)
-            ?: if (status == 429) 60L else 30L) * 1_000L
+        val retryDelayMs = retryAfterSeconds(retryAfter, if (status == 429) 60L else 30L, 3_600L) * 1_000L
     }
 
     companion object {

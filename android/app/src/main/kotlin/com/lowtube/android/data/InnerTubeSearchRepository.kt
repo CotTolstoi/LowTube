@@ -1847,7 +1847,7 @@ class InnerTubeSearchRepository(context: Context? = null) {
 
     private fun updateCooldown(status: Int, retryAfter: String?) {
         val fallback = if (status == 429) 60L else 30L
-        val seconds = retryAfter?.toLongOrNull()?.coerceIn(1, MAX_COOLDOWN_SECONDS) ?: fallback
+        val seconds = retryAfterSeconds(retryAfter, fallback, MAX_COOLDOWN_SECONDS)
         cooldownUntil = maxOf(cooldownUntil, System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(seconds))
     }
 
