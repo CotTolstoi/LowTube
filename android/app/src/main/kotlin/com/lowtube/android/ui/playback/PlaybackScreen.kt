@@ -155,6 +155,7 @@ fun PlaybackScreen(
     var loading by remember(video.id, playbackRequestId) { mutableStateOf(true) }
     var shouldResumePlayback by rememberSaveable(video.id, playbackRequestId, localAudioTrack?.uri) { mutableStateOf(true) }
     var watchedVideo by remember(video.id, playbackRequestId) { mutableStateOf(video) }
+    val historyGeneration = remember(library, video.id, playbackRequestId) { library.watchHistoryGeneration }
     var displayedFollowState by remember(video.id, playbackRequestId) { mutableStateOf(isFollowing) }
     var readyNotified by remember(video.id, playbackRequestId) { mutableStateOf(false) }
     var endedHandled by remember(video.id, playbackRequestId) { mutableStateOf(false) }
@@ -342,7 +343,8 @@ fun PlaybackScreen(
                     }
                 }
                 if (lastObservedDurationMs > 0) {
-                    library.recordWatchProgress(watchedVideo, lastObservedDurationMs, lastObservedDurationMs, complete = true)
+                    library.recordWatchProgress(watchedVideo, lastObservedDurationMs, lastObservedDurationMs,
+                        complete = true, historyGeneration = historyGeneration)
                 }
                 val previousItemCount = active.currentMediaItemIndex
                 if (previousItemCount > 0) active.removeMediaItems(0, previousItemCount)
@@ -385,6 +387,7 @@ fun PlaybackScreen(
                             active.currentPosition.coerceAtLeast(0),
                             active.duration.coerceAtLeast(0),
                             complete = true,
+                            historyGeneration = historyGeneration,
                         )
                     }
                     if (localAudioTrack == null && autoNext && !endedHandled) {
@@ -545,7 +548,8 @@ fun PlaybackScreen(
         ) return
         val position = active.currentPosition
         if (position > 0) {
-            library.recordWatchProgress(watchedVideo, position, active.duration.coerceAtLeast(0))
+            library.recordWatchProgress(watchedVideo, position, active.duration.coerceAtLeast(0),
+                historyGeneration = historyGeneration)
         }
     }
 

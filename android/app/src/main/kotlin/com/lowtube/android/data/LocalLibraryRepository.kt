@@ -746,7 +746,19 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
         }
     }
 
-    fun recordWatchProgress(video: VideoItem, positionMs: Long, durationMs: Long, complete: Boolean = false) {
+    @Volatile
+    var watchHistoryGeneration: Long = 0
+        private set
+
+    @Synchronized
+    fun recordWatchProgress(
+        video: VideoItem,
+        positionMs: Long,
+        durationMs: Long,
+        complete: Boolean = false,
+        historyGeneration: Long = watchHistoryGeneration,
+    ) {
+        if (historyGeneration != watchHistoryGeneration) return
         if (!VIDEO_ID.matches(video.id) || video.kind == "live" || video.liveStatus in setOf("is_live", "is_upcoming")) return
         if (positionMs < 0 || durationMs < 0) return
         if (positionMs == 0L && !complete) return
@@ -836,8 +848,10 @@ class LocalLibraryRepository(context: Context, databaseName: String = DATABASE_N
         writableDatabase.update("watch_history", values, "video_id=?", arrayOf(videoId))
     }
 
+    @Synchronized
     fun clearWatchHistory() {
         writableDatabase.delete("watch_history", null, null)
+        watchHistoryGeneration++
     }
 
     fun moveVideo(playlistId: String, fromIndex: Int, toIndex: Int) {
