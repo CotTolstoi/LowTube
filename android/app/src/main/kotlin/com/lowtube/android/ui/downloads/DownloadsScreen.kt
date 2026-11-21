@@ -161,6 +161,7 @@ internal fun DownloadRow(
         DownloadStatus.RUNNING -> stringResource(R.string.download_running)
         DownloadStatus.PAUSED -> stringResource(R.string.download_paused)
         DownloadStatus.SUCCESSFUL -> stringResource(R.string.download_complete)
+        DownloadStatus.CANCELLED -> stringResource(R.string.download_cancelled)
         else -> stringResource(R.string.download_failed)
     }
     val format = when (record.mimeType) {
