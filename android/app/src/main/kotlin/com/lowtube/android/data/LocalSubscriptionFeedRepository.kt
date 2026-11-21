@@ -85,10 +85,8 @@ class LocalSubscriptionFeedRepository(
             .take(MAX_ITEMS_PER_CHANNEL)
             .toList()
         if (fallbackItems.isEmpty()) throw IOException(atomFailure.message ?: "Channel feed unavailable.", atomFailure)
-        val refreshedAt = System.currentTimeMillis()
-        fallbackItems.mapIndexed { index, video ->
-            video.copy(publishedAtMs = (refreshedAt - index).coerceAtLeast(0L))
-        } to true
+        // A refresh timestamp would push undated uploads ahead of genuinely recent videos.
+        fallbackItems to true
     }
 
     private fun fetchAtom(channel: SavedChannel, language: String): List<VideoItem> {
