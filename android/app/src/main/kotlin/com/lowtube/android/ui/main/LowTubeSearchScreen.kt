@@ -586,7 +586,7 @@ fun LowTubeSearchScreen(
                         }) { Text(stringResource(R.string.retry)) }
                     }
                 }
-            } else if (visibleItems.isEmpty() && channelHeader == null) {
+            } else if (visibleItems.isEmpty() && channelHeader == null && state.continuation == null) {
                 MessagePanel(when {
                     state.isHome -> stringResource(R.string.recommendations_empty)
                     state.searched -> stringResource(R.string.search_empty)
@@ -679,6 +679,7 @@ fun LowTubeSearchScreen(
                     if (state.continuation != null || visibleItems.size > state.displayLimit) {
                         item(key = "load-more", span = { GridItemSpan(maxLineSpan) }) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                                if (visibleItems.isEmpty()) Text(stringResource(R.string.feed_no_matches_yet))
                                 if (state.error != null && !state.homeRefreshFailed) Text(state.error.orEmpty(), color = MaterialTheme.colorScheme.error)
                                 Button(onClick = { viewModel.loadMore(requestFailedMessage, pageSize, visibleItems.size) }, enabled = !state.loading && !state.loadingMore) {
                                     if (state.loadingMore) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)

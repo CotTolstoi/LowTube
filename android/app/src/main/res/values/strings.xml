@@ -378,4 +378,5 @@
     <string name="decoder_benchmark_status_timeout">Watchdog timeout</string>
     <string name="decoder_benchmark_status_insufficient">Insufficient data</string>
     <string name="feed_refresh_paused">Subscription refresh is paused. Try again in %1$d seconds.</string>
+    <string name="feed_no_matches_yet">No matches on the loaded pages.</string>
 </resources>
