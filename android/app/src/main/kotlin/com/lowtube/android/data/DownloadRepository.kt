@@ -95,10 +95,8 @@ class DownloadRepository private constructor(
 
     suspend fun retry(id: Long, streamPreferences: DownloadStreamPreferences = DownloadStreamPreferences()) {
         if (id >= OWN_ID_BASE) {
-            val job = jobs.get(id) ?: throw IllegalStateException("This LowTube download no longer exists.")
-            if (job.status == DownloadStatus.RUNNING || job.status == DownloadStatus.PENDING) return
-            jobs.update(id, DownloadStatus.PENDING)
-            startService()
+            if (jobs.requeueRetryable(id)) startService()
+            else if (jobs.get(id) == null) throw IllegalStateException("This LowTube download no longer exists.")
             return
         }
         val video = storedLegacyVideo(id) ?: throw IllegalStateException("The original video details for this download are unavailable.")

@@ -58,6 +58,16 @@ internal class DownloadJobStore(context: Context, databaseName: String = DEFAULT
         writableDatabase.update("jobs", values, "id=?", arrayOf(id.toString()))
     }
     @Synchronized fun remove(id: Long) { writableDatabase.delete("jobs", "id=?", arrayOf(id.toString())) }
+    @Synchronized fun requeueRetryable(id: Long): Boolean {
+        val values = ContentValues().apply {
+            put("status", DownloadStatus.PENDING)
+            put("reason", "")
+        }
+        return writableDatabase.update(
+            "jobs", values, "id=? AND status IN (?,?,?)",
+            arrayOf(id.toString(), DownloadStatus.FAILED.toString(), DownloadStatus.CANCELLED.toString(), DownloadStatus.PAUSED.toString()),
+        ) == 1
+    }
     @Synchronized fun requeueInterrupted() { writableDatabase.execSQL("UPDATE jobs SET status=?, reason='' WHERE status=?", arrayOf(DownloadStatus.PENDING, DownloadStatus.RUNNING)) }
 
     private companion object {
