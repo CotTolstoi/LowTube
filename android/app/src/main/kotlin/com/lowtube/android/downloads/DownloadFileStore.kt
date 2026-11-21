@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.provider.DocumentsContract
+import com.lowtube.android.R
 import com.lowtube.android.model.DownloadJob
 import java.io.File
 import java.io.FileInputStream
@@ -60,7 +61,16 @@ internal class DownloadFileStore(private val context: Context) {
         val partial = sourceFile
         if (!partial.isFile || partial.length() <= 0L) throw IOException("The downloaded file is empty or missing.")
         val selectedTree = DownloadDestination.selectedTreeUri(context)
-        if (selectedTree != null) return publishToTree(job, partial, selectedTree)
+        if (selectedTree != null) {
+            if (context.contentResolver.persistedUriPermissions.none { it.uri == selectedTree && it.isWritePermission }) {
+                throw IOException(context.getString(R.string.download_location_error))
+            }
+            try {
+                return publishToTree(job, partial, selectedTree)
+            } catch (failure: SecurityException) {
+                throw IOException(context.getString(R.string.download_location_error), failure)
+            }
+        }
         if (Build.VERSION.SDK_INT >= 29) {
             val values = ContentValues().apply {
                 put(MediaStore.MediaColumns.DISPLAY_NAME, job.fileName)
