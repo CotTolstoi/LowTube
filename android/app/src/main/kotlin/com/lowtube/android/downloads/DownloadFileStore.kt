@@ -15,7 +15,14 @@ import java.io.IOException
 
 internal class DownloadFileStore(private val context: Context) {
     fun partialFile(job: DownloadJob): File = File(job.partialPath)
-    fun readyConvertedFile(job: DownloadJob): File = File(job.partialPath + if (job.transcodeMp3) ".ready.mp3" else ".ready.mkv")
+    fun readyConvertedFile(job: DownloadJob): File {
+        val suffix = when {
+            job.transcodeMp3 -> ".ready.mp3"
+            job.fileName.endsWith(".mkv", ignoreCase = true) -> ".ready.mkv"
+            else -> ".ready.mux"
+        }
+        return File(job.partialPath + suffix)
+    }
     fun matroskaFile(job: DownloadJob): File = File(job.partialPath + ".mkv")
     fun videoTrackFile(job: DownloadJob): File = File(job.partialPath + ".video")
     fun audioTrackFile(job: DownloadJob): File = File(job.partialPath + ".audio")

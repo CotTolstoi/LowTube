@@ -158,7 +158,7 @@ class DownloadService : Service() {
         runCatching { part.parentFile?.mkdirs() }
         val isMatroska = job.fileName.endsWith(".mkv", ignoreCase = true)
         val readyConverted = files.readyConvertedFile(job)
-        val reuseConverted = (isMatroska || job.transcodeMp3) && readyConverted.isFile && readyConverted.length() > 0L
+        val reuseConverted = readyConverted.isFile && readyConverted.length() > 0L
         var downloaded = if (reuseConverted) job.downloadedBytes else part.length()
         var requiresMuxing = false
         transferStartNs = System.nanoTime()
@@ -252,7 +252,7 @@ class DownloadService : Service() {
                     AudioMp3Transcoder.transcode(part, converted, job.targetAudioBitrateKbps) { cancelId == job.id }
                     if (cancelId == job.id) throw CancellationException("Cancelled by user.")
                     retainConvertedFile(converted, readyConverted)
-                } else if (option?.container == "MKV") {
+                } else if (requiresMuxing || option?.container == "MKV") {
                     val converted = if (requiresMuxing) part else files.matroskaFile(job)
                     if (!requiresMuxing) {
                         show(job, outcome.downloaded, outcome.total, true, getString(R.string.download_preparing))
@@ -261,7 +261,7 @@ class DownloadService : Service() {
                     if (cancelId == job.id) throw CancellationException("Cancelled by user.")
                     retainConvertedFile(converted, readyConverted)
                 } else part
-                if (isMatroska && publicationPart == readyConverted) files.deleteTrackFiles(job)
+                if (!job.transcodeMp3 && publicationPart == readyConverted) files.deleteTrackFiles(job)
                 val published = withContext(Dispatchers.IO) { files.publish(job, publicationPart) }
                 val committed = synchronized(cancelLock) {
                     if (cancelId == job.id) false
@@ -404,8 +404,6 @@ class DownloadService : Service() {
         if (cancelId == job.id) throw CancellationException("Cancelled by user.")
         val sourceBytes = videoPart.length() + audioPart.length()
         MediaTrackMuxer.merge(videoPart, audioPart, outputPart, option.container) { cancelId == job.id }
-        // Keep the tracks until the MKV output has been checkpointed for publication.
-        if (option.container != "MKV") files.deleteTrackFiles(job)
         return TransferOutcome(
             downloaded = sourceBytes,
             total = combinedTotal(videoTotal, audioTotal),

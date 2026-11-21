@@ -1019,7 +1019,8 @@ class DownloadServiceAcceptanceTest {
             )
             val arguments = InstrumentationRegistry.getArguments()
             val reuseMatroska = arguments.getString("reuseCompletedMatroska") == "true"
-            val reuseCompletePart = reuseMatroska || arguments.getString("reuseCompleteDownloadPart") == "true"
+            val reuseMerged = arguments.getString("reuseCompletedMuxedDownload") == "true"
+            val reuseCompletePart = reuseMatroska || reuseMerged || arguments.getString("reuseCompleteDownloadPart") == "true"
             val context = ApplicationProvider.getApplicationContext<Context>()
             val storagePermissionAvailable = Build.VERSION.SDK_INT > 28 ||
                 (context.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
@@ -1033,8 +1034,9 @@ class DownloadServiceAcceptanceTest {
             var publishedUri: Uri? = null
             val extension = if (reuseMatroska) "mkv" else "mp4"
             val publishedName = "lowtube-bounded-${System.currentTimeMillis()}.$extension"
-            val readyMatroska = File(partial.path + ".ready.mkv")
-            val source = if (reuseMatroska) readyMatroska else partial
+            val readyFile = File(partial.path + if (reuseMatroska) ".ready.mkv" else ".ready.mux")
+            val source = if (reuseMatroska || reuseMerged) readyFile else partial
+            val transferBytes = RangeResumeLoopbackServer.TOTAL_BYTES + if (reuseMerged) 33L else 0L
             try {
                 val video = VideoItem("fixture", "Publication fixture", duration = "—", url = "https://www.youtube.com/watch?v=fixture")
                 val videoJson = JSONObject().put("id", video.id).put("title", video.title).put("url", video.url).toString()
@@ -1052,15 +1054,15 @@ class DownloadServiceAcceptanceTest {
                 if (reuseCompletePart) {
                     source.writeBytes(expectedBytes)
                     store.update(id, DownloadStatus.FAILED, "Fixture publication failure",
-                        downloaded = expectedBytes.size.toLong(), total = expectedBytes.size.toLong())
+                        downloaded = transferBytes, total = transferBytes)
                     assertTrue(store.requeueRetryable(id))
                 }
                 server.start()
                 startService(context, dbName, testStreamUrl = server.url)
                 val complete = waitForTerminalAttempt(store, id)
                 assertEquals("Bounded file did not reach SUCCESSFUL: ${complete.reason}", DownloadStatus.SUCCESSFUL, complete.status)
-                assertEquals(RangeResumeLoopbackServer.TOTAL_BYTES, complete.downloadedBytes)
-                assertEquals(RangeResumeLoopbackServer.TOTAL_BYTES, complete.totalBytes)
+                assertEquals(transferBytes, complete.downloadedBytes)
+                assertEquals(transferBytes, complete.totalBytes)
                 val expectedRange = if (reuseCompletePart) null else "bytes=0-${RangeResumeLoopbackServer.TOTAL_BYTES - 1}"
                 assertEquals(expectedRange, server.rangeHeader)
                 assertFalse("Private source should be removed after publishing", source.exists())
@@ -1088,7 +1090,7 @@ class DownloadServiceAcceptanceTest {
                 context.stopService(Intent(context, DownloadService::class.java))
                 server.close()
                 partial.delete()
-                readyMatroska.delete()
+                readyFile.delete()
                 publishedUri?.let { runCatching { DownloadFileStore(context).deletePublished(it) } }
                 if (id > 0) store.remove(id)
                 store.close()
