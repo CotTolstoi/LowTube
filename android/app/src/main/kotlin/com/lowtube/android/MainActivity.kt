@@ -224,7 +224,8 @@ class MainActivity : ComponentActivity() {
       val scaledDensity = remember(baseDensity, uiScale) {
         Density(
           density = baseDensity.density * uiScale,
-          fontScale = baseDensity.fontScale * uiScale,
+          // Scaled density already applies the UI zoom to text measured in sp.
+          fontScale = baseDensity.fontScale,
         )
       }
       CompositionLocalProvider(LocalDensity provides scaledDensity) {
