@@ -1,3 +1,14 @@
+## Current artifact (2026-11-21, source revision b4edbb4)
+
+- File: `LowTube-Android-debug-0.1.10.apk`; version `0.1.10-android-dev` (version code 11); minimum Android 6.0 (API 23).
+- Build type: installable debug APK signed with the Android debug certificate; not production-signed.
+- Source revision: `b4edbb4` on `codex/android-shorts-continuation`.
+- Build: `:app:assembleDebug --offline --no-configuration-cache` succeeded for armeabi-v7a, arm64-v8a and x86_64.
+- Change in 0.1.10: Subscriptions channel filter chips display cached channel avatars with an initial-letter fallback; no additional network request is made.
+- Playback was not run; player code was unchanged. APK installed on Xiaomi Pad 6 and MainActivity verified foreground. UI acceptance was not run.
+- APK size: 24592429 bytes.
+- SHA-256: `68F91DC41362E44F7EA1FAEF81CB86A3A564CC5DE2249BE649A0D6EF740D902C`.
+
 ## Current artifact (2026-11-21, source revision b8e77c1)
 
 - File: `LowTube-Android-debug-0.1.9.apk`; version `0.1.9-android-dev` (version code 10); minimum Android 6.0 (API 23).
