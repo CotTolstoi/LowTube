@@ -976,11 +976,24 @@ fun MainNavigation(
                     },
                     onAdvanceQueue = advanceQueuedPlayback,
                     onPreviousVideo = {
-                        shortsSession = emptyList()
-                        shortsSessionIndex = -1
-                        val previous = library.previousWatchedVideo(video.id)
-                        if (previous == null) Toast.makeText(context, R.string.no_previous_video, Toast.LENGTH_SHORT).show()
-                        else { selectedQueueRowId = null; selectedLocalAudio = null; selectedLocalVideoSource = null; selectedVideo = previous; playbackRequestId++ }
+                        val requestId = playbackRequestId
+                        scope.launch {
+                            val previous = withContext(Dispatchers.IO) { library.previousWatchedVideo(video.id) }
+                            if (backStack.lastOrNull() != Player || playbackRequestId != requestId ||
+                                selectedVideo?.id != video.id
+                            ) return@launch
+                            if (previous == null) {
+                                Toast.makeText(context, R.string.no_previous_video, Toast.LENGTH_SHORT).show()
+                                return@launch
+                            }
+                            shortsSession = emptyList()
+                            shortsSessionIndex = -1
+                            selectedQueueRowId = null
+                            selectedLocalAudio = null
+                            selectedLocalVideoSource = null
+                            selectedVideo = previous
+                            playbackRequestId++
+                        }
                     },
                     onPlaybackSpeedChanged = { updated ->
                         playbackSpeed = updated.coerceIn(0.25f, 2f)
