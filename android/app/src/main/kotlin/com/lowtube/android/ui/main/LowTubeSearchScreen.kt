@@ -33,6 +33,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -562,7 +563,10 @@ fun LowTubeSearchScreen(
                         requestFailedMessage = requestFailedMessage, pageSize = pageSize)
                 }) { Text(stringResource(R.string.retry)) }
             }
-            if (state.loading) {
+            if (state.loading && state.isHome && state.items.isNotEmpty()) {
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            }
+            if (state.loading && (!state.isHome || state.items.isEmpty())) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
             } else if (state.error != null && state.items.isEmpty()) {
                 Column(
@@ -676,7 +680,7 @@ fun LowTubeSearchScreen(
                         item(key = "load-more", span = { GridItemSpan(maxLineSpan) }) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                                 if (state.error != null && !state.homeRefreshFailed) Text(state.error.orEmpty(), color = MaterialTheme.colorScheme.error)
-                                Button(onClick = { viewModel.loadMore(requestFailedMessage, pageSize, visibleItems.size) }, enabled = !state.loadingMore) {
+                                Button(onClick = { viewModel.loadMore(requestFailedMessage, pageSize, visibleItems.size) }, enabled = !state.loading && !state.loadingMore) {
                                     if (state.loadingMore) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
                                     else Text(stringResource(R.string.load_more))
                                 }
