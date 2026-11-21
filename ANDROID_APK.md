@@ -1,3 +1,14 @@
+## Current artifact (2026-11-21, source revision 4f79a7d)
+
+- File: `LowTube-Android-debug-0.1.16.apk`; version `0.1.16-android-dev` (version code 17); minimum Android 6.0 (API 23).
+- Build type: installable debug APK signed with the Android debug certificate; not production-signed.
+- Source revision: `4f79a7d` on `codex/android-shorts-continuation`.
+- Build: `:app:assembleDebug --offline --no-configuration-cache` and `:app:assembleDebugAndroidTest --offline --no-configuration-cache` succeeded for armeabi-v7a, arm64-v8a and x86_64.
+- Change in 0.1.16: reopening Player restores the staged queue entry from MediaSession metadata; the session observer consumes its queue row after transition.
+- Bounded playback acceptance passed on Android 6/API 23 AVD: a 12 s first clip and about 1 s of the next item, below 120 s. The MainActivity navigation/background synchronization route remains unverified. APK installed on Xiaomi Pad 6; MainActivity verified foreground. No playback started on the tablet.
+- APK size: 24612344 bytes.
+- SHA-256: `3BC0B521359F29BF68C01B360F8D0EBA818BFC30F4C9E040C5C2612FAAC9A6AC`.
+
 ## Current artifact (2026-11-21, source revision 122cc4b)
 
 - File: `LowTube-Android-debug-0.1.15.apk`; version `0.1.15-android-dev` (version code 16); minimum Android 6.0 (API 23).
