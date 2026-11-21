@@ -158,6 +158,7 @@ class SearchViewModel(
     ) {
         require(pageSize in FeedPagePolicy.MIN_PAGE_SIZE..FeedPagePolicy.MAX_PAGE_SIZE)
         val current = mutableState.value
+        if (current.loading || current.loadingMore) return
         val availableCount = availableItemCount.takeIf { it >= 0 } ?: current.items.size
         if (FeedPagePolicy.hasBufferedResults(availableCount, current.displayLimit)) {
             mutableState.value = current.copy(
@@ -167,7 +168,6 @@ class SearchViewModel(
             return
         }
         val token = current.continuation ?: return
-        if (current.loading || current.loadingMore) return
         val requestGeneration = generation
         mutableState.value = current.copy(loadingMore = true, error = null)
         viewModelScope.launch {
@@ -183,10 +183,13 @@ class SearchViewModel(
                     val merged = (current.items + page.items).distinctBy { it.kind + ":" + it.id }.take(5_000)
                     val updated = current.copy(
                         items = merged,
-                        continuation = page.continuation,
+                        continuation = page.continuation?.takeUnless {
+                            merged.size == 5_000 || (it == token && merged.size == current.items.size)
+                        },
                         playlistTitle = page.playlistTitle ?: current.playlistTitle,
                         channelHeader = page.channelHeader ?: current.channelHeader,
                         loadingMore = false,
+                        error = null,
                     )
                     mutableState.value = updated
                     if (updated.isHome) rememberHomePage(updated)

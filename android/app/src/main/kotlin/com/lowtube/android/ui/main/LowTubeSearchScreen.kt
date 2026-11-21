@@ -311,13 +311,16 @@ fun LowTubeSearchScreen(
         state.continuation,
         state.loading,
         state.loadingMore,
+        state.error,
         displayedItems.size,
         state.displayLimit,
     ) {
         if (selectedTab != "search" && selectedTab != "home") return@LaunchedEffect
         val continuation = state.continuation ?: return@LaunchedEffect
         val attemptKey = "$continuation|${state.displayLimit}"
-        if (state.loading || state.loadingMore || visibleItems.isEmpty() || autoLoadAttemptedToken == attemptKey) return@LaunchedEffect
+        if (state.loading || state.loadingMore || state.error != null || visibleItems.isEmpty() ||
+            autoLoadAttemptedToken == attemptKey
+        ) return@LaunchedEffect
 
         fun nearEnd(lastVisibleIndex: Int) = FeedAutoPaginationPolicy.shouldPrefetch(lastVisibleIndex, displayedItems.size)
         val lastVisibleIndex = resultsGridState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
